@@ -325,13 +325,21 @@ switch char(M)
                 U=zeros(size(X));
                 V=zeros(size(X));
                 C=zeros(size(X));
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
-                %[Xc,Yc,Uc,Vc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
-                U(Eval>=0)=Uc;
-                V(Eval>=0)=Vc;
-                C(Eval>=0)=Cc; %
-                U=U+Ub;
-                V=V+Vb;
+                if e==1
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    %[Xc,Yc,Uc,Vc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    U(Eval>=0)=Uc;
+                    V(Eval>=0)=Vc;
+                    C(Eval>=0)=Cc; %
+               else
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
+                    %[Xc,Yc,Uc,Vc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
+                    U(Eval>=0)=Uc;
+                    V(Eval>=0)=Vc;
+                    C(Eval>=0)=Cc; %
+                    U=U+Ub;
+                    V=V+Vb;
+                end
                 
                 %validation
                 if Valswitch(e)==1
@@ -456,6 +464,9 @@ switch char(M)
                     %clip lower values of deformed images
                     im1d(im1d<0)=0;
                     im2d(im2d<0)=0;
+%                     keyboard
+%                     imwrite(uint8(im1d),['C:\Documents and Settings\User\Desktop\Artificial_Image_Generation\deformed images investigation\scc_deform_validation_1.tif']);
+%                     imwrite(uint8(im2d),['C:\Documents and Settings\User\Desktop\Artificial_Image_Generation\deformed images investigation\scc_deform_validation_2.tif']);
 
                     eltime=cputime-t1;
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
