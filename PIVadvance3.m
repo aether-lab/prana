@@ -1,12 +1,12 @@
-function varargout = PIVadvance2(varargin)
-
+function varargout = PIVadvance3(varargin)
+  
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
     'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @PIVadvance2_OpeningFcn, ...
-    'gui_OutputFcn',  @PIVadvance2_OutputFcn, ...
+    'gui_OpeningFcn', @PIVadvance3_OpeningFcn, ...
+    'gui_OutputFcn',  @PIVadvance3_OutputFcn, ...
     'gui_LayoutFcn',  [] , ...
     'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -22,10 +22,14 @@ end
 
 
 %% opening funciton for figure
-function PIVadvance2_OpeningFcn(hObject, eventdata, handles, varargin)
+function PIVadvance3_OpeningFcn(hObject, eventdata, handles, varargin)
 
 handles.syscolor=get(hObject,'color');
-handles.loaddirec=[pwd '\'];
+if ispc
+    handles.loaddirec=[pwd '\'];
+else
+    handles.loaddirec=[pwd '/'];
+end
 
 handles.data.imdirec=pwd;
 handles.data.imbase='ImgA';
@@ -84,7 +88,7 @@ guidata(hObject, handles);
 
 
 %output
-function varargout = PIVadvance2_OutputFcn(hObject, eventdata, handles)
+function varargout = PIVadvance3_OutputFcn(hObject, eventdata, handles)
 varargout{1} = handles.output;
 
 
@@ -135,9 +139,10 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+%% add pass 
+function pushbotton7_Callback(hObject, eventdata, handles) 
 
-%% add pass
-function pushbutton7_Callback(hObject, eventdata, handles)
+ 
 if str2double(handles.Njob)>0
     N=str2double(handles.data.passes);
     eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
@@ -1135,7 +1140,11 @@ if str2double(handles.Njob)>0
             mask = double(imread(handles.data.maskname));
             mask=flipud(mask);
         else
-            mask = 1+0*double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+            if ispc
+                mask = 1+0*double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+            else
+                mask = 1+0*double(imread([handles.data.imdirec '/' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+            end
         end
         e=0;
     catch
@@ -1347,7 +1356,7 @@ end
 function Untitled_10_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data=handles.data;
-    PIVadvance2code(Data);
+    PIVadvance3code(Data);
 end
 
 
@@ -1357,7 +1366,7 @@ if str2double(handles.Njob)>0
     Jlist=char(get(handles.listbox5,'String'));
     for e=1:size(Jlist,1)
         Data=eval(['handles.' Jlist(e,:)]);
-        PIVadvance2code(Data);
+        PIVadvance3code(Data);
     end
 end
 
@@ -1445,7 +1454,7 @@ PIVhelp(9);
 function Untitled_20_Callback(hObject, eventdata, handles)
 
 
-%% Help PIVadvance2
+%% Help PIVadvance3
 function Untitled_21_Callback(hObject, eventdata, handles)
 PIVhelp(1);
 
@@ -1462,9 +1471,17 @@ PIVhelp(7)
 %% Load Images
 function Untitled_24_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[handles.data.outdirec '\'],'Multiselect','on');
+    if ispc
+        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[handles.data.outdirec '\'],'Multiselect','on');
+    else
+        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[handles.data.outdirec '/'],'Multiselect','on');
+    end
 else
-    [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[pwd '\'],'Multiselect','on');
+    if ispc
+        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[pwd '\'],'Multiselect','on');
+    else
+        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[pwd '/'],'Multiselect','on');
+    end
 end
 for e=1:length(A)
     im=imread([d A{e}]);
@@ -1474,9 +1491,17 @@ end
 %% Load Plt
 function Untitled_25_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    [A,d]=uigetfile('*.plt','LOAD PLT FILES',[handles.data.outdirec '\'],'Multiselect','on');
+    if ispc
+        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[handles.data.outdirec '\'],'Multiselect','on');
+    else
+        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[handles.data.outdirec '/'],'Multiselect','on');
+    end
 else
-    [A,d]=uigetfile('*.plt','LOAD PLT FILES',[pwd '\'],'Multiselect','on');
+    if ispc
+        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[pwd '\'],'Multiselect','on');
+    else
+        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[pwd '/'],'Multiselect','on');
+    end
 end
 A=sort(A);
 for e=1:length(A)
@@ -1538,7 +1563,7 @@ while status==1
                 var=varlist;
             end
         end
-
+ 
         %reads zone lengths
         if length(strfind(lower(temp),'zone '))~=0
             indi=(strfind(temp,'I=')+2):((strfind(temp,'I=')+2)+strfind(temp(strfind(temp,'I=')+2:end),' ')-2);
