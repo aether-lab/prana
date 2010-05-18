@@ -1,4 +1,4 @@
-function PIVadvance2code(Data)
+function PIVadvance3code(Data)
 %
 % PIVadvance2code(Data)
 %
@@ -11,8 +11,13 @@ function PIVadvance2code(Data)
 % clc;
 
 %input/output directory
-imbase=[Data.imdirec '/' Data.imbase];
-pltdirec=[Data.outdirec '/'];
+if ispc
+    imbase=[Data.imdirec '/' Data.imbase];
+    pltdirec=[Data.outdirec '/'];
+else
+    imbase=[Data.imdirec '/' Data.imbase];
+    pltdirec=[Data.outdirec '/'];
+end
 
 %image indices
 I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
@@ -147,13 +152,16 @@ switch char(M)
             Vb = BWO(2)*ones(size(X));
             U  = zeros(size(X));
             V  = zeros(size(X));
+            C  = zeros(size(X)); %
 
             for e=1:P
 
                 %correlate image pair
-                [Xc,Yc,Uc,Vc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                %[Xc,Yc,Uc,Vc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                 U(Eval>=0)=Uc;
                 V(Eval>=0)=Vc;
+                C(Eval>=0)=Cc; %
 
                 %validation
                 if Valswitch(e)==1
@@ -169,7 +177,8 @@ switch char(M)
                 %write outut
                 if Writeswitch(e)==1
                     time=(q-1)/Freq;
-                    write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,Mag,dt,time,title);
+                    %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,Mag,dt,time,title);
+                    write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,Mag,dt,time,title);
                 end
 
             end
@@ -218,9 +227,12 @@ switch char(M)
                 %correlate image pair
                 U=zeros(size(X));
                 V=zeros(size(X));
-                [Xc,Yc,Uc,Vc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                C=zeros(size(X)); %
+                %[Xc,Yc,Uc,Vc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                 U(Eval>=0)=Uc;
                 V(Eval>=0)=Vc;
+                C(Eval>=0)=Cc; %
 
                 %validation
                 if Valswitch(e)==1
@@ -232,7 +244,8 @@ switch char(M)
                 %write output
                 if Writeswitch(e)==1
                     time=(q-1)/Freq;
-                    write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,Mag,dt,time,title);
+                    %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,Mag,dt,time,title);
+                    write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,Mag,dt,time,title);
                 end
 
                 if e~=P
@@ -245,6 +258,7 @@ switch char(M)
                     Y=reshape(Y,S(1),S(2));
                     U=reshape(U,S(1),S(2));
                     V=reshape(V,S(1),S(2));
+                    %C=reshape(C,S(1),S(2));
 
                     %velocity smoothing
                     if Velsmoothswitch==1
@@ -310,11 +324,22 @@ switch char(M)
                 %correlate image pair
                 U=zeros(size(X));
                 V=zeros(size(X));
-                [Xc,Yc,Uc,Vc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
-                U(Eval>=0)=Uc;
-                V(Eval>=0)=Vc;
-                U=U+Ub;
-                V=V+Vb;
+                C=zeros(size(X));
+                if e==1
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    %[Xc,Yc,Uc,Vc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    U(Eval>=0)=Uc;
+                    V(Eval>=0)=Vc;
+                    C(Eval>=0)=Cc; %
+               else
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed_C(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
+                    %[Xc,Yc,Uc,Vc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0));
+                    U(Eval>=0)=Uc;
+                    V(Eval>=0)=Vc;
+                    C(Eval>=0)=Cc; %
+                    U=U+Ub;
+                    V=V+Vb;
+                end
                 
                 %validation
                 if Valswitch(e)==1
@@ -326,7 +351,8 @@ switch char(M)
                 %write output
                 if Writeswitch(e)==1
                     time=(q-1)/Freq;
-                    write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,Mag,dt,time,title);
+                    %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,Mag,dt,time,title);
+                    write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,Mag,dt,time,title);
                 end
 
                 if e~=P
@@ -438,6 +464,9 @@ switch char(M)
                     %clip lower values of deformed images
                     im1d(im1d<0)=0;
                     im2d(im2d<0)=0;
+%                     keyboard
+%                     imwrite(uint8(im1d),['C:\Documents and Settings\User\Desktop\Artificial_Image_Generation\deformed images investigation\scc_deform_validation_1.tif']);
+%                     imwrite(uint8(im2d),['C:\Documents and Settings\User\Desktop\Artificial_Image_Generation\deformed images investigation\scc_deform_validation_2.tif']);
 
                     eltime=cputime-t1;
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -475,6 +504,7 @@ switch char(M)
             %initialize velocity outputs
             U=zeros(size(X));
             V=zeros(size(X));
+            C=zeros(size(X)); %
             
             %output text
             title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
@@ -507,12 +537,15 @@ switch char(M)
             Z=size(CCm);
             Uc=zeros(Z(3),1);
             Vc=zeros(Z(3),1);
+            Cc=zeros(Z(3),1);
             ZZ=ones(Z(1),Z(2));
             for s=1:length(Xc)
-                [Uc(s),Vc(s)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ);
+                %[Uc(s),Vc(s)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ);
+                [Uc(s),Vc(s),Cc(s)]=subpixel_C(CCm(:,:,s),Z(2),Z(1),ZZ);
             end
             U(Eval>=0)=Uc+round(Ub(Eval>=0));
             V(Eval>=0)=Vc+round(Vb(Eval>=0));
+            C(Eval>=0)=Cc;
 
             %validation
             if Valswitch(e)==1
@@ -523,7 +556,8 @@ switch char(M)
 
             %write output
             if Writeswitch(e)==1
-                write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
+                %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
+                write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,C,Mag,dt,0,title);
             end
             
             if e~=P
@@ -738,6 +772,187 @@ switch upper(tcorr)
             
             %subpixel estimation
             [U(n),V(n)]=subpixel(G,Nx,Ny,cnorm);
+
+        end
+end
+
+%add DWO to estimation
+U = round(Uin)+U;
+V = round(Vin)+V;
+
+eltime=cputime-t1;
+fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+%% DPIV CORRELATION WITH RETURNED CC PEAKS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [X,Y,U,V,C]=PIVwindowed_C(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin)
+
+t1=cputime;
+
+%convert input parameters
+im1=double(im1);
+im2=double(im2);
+L = size(im1);
+
+%convert to gridpoint list
+X=X(:);
+Y=Y(:);
+
+%correlation and window mask types
+ctype    = {'SCC','RPC'};
+tcorr = char(ctype(corr+1)); 
+
+%preallocate velocity fields and grid format
+Nx = window(1);
+Ny = window(2);
+if nargin <=10
+    Uin = zeros(length(X),1);
+    Vin = zeros(length(X),1);
+end
+Uin = Uin(:);
+Vin = Vin(:);
+U = zeros(length(X),1);
+V = zeros(length(X),1);
+C = zeros(length(X),1);
+
+%sets up extended domain size
+if zpad~=0
+    Sy=2*Ny;
+    Sx=2*Nx;
+else
+    Sy=Ny;
+    Sx=Nx;
+end
+
+%window masking filter
+sfilt = windowmask([Nx Ny],[res(1) res(2)]);
+
+%correlation plane normalization function (always off)
+cnorm = ones(Ny,Nx);
+
+%RPC spectral energy filter
+spectral = fftshift(energyfilt(Sx,Sy,D,0));
+
+%fftshift indicies
+fftindy = [Sy/2+1:Sy 1:Sy/2];
+fftindx = [Sx/2+1:Sx 1:Sx/2];
+
+fprintf('correlating...                   ')
+
+switch upper(tcorr)
+
+    %Standard Cross Correlation
+    case 'SCC'
+
+        for n=1:length(X)
+
+            %apply the second order discrete window offset
+            x1 = X(n) - floor(round(Uin(n))/2);
+            x2 = X(n) +  ceil(round(Uin(n))/2);
+
+            y1 = Y(n) - floor(round(Vin(n))/2);
+            y2 = Y(n) +  ceil(round(Vin(n))/2);
+
+            xmin1 = x1-Nx/2+1;
+            xmax1 = x1+Nx/2;
+            xmin2 = x2-Nx/2+1;
+            xmax2 = x2+Nx/2;
+            ymin1 = y1-Ny/2+1;
+            ymax1 = y1+Ny/2;
+            ymin2 = y2-Ny/2+1;
+            ymax2 = y2+Ny/2;
+
+            %find the image windows
+            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
+            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
+            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                w1 = zeros(Ny,Nx);
+                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                zone1 = w1;
+            end
+            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                w2 = zeros(Ny,Nx);
+                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                zone2 = w2;
+            end
+            
+            %apply the image spatial filter
+            region1 = (zone1).*sfilt;
+            region2 = (zone2).*sfilt;
+
+            %FFTs and Cross-Correlation
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
+            P21  = f2.*conj(f1);
+
+            %Standard Fourier Based Cross-Correlation
+            G = ifftn(P21,'symmetric');
+            G = G(fftindy,fftindx);
+            G = abs(G);
+            
+            %subpixel estimation
+            [U(n),V(n),C(n)]=subpixel_C(G,Nx,Ny,cnorm);
+            %[U(n),V(n)]=subpixel(G,Nx,Ny,cnorm);
+
+        end
+
+    %Robust Phase Correlation
+    case 'RPC'
+        
+        for n=1:length(X)
+
+            %apply the second order discrete window offset
+            x1 = X(n) - floor(round(Uin(n))/2);
+            x2 = X(n) +  ceil(round(Uin(n))/2);
+
+            y1 = Y(n) - floor(round(Vin(n))/2);
+            y2 = Y(n) +  ceil(round(Vin(n))/2);
+
+            xmin1 = x1-Nx/2+1;
+            xmax1 = x1+Nx/2;
+            xmin2 = x2-Nx/2+1;
+            xmax2 = x2+Nx/2;
+            ymin1 = y1-Ny/2+1;
+            ymax1 = y1+Ny/2;
+            ymin2 = y2-Ny/2+1;
+            ymax2 = y2+Ny/2;
+
+            %find the image windows
+            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
+            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
+            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                w1 = zeros(Ny,Nx);
+                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                zone1 = w1;
+            end
+            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                w2 = zeros(Ny,Nx);
+                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                zone2 = w2;
+            end
+
+            %apply the image spatial filter
+            region1 = (zone1).*sfilt;
+            region2 = (zone2).*sfilt;
+
+            %FFTs and Cross-Correlation
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
+            P21  = f2.*conj(f1);
+
+            %Phase Correlation
+            W = ones(Sy,Sx);
+            Wden = sqrt(P21.*conj(P21));
+            W(P21~=0) = Wden(P21~=0);
+            R = P21./W;
+
+            %Robust Phase Correlation with spectral energy filter
+            G = ifftn(R.*spectral,'symmetric');
+            G = G(fftindy,fftindx);
+            G = abs(G);
+            
+            %subpixel estimation
+            [U(n),V(n),C(n)]=subpixel_C(G,Nx,Ny,cnorm);
+            %[U(n),V(n)]=subpixel(G,Nx,Ny,cnorm);
 
         end
 end
@@ -1134,6 +1349,83 @@ else
     v = (cc_y(shift_locy) + shift_err);
 
 end
+%% 3 POINT GAUSSIAN SUBPIXEL ESTIMATOR SUBFUNCTION PLUS PEAK RETURN
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [u,v,M]=subpixel_C(G,ccsizex,ccsizey,W)
+
+%intialize indices
+cc_x = -ccsizex/2:ccsizex/2-1;
+cc_y = -ccsizey/2:ccsizey/2-1;
+
+%find maximum correlation value
+[M,I] = max(G(:));
+
+if M==0
+    %if correlation empty
+    u=0;
+    v=0;
+else
+    %find x and y indices
+    shift_locy = 1+mod(I-1,ccsizey);
+    shift_locx = ceil(I/ccsizey);
+    
+    %find subpixel displacement in x
+    if shift_locx == 1
+        %boundary condition 1
+        shift_err =  G( shift_locy , shift_locx+1 )/M;
+    elseif shift_locx == ccsizex
+        %boundary condition 2
+        shift_err = -G( shift_locy , shift_locx-1 )/M;
+    elseif G( shift_locy , shift_locx+1 ) == 0
+        %endpoint discontinuity 1
+        shift_err = -G( shift_locy , shift_locx-1 )/M;
+    elseif G( shift_locy , shift_locx-1 ) == 0
+        %endpoint discontinuity 2
+        shift_err =  G( shift_locy , shift_locx+1 )/M;
+    else
+        %gaussian fit
+        lCm1 = log(G( shift_locy , shift_locx-1 )*W( shift_locy , shift_locx-1 ));
+        lC00 = log(G( shift_locy , shift_locx   )*W( shift_locy , shift_locx   ));
+        lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
+        if (2*(lCm1+lCp1-2*lC00)) == 0
+            shift_err = 0;
+        else
+            shift_err = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+        end
+    end
+
+    %add subpixel to discete pixel value
+    u = cc_x(shift_locx) + shift_err;
+
+    %find subpixel displacement in y
+    if shift_locy == 1
+        %boundary condition 1
+        shift_err = -G( shift_locy+1 , shift_locx )/M;
+    elseif shift_locy == ccsizey
+        %boundary condition 2
+        shift_err =  G( shift_locy-1 , shift_locx )/M;
+    elseif G( shift_locy+1 , shift_locx ) == 0
+        %endpoint discontinuity 1
+        shift_err =  G( shift_locy-1 , shift_locx )/M;
+    elseif G( shift_locy-1 , shift_locx ) == 0
+        %endpoint discontinuity 2
+        shift_err = -G( shift_locy+1 , shift_locx )/M;
+    else
+        %gaussian fit
+        lCm1 = log(G( shift_locy-1 , shift_locx )*W( shift_locy-1 , shift_locx ));
+        lC00 = log(G( shift_locy   , shift_locx )*W( shift_locy   , shift_locx ));
+        lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
+        if (2*(lCm1+lCp1-2*lC00)) == 0
+            shift_err = 0;
+        else
+            shift_err = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+        end
+    end
+    
+    %add subpixel to discete pixel value
+    v = (cc_y(shift_locy) + shift_err);
+
+end
 
 
 %% VALIDATION SUBFUNCTION
@@ -1352,6 +1644,34 @@ for n=1:N
     Eval(I,J) = eval(n);
 end
 
+%% VECTOR TO MATRIX SUBFUNCTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [X,Y,U,V,Eval,C]=matrixform_C(x,y,u,v,eval,c)
+
+%find unique x and y grid points
+a=sort(unique(x));
+b=sort(unique(y));
+N=length(x);
+
+%initialize matrices
+U=nan(length(b),length(a));
+V=nan(length(b),length(a));
+Eval=-1*ones(length(b),length(a));
+C=nan(length(b),length(a));
+
+%generate grid matrix
+[X,Y]=meshgrid(a,b);
+
+%generate variable matrices (nans where no data available)
+for n=1:N
+    I=find(b==y(n));
+    J=find(a==x(n));
+    U(I,J) = u(n);
+    V(I,J) = v(n);
+    Eval(I,J) = eval(n);
+    C(I,J) = c(n);
+end
+
 
 %% MATRIX TO VECTOR SUBFUNCTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1424,6 +1744,64 @@ for i=1:S(1)
         else
             %valid data points
             fprintf(fid,'%14.6e %14.6e %14.6e %14.6e %14.6e\n',X(i,j),Y(i,j),U(i,j),V(i,j),Eval(i,j));
+        end
+    end
+end
+
+fclose(fid);
+
+%output text
+eltime=cputime-t1;
+fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+
+%% PLT WRITER SUBFUNCTION WITH CORRELATION STRENGTH
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function []=write_plt_val_C(fname,X,Y,U,V,Eval,C,Mag,dt,T,title)
+
+%output text
+fprintf('saving...                        ')
+t1=cputime;
+
+%convert to physical units
+X=X*Mag;
+Y=Y*Mag;
+U=U*Mag/dt;
+V=V*Mag/dt;
+
+%convert to matrix if necessary
+if size(X,2)==1
+    %[X,Y,U,V,Eval]=matrixform(X,Y,U,V,Eval);
+    [X,Y,U,V,Eval,C]=matrixform_C(X,Y,U,V,Eval,C);
+end
+
+%remove nans from data, replace with zeros
+U(Eval<0)=0;
+V(Eval<0)=0;
+C(Eval<0)=0;
+
+%find I,J for plt
+S = size(U);
+
+%generate text file
+fid = fopen(fname,'w');
+if fid==-1
+    error(['error creating file ',fname])
+end
+
+%header lines
+fprintf(fid,['TITLE        = "' title '"\n']);
+fprintf(fid,'VARIABLES    = "X", "Y", "U", "V", "Eval", "C"\n');
+fprintf(fid,'ZONE T="Time=%0.6f" I=%i J=%i C=BLACK STRANDID=1 SOLUTIONTIME = %0.6f\n',T,S(2),S(1),T);
+
+%write data
+for i=1:S(1)
+    for j=1:S(2)
+        if isnan(U(i,j)) || isnan(V(i,j) || isnan(C(i,j)))
+            %second check to ensure no nans present
+            fprintf(fid,'%14.6e %14.6e %14.6e %14.6e %14.6e %14.6e\n',X(i,j),Y(i,j),0,0,-1,0);
+        else
+            %valid data points
+            fprintf(fid,'%14.6e %14.6e %14.6e %14.6e %14.6e %14.6e\n',X(i,j),Y(i,j),U(i,j),V(i,j),Eval(i,j),C(i,j));
         end
     end
 end
