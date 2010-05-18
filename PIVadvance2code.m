@@ -4,9 +4,6 @@ function PIVadvance2code(Data)
 %
 % DPIV estimation and analysis tool based upon input structure "Data"
 % generated using the PIVadvance2.fig GUI file
-%
-% Copyright (c) 3/11/2008 by Virginia Polytechnic Institute and State
-% University  All rights reserved.
 
 %% READ FORMATTED PARAMETERS
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -14,8 +11,8 @@ function PIVadvance2code(Data)
 % clc;
 
 %input/output directory
-imbase=[Data.imdirec '\' Data.imbase];
-pltdirec=[Data.outdirec '\'];
+imbase=[Data.imdirec '/' Data.imbase];
+pltdirec=[Data.outdirec '/'];
 
 %image indices
 I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
@@ -105,6 +102,16 @@ for e=1:P
     
 end
 
+%% IMAGE PREFILTER
+
+%added to multipass, multigrid, deform, and ensemble for image loading
+try
+    IMmin=double(imread([Data.imdirec '/IMmin.tif']));
+catch
+    beep
+    disp('Error reading image subtraction file...\nResuming without image prefilter...')
+    IMmin=0*double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+end
 
 %% EVALUATE IMAGE SEQUENCE
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -124,8 +131,8 @@ switch char(M)
             fprintf('----------------------------------------------------\n')
 
             %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
             im1=flipud(im1);
             im2=flipud(im2);
             L=size(im1);
@@ -186,8 +193,8 @@ switch char(M)
             fprintf('----------------------------------------------------\n')
             
             %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
             im1=flipud(im1);
             im2=flipud(im2);
             L=size(im1);
@@ -274,8 +281,8 @@ switch char(M)
             fprintf('----------------------------------------------------\n')
             
             %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
             im1=flipud(im1);
             im2=flipud(im2);
             L=size(im1);
@@ -478,8 +485,8 @@ switch char(M)
             for q=1:length(I1)
 
                 %load image pair and flip coordinates
-                im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-                im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+                im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
                 im1=flipud(im1);
                 im2=flipud(im2);
                 L=size(im1);
@@ -495,13 +502,12 @@ switch char(M)
 
             end
             fprintf('----------------------------------------------------\n\n')
-            
+
             %evaluate subpixel displacement of averaged correlation
             Z=size(CCm);
             Uc=zeros(Z(3),1);
             Vc=zeros(Z(3),1);
-%             ZZ=ones(Z(1),Z(2));
-            ZZ=winfilt(windowmask(Wsize(e,:),Wres(e,:)));
+            ZZ=ones(Z(1),Z(2));
             for s=1:length(Xc)
                 [Uc(s),Vc(s)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ);
             end
@@ -586,7 +592,7 @@ tcorr = char(ctype(corr+1));
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin ==10
+if nargin <=10
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -711,8 +717,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = zone1.*sfilt;
-            region2 = zone2.*sfilt;
+            region1 = (zone1).*sfilt;
+            region2 = (zone2).*sfilt;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
@@ -835,18 +841,19 @@ switch upper(tcorr)
             end
             
             %apply the image spatial filter
-            region1 = (zone1-median(zone1(:))).*sfilt;
-            region2 = (zone2-median(zone2(:))).*sfilt;
+            region1 = (zone1).*sfilt;
+            region2 = (zone2).*sfilt;
 
             %FFTs and Cross-Correlation
-            f1   = fftn(region1,[Sy Sx]);
-            f2   = fftn(region2,[Sy Sx]);
+            f1   = fftn(region1-mean(region1(:)),[Sy Sx]);
+            f2   = fftn(region2-mean(region2(:)),[Sy Sx]);
             P21  = f2.*conj(f1);
 
             %Standard Fourier Based Cross-Correlation
             G = ifftn(P21,'symmetric');
             G = G(fftindy,fftindx);
             G = abs(G);
+            G = G/std(region1(:))/std(region2(:))/length(region1(:));
             
             %store correlation matrix
             CC(:,:,n) = G;
@@ -889,8 +896,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = (zone1-median(zone1(:))).*sfilt;
-            region2 = (zone2-median(zone2(:))).*sfilt;
+            region1 = zone1.*sfilt;
+            region2 = zone2.*sfilt;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
@@ -1167,6 +1174,11 @@ else
     S=Sin;
 end
 
+% [Evalprofile]=VALprofile2(U,V,2);
+% Eval(Evalprofile>0)=100;
+% U(Evalprofile>0)=nan;
+% V(Evalprofile>0)=nan;
+
 %thresholding
 for i=1:S(1)
     for j=1:S(2)
@@ -1423,7 +1435,7 @@ eltime=cputime-t1;
 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
 
-%% function
+%% window size interpolation function
 function [p]=findwidth(r)
 
 R = [0.0000 0.0051 0.0052 0.0053 0.0055 0.0056 0.0057 0.0059 0.0060 ...
@@ -1494,21 +1506,13 @@ P = [500.0000 245.4709 239.8833 234.4229 229.0868 223.8721 218.7762 213.7962 208
  
 p=interp1q(R,P,r);
 
+%% axial profile validation thresholding
 
-%% window normalization function
-function [C] = winfilt(W)
-%
-% [C] = winfilt(W)
-% creates a 2-D filter of size(C)=size(W) where C is the normalization for
-% the correlation between two image windows with an energy distribution
-% given by W
+function [Eval]=VALprofile2(U,V,thresh)
 
-N  = size(W);
-N  = 2*N;
-F  = fft2(W,N(1),N(2));
-FC = F.*conj(F);
-SC = abs(fftshift(ifft2(FC)));
-SC = SC/max(max(SC));
-C  = SC(0.25*N(1)+1:0.75*N(1),0.25*N(2)+1:0.75*N(2));
-C  = C.^-1;
+um=median(U,2);
+Um=um(:,ones(size(U,2),1));
+Err=sqrt((U-Um).^2+V.^2);
+Eval=zeros(size(U));
+Eval(Err>thresh)=100;
 

@@ -1,8 +1,5 @@
 function varargout = PIVadvance2(varargin)
-% PIVadvance2 GUI
-%
-% Copyright (c) 3/11/2008 by Virginia Polytechnic Institute and State
-% University  All rights reserved.
+
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -720,7 +717,7 @@ end
 %% velocity smoothing switch
 function checkbox10_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.velsmooth = get(hObject,'Value');
+    handles.data.velsmooth = num2str(get(hObject,'Value'));
     if get(hObject,'Value')==1 && get(handles.popupmenu3,'Value')>1
         set(handles.edit45,'backgroundcolor',[1 1 1]);
     else
