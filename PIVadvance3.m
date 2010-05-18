@@ -1,5 +1,5 @@
 function varargout = PIVadvance3(varargin)
-  
+
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -29,7 +29,7 @@ if ispc
     handles.loaddirec=[pwd '\'];
 else
     handles.loaddirec=[pwd '/'];
-end
+end    
 
 handles.data.imdirec=pwd;
 handles.data.imbase='ImgA';
@@ -139,10 +139,9 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-%% add pass 
-function pushbotton7_Callback(hObject, eventdata, handles) 
 
- 
+%% add pass
+function pushbutton7_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     N=str2double(handles.data.passes);
     eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
@@ -1563,7 +1562,7 @@ while status==1
                 var=varlist;
             end
         end
- 
+
         %reads zone lengths
         if length(strfind(lower(temp),'zone '))~=0
             indi=(strfind(temp,'I=')+2):((strfind(temp,'I=')+2)+strfind(temp(strfind(temp,'I=')+2:end),' ')-2);
