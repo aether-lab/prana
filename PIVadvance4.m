@@ -1,14 +1,12 @@
-function varargout = PIVadvance3(varargin)
-
-
+function varargout = PIVadvance4(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-    'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @PIVadvance3_OpeningFcn, ...
-    'gui_OutputFcn',  @PIVadvance3_OutputFcn, ...
-    'gui_LayoutFcn',  [] , ...
-    'gui_Callback',   []);
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @PIVadvance4_OpeningFcn, ...
+                   'gui_OutputFcn',  @PIVadvance4_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -20,10 +18,8 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-
-%% opening funciton for figure
-function PIVadvance3_OpeningFcn(hObject, eventdata, handles, varargin)
-
+% --- Opening function for figure / variable initialization ---
+function PIVadvance4_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.syscolor=get(hObject,'color');
 if ispc
     handles.loaddirec=[pwd '\'];
@@ -32,7 +28,7 @@ else
 end    
 
 handles.data.imdirec=pwd;
-handles.data.imbase='ImgA';
+handles.data.imbase='Img_';
 handles.data.imzeros='6';
 handles.data.imext='tif';
 handles.data.imcstep='2';
@@ -43,25 +39,48 @@ handles.data.imfend='1';
 handles.data.wrmag='1';
 handles.data.wrsamp='1';
 handles.data.wrsep='1';
-handles.data.maskname='';
 handles.data.batchname='Proc1';
+handles.data.pltout='1';
+handles.data.multiplematout='0';
+handles.data.singlematout='0';
 handles.data.outdirec=pwd;
+
+handles.data.masktype='none';
+handles.data.staticmaskname='';
+handles.data.maskdirec=pwd;
+handles.data.maskbase='maskfor_Img_';
+handles.data.maskzeros='6';
+handles.data.maskext='tif';
+handles.data.maskfstep='1';
+handles.data.maskfstart='1';
 
 handles.data.PIV0.winres='32,32';
 handles.data.PIV0.winsize='64,64';
 handles.data.PIV0.winauto='1';
 handles.data.PIV0.gridres='8,8';
+handles.data.PIV0.winoverlap='75,75';
+handles.data.PIV0.gridtype='1';
 handles.data.PIV0.gridbuf='8,8';
 handles.data.PIV0.BWO='0,0';
 handles.data.PIV0.corr='2';
 handles.data.PIV0.RPCd='2.8';
 handles.data.PIV0.val='0';
-handles.data.PIV0.valtype='2';
+handles.data.PIV0.uod='1';
+handles.data.PIV0.bootstrap='0';
 handles.data.PIV0.thresh='0';
-handles.data.PIV0.valsize='7,7;7,7';
-handles.data.PIV0.valthresh='3,2';
+handles.data.PIV0.uod_type='2';
+handles.data.PIV0.uod_window='7,7;7,7';
+handles.data.PIV0.uod_thresh='3,2';
+handles.data.PIV0.bootstrap_percentsampled='15';
+handles.data.PIV0.bootstrap_iterations='700';
+handles.data.PIV0.bootstrap_passes='12';
 handles.data.PIV0.valuthresh='-16,16';
 handles.data.PIV0.valvthresh='-16,16';
+handles.data.PIV0.valextrapeaks='1';
+handles.data.PIV0.savepeakinfo='0';
+handles.data.PIV0.corrpeaknum='1';
+handles.data.PIV0.savepeakmag='0';
+handles.data.PIV0.savepeakvel='0';
 handles.data.PIV0.outbase='PIV_';
 handles.data.PIV0.write='1';
 
@@ -69,565 +88,299 @@ handles.data.PIV1=handles.data.PIV0;
 handles.data.PIV2=handles.data.PIV0;
 
 handles.data.passes='2';
-handles.data.cpass=num2str(get(handles.listbox3,'Value'));
+handles.data.cpass=num2str(get(handles.passlist,'Value'));
 handles.data.method='1';
 handles.data.velsmooth='0';
 handles.data.velsmoothfilt='2';
 handles.data.velinterp='3';
 handles.data.iminterp='1';
+handles.data.framestep='1';
 
 handles.data0=handles.data;
-handles.Njob=num2str(size(get(handles.listbox5,'String'),1));
-handles.Cjob=num2str(get(handles.listbox5,'String'));
+handles.Njob=num2str(size(get(handles.joblist,'String'),1));
+handles.Cjob=num2str(get(handles.joblist,'String'));
 handles=rmfield(handles,'data');
-
 handles=update_data(handles);
-
 handles.output = hObject;
 guidata(hObject, handles);
 
-
-%output
-function varargout = PIVadvance3_OutputFcn(hObject, eventdata, handles)
+% --- Outputs from this function are returned to the command line ---
+function varargout = PIVadvance4_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
 
-
-%PIV pass window
-function listbox3_Callback(hObject, eventdata, handles)
+% --- Job Menu ---
+function jobmenu_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
+    set(handles.jobmenu_save,'Enable','on')
+    set(handles.jobmenu_copy,'Enable','on')
+    set(handles.jobmenu_delete,'Enable','on')
+else
+    set(handles.jobmenu_save,'Enable','off')
+    set(handles.jobmenu_copy,'Enable','off')
+    set(handles.jobmenu_delete,'Enable','off')
 end
 
-function listbox3_CreateFcn(hObject, eventdata, handles)
+% --- Job Menu -> New Job ---
+function jobmenu_new_Callback(hObject, eventdata, handles)
+newjobbutton_Callback(hObject, eventdata, handles)
+
+% --- Job Menu -> Load Job ---
+function jobmenu_load_Callback(hObject, eventdata, handles)
+loadjobbutton_Callback(hObject, eventdata, handles)
+
+% --- Job Menu -> Save Job ---
+function jobmenu_save_Callback(hObject, eventdata, handles)
+savejobbutton_Callback(hObject, eventdata, handles)
+
+% --- Job Menu -> Copy Job ---
+function jobmenu_copy_Callback(hObject, eventdata, handles)
+copyjobbutton_Callback(hObject, eventdata, handles)
+
+% --- Job Menu -> Delete Job ---
+function jobmenu_delete_Callback(hObject, eventdata, handles)
+deletejobbutton_Callback(hObject, eventdata, handles)
+
+% --- Execute Menu ---
+function executemenu_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(handles.executemenu_currentjob,'Enable','on')
+    set(handles.executemenu_alljobs,'Enable','on')
+else
+    set(handles.executemenu_currentjob,'Enable','off')
+    set(handles.executemenu_alljobs,'Enable','off')
+end
+
+% --- Execute Menu -> Run Current Job ---
+function executemenu_currentjob_Callback(hObject, eventdata, handles)
+runcurrent_Callback(hObject, eventdata, handles)
+
+% --- Execute Menu -> Run All Jobs ---
+function executemenu_alljobs_Callback(hObject, eventdata, handles)
+runall_Callback(hObject, eventdata, handles)
+
+% --- Help Menu ---
+function helpmenu_Callback(hObject, eventdata, handles)
+
+% --- Help Menu -> About ---
+function helpmenu_about_Callback(hObject, eventdata, handles)
+msgbox({'PIVAdvance4 v1.0','','Modified by B.Drew on 5/14/10','','[License / Copyright]'},'About')
+
+% --- Help Menu -> Help Topics ---
+function helpmenu_helptopics_Callback(hObject, eventdata, handles)
+PIVhelp
+
+% --- Image and Data Masks Tab ---
+function imagetoggle_Callback(hObject, eventdata, handles)
+set(handles.outputtoggle,'Value',0)
+set(handles.processingtoggle,'Value',0)
+set(handles.outputpanel,'Visible','off')
+set(handles.processingpanel,'Visible','off')
+set(handles.imagepanel,'Visible','on')
+
+% --- PIV Processing Tab ---
+function processingtoggle_Callback(hObject, eventdata, handles)
+set(handles.imagetoggle,'Value',0)
+set(handles.outputtoggle,'Value',0)
+set(handles.imagepanel,'Visible','off')
+set(handles.outputpanel,'Visible','off')
+set(handles.processingpanel,'Visible','on')
+
+% --- Output Tab ---
+function outputtoggle_Callback(hObject, eventdata, handles)
+set(handles.imagetoggle,'Value',0)
+set(handles.processingtoggle,'Value',0)
+set(handles.imagepanel,'Visible','off')
+set(handles.processingpanel,'Visible','off')
+set(handles.outputpanel,'Visible','on')
+
+% --- Job List ---
+function joblist_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    handles.Cjob=num2str(get(hObject,'Value'));
+    handles=update_data(handles);
+    guidata(hObject,handles)
+end
+function joblist_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-%% PIV method
-function popupmenu3_Callback(hObject, eventdata, handles)
+% --- Run Current Job Button ---
+function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.method=num2str(get(hObject,'Value'));
-    if get(hObject,'Value')>1
-        set(handles.popupmenu8,'backgroundcolor',[1 1 1]);
-        if get(hObject,'Value')==3
-            set(handles.popupmenu6,'backgroundcolor',[1 1 1]);
-        else
-            set(handles.popupmenu6,'backgroundcolor',0.5*[1 1 1]);
-        end
-        if get(handles.checkbox10,'Value')==1
-            set(handles.edit45,'backgroundcolor',[1 1 1]);
-        else
-            set(handles.edit45,'backgroundcolor',0.5*[1 1 1]);
+    Data=handles.data;
+    PIVadvance4code(Data);
+end
+
+% --- Run All Jobs Button ---
+function runall_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    for e=1:size(Jlist,1)
+        Data=eval(['handles.' Jlist(e,:)]);
+        PIVadvance4code(Data);
+    end
+end
+
+% --- New Job Button ---
+function newjobbutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+end
+Data=handles.data0;
+vn=0;
+Data.batchname=char(inputdlg('Job Name?                  ','NEW JOB',1,{['PIV' num2str(str2double(handles.Njob)+1)]}));
+if isempty(Data.batchname)
+    vn=-1;
+end
+while vn==0
+    if isfield(handles,Data.batchname)
+        Data.batchname=char(inputdlg('Job already exists, rename?','NEW JOB',1,{['PIV' num2str(str2double(handles.Njob)+1)]}));
+        if isempty(Data.batchname)
+            vn=-1;
         end
     else
-        set(handles.popupmenu8,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.popupmenu6,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.edit45,'backgroundcolor',0.5*[1 1 1]);
+        handles=setfield(handles,Data.batchname,Data);
+        vn=1;
     end
-    for e=1:str2double(handles.data.passes)
-        eval(['handles.data.PIV' num2str(e) '.gridres = get(handles.edit24,''String'');'])
-        eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.edit46,''String'');'])
+end
+if vn~=-1
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        Jlist={Jlist;Data.batchname};
+    else
+        Jlist={Data.batchname};
     end
-    load_data(handles);
+    handles.Njob=num2str(str2double(handles.Njob)+1);
+    handles.Cjob=handles.Njob;
+    set(handles.joblist,'String',Jlist,'Value',str2double(handles.Cjob));
+    handles=update_data(handles);
     guidata(hObject,handles)
 end
 
-function popupmenu3_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% add pass
-function pushbutton7_Callback(hObject, eventdata, handles)
+% --- Load Job Button ---
+function loadjobbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    N=str2double(handles.data.passes);
-    eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
-    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
-    handles.data.passes=num2str(N+1);
-    load_PIVlist(handles);
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
 end
+handlesP=handles;
+[f,handles.loaddirec]=uigetfile('*.mat','LOAD JOB',handles.loaddirec,'multiselect','on');
+if ischar(f)==1
+    f={f};
+else
+    f=sort(f);
+end
+if isnumeric(f)==0
+    try
+        for pp=1:length(f)
+            load([handles.loaddirec char(f(pp))]);
+            if exist('Data')~=0
+                vn=0;
+                while vn==0
+                    if isfield(handles,Data.batchname)
+                        Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));
+                        if isempty(Data.batchname)
+                            vn=-1;
+                        end
+                    else
+                        handles=setfield(handles,Data.batchname,Data);
+                        vn=1;
+                    end
+                end
+                if vn~=-1
+                    if str2double(handles.Njob)>0
+                        Jlist=char(get(handles.joblist,'String'));
+                        Jlist={Jlist;Data.batchname};
+                    else
+                        Jlist={Data.batchname};
+                    end
+                    handles.Njob=num2str(str2double(handles.Njob)+1);
+                    handles.Cjob=handles.Njob;
+                    set(handles.joblist,'String',Jlist,'Value',str2double(handles.Cjob));
 
-
-%% delete pass
-function pushbutton8_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if str2double(handles.data.passes)>1
-        p=get(handles.listbox3,'Value');
-        eval(['handles.data=rmfield(handles.data,''PIV' num2str(p) ''');']);
-        for e=(p+1):str2double(handles.data.passes)
-            eval(['handles.data=setfield(handles.data,''PIV' num2str(e-1) ''',handles.data.PIV' num2str(e) ');']);
-            eval(['handles.data.PIV' num2str(e-1) '.outbase=[''Pass'' num2str(e-1) ''_''];']);
-            if e==str2double(handles.data.passes)
-                eval(['handles.data=rmfield(handles.data,''PIV' num2str(e) ''');']);
+                    handles=update_data(handles);
+                    guidata(hObject,handles)
+                end
             end
         end
-        handles.data.passes=num2str(str2double(handles.data.passes)-1);
-        set(handles.listbox3,'Value',1);
-        load_PIVlist(handles)
+    catch
+        handles=handlesP;
+        handles=update_data(handles);
+        guidata(hObject,handles)
+        beep,disp('ERROR: Invalid Data Format, Reloading Previous Settings')
+    end
+end
+
+% --- Save Job Button ---
+function savejobbutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    Data=handles.data;
+    uisave('Data',[handles.loaddirec handles.data.batchname '.mat']);
+end
+
+% --- Copy Job Button ---
+function copyjobbutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+end
+Data=handles.data;
+vn=0;
+Data.batchname=char(inputdlg('Job Name?                  ','NEW JOB',1,{strtrim(Jlist(str2double(handles.Cjob),:))}));
+if isempty(Data.batchname)
+    vn=-1;
+end
+while vn==0
+    if isfield(handles,Data.batchname)
+        Data.batchname=char(inputdlg('Job already exists, rename?','NEW JOB',1,{strtrim(Jlist(str2double(handles.Cjob),:))}));
+        if isempty(Data.batchname)
+            vn=-1;
+        end
+    else
+        handles=setfield(handles,Data.batchname,Data);
+        vn=1;
+    end
+end
+if vn~=-1
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        Jlist={Jlist;Data.batchname};
+    else
+        Jlist={Data.batchname};
+    end
+    handles.Njob=num2str(str2double(handles.Njob)+1);
+    handles.Cjob=handles.Njob;
+    set(handles.joblist,'String',Jlist,'Value',str2double(handles.Cjob));
+    handles=update_data(handles);
+    guidata(hObject,handles)
+end
+
+% --- Delete Job Button ---
+function deletejobbutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    del=questdlg('Are You Sure?','Delete Job File','yes','no','yes');
+    if strcmp(del,'yes')==1
+        Jlist=char(get(handles.joblist,'String'));
+        handles=rmfield(handles,Jlist(str2double(handles.Cjob),:));
+        id=setdiff(1:str2double(handles.Njob),str2double(handles.Cjob));
+        Jlist=Jlist(id,:);
+        set(handles.joblist,'String',Jlist,'Value',1);
+        handles.Cjob='1';
+        handles.Njob=num2str(str2double(handles.Njob)-1);
+        handles=update_data(handles);
         guidata(hObject,handles)
     end
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
 end
 
-%% window resolution
-function edit23_Callback(hObject, eventdata, handles)
+% --- Job Name Text Box ---
+function currentjobname_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.winres = get(hObject,''String'');'])
-    a=get(hObject,'String');
-    wx=str2double(a(1:(strfind(a,',')-1)));
-    wy=str2double(a((strfind(a,',')+1):end));
-    if get(handles.checkbox5,'Value')==1
-        xbin = 2^(ceil(log(2*wx)/log(2)));
-        ybin = 2^(ceil(log(2*wy)/log(2)));
-        eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xbin) '','' num2str(ybin)];'])
-        eval(['set(handles.edit25,''String'',handles.data.PIV' handles.data.cpass '.winsize)'])
-    end
-    if wx*wy<256
-        set(hObject,'backgroundcolor',[1 0.5 0]);
-    else
-        set(hObject,'backgroundcolor',[1 1 1]);
-    end
-    guidata(hObject,handles)
-end
-
-function edit23_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% grid resolution
-function edit24_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if str2double(handles.data.method)==1
-        for e=1:str2double(handles.data.passes)
-            eval(['handles.data.PIV' num2str(e) '.gridres = get(hObject,''String'');'])
-        end
-    else
-        eval(['handles.data.PIV' handles.data.cpass '.gridres = get(hObject,''String'');'])
-    end
-    guidata(hObject,handles)
-end
-
-function edit24_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% window size
-function edit25_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if get(handles.checkbox5,'Value')==0
-        A=get(hObject,'String');
-        Wx=str2double(A(1:(strfind(A,',')-1)));
-        Wy=str2double(A((strfind(A,',')+1):end));
-        B=get(handles.edit23,'String');
-        Rx=str2double(B(1:(strfind(B,',')-1)));
-        Ry=str2double(B((strfind(B,',')+1):end));
-        if Wx<Rx
-            Wx=Rx;
-            set(hObject,'String',[num2str(Wx) ',' num2str(Wy)]);
-        end
-        if Wy<Ry
-            Wy=Ry;
-            set(hObject,'String',[num2str(Wx) ',' num2str(Wy)]);
-        end
-        eval(['handles.data.PIV' handles.data.cpass '.winsize = get(hObject,''String'');'])
-        guidata(hObject,handles)
-    else
-        eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winsize);'])
-    end
-end
-
-function edit25_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%%  autowindow switch
-function checkbox5_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.winauto = num2str(get(hObject,''Value''));'])
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
-end
-
-
-%% correlation technique
-function popupmenu4_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.corr = num2str(get(hObject,''Value''));'])
-    guidata(hObject,handles)
-    N=handles.data.cpass;
-    A=eval(['handles.data.PIV' num2str(N)]);
-    if str2double(A.corr)==1
-        set(handles.edit26,'backgroundcolor',0.5*[1 1 1]);
-    else
-        set(handles.edit26,'backgroundcolor',[1 1 1]);
-    end
-end
-
-function popupmenu4_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% RPC diameter
-function edit26_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.RPCd = get(hObject,''String'');'])
-    guidata(hObject,handles)
-    if get(handles.popupmenu4,'Value')==2
-        if str2double(get(hObject,'String'))<2
-            if str2double(get(hObject,'String'))==0
-                set(hObject,'backgroundcolor','r');
-            else
-                set(hObject,'backgroundcolor',[1 0.5 0]);
-            end
-
-        else
-            set(hObject,'backgroundcolor',[1 1 1]);
-        end
-    else
-        set(hObject,'backgroundcolor',0.5*[1 1 1]);
-    end
-end
-
-function edit26_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% validation window size
-function edit27_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    A=get(hObject,'String');
-    if strcmp(A(end),';')
-        A=A(1:end-1);
-    end
-    set(hObject,'String',A)
-    eval(['handles.data.PIV' handles.data.cpass '.valsize = get(hObject,''String'');'])
-    guidata(hObject,handles)
-end
-
-function edit27_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% validation v threshold
-function edit28_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.valvthresh = get(hObject,''String'');'])
-    a=get(hObject,'String');
-    tx=str2double(a(1:(strfind(a,',')-1)));
-    ty=str2double(a((strfind(a,',')+1):end));
-    if get(handles.checkbox6,'Value')+get(handles.checkbox8,'Value')==2
-        if tx>=ty
-            set(hObject,'backgroundcolor','r');
-        else
-            set(hObject,'backgroundcolor',[1 1 1]);
-        end
-    else
-        set(hObject,'backgroundcolor',0.5*[1 1 1]);
-    end
-    guidata(hObject,handles)
-end
-
-function edit28_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% validation switch
-function checkbox6_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.val = num2str(get(hObject,''Value''));'])
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
-end
-
-
-%% write plt switch
-function checkbox7_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.write = num2str(get(hObject,''Value''));'])
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
-end
-
-
-%% validation u threhsold
-function edit29_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.valuthresh = get(hObject,''String'');'])
-    a=get(hObject,'String');
-    tx=str2double(a(1:(strfind(a,',')-1)));
-    ty=str2double(a((strfind(a,',')+1):end));
-    if get(handles.checkbox6,'Value')+get(handles.checkbox8,'Value')==2
-        if tx>=ty
-            set(hObject,'backgroundcolor','r');
-        else
-            set(hObject,'backgroundcolor',[1 1 1]);
-        end
-    else
-        set(hObject,'backgroundcolor',0.5*[1 1 1]);
-    end
-    guidata(hObject,handles)
-end
-
-function edit29_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% validation threshold
-function edit30_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.valthresh = get(hObject,''String'');'])
-    guidata(hObject,handles)
-end
-
-function edit30_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% validation threshold switch
-function checkbox8_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.thresh = num2str(get(hObject,''Value''));'])
-    handles=set_PIVcontrols(handles);
-    guidata(hObject,handles)
-end
-
-%% write plt basename
-function edit31_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.outbase = get(hObject,''String'');'])
-    guidata(hObject,handles)
-end
-
-function edit31_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image directory
-function edit32_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imdirec = get(hObject,'String');
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit32_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-%% image directory browse
-function pushbutton9_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    D = handles.data.imdirec;
-    handles.data.imdirec = uigetdir(handles.data.imdirec);
-    if handles.data.imdirec==0
-        handles.data.imdirec = D;
-    end
-    set(handles.edit32,'string',handles.data.imdirec);
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-
-%% output directory
-function edit33_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.outdirec = get(hObject,'String');
-    guidata(hObject,handles)
-end
-
-function edit33_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% browse output directory
-function pushbutton10_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    D = handles.data.outdirec;
-    handles.data.outdirec = uigetdir(handles.data.outdirec);
-    if handles.data.outdirec==0
-        handles.data.outdirec = D;
-    end
-    set(handles.edit33,'string',handles.data.outdirec);
-    guidata(hObject,handles)
-end
-
-
-%% image list
-function listbox4_Callback(hObject, eventdata, handles)
-
-function listbox4_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image base name
-function edit34_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imbase = get(hObject,'String');
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit34_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image extension
-function edit35_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imext = get(hObject,'String');
-    if strcmp(handles.data.imext(1),'.')
-        set(hObject,'backgroundcolor','r');
-    else
-        set(hObject,'backgroundcolor',[1 1 1]);
-    end
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit35_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image pair step
-function edit36_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imcstep = get(hObject,'String');
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit36_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image frame step
-function edit37_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imfstep = get(hObject,'String');
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit37_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image frame start
-function edit38_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imfstart = get(hObject,'String');
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit38_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image frame end
-function edit39_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.imfend = get(hObject,'String');
-    load_imlist(handles);
-    guidata(hObject,handles)
-end
-
-function edit39_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% magnification factor
-function edit40_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.wrmag = get(hObject,'String');
-    guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
-        set(hObject,'backgroundcolor','r')
-    else
-        set(hObject,'backgroundcolor',[1 1 1])
-    end
-end
-
-function edit40_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image mask name
-function edit41_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.maskname = get(hObject,'String');
-    guidata(hObject,handles)
-end
-
-function edit41_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% browse image mask
-function pushbutton11_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    D = handles.data.maskname;
-    [a,b] = uigetfile('*.*');
-    handles.data.maskname = [b a];
-    if handles.data.maskname==0
-        handles.data.maskname = D;
-    end
-    set(handles.edit41,'string',handles.data.maskname);
-    guidata(hObject,handles)
-end
-
-
-%% batch processing filename
-function edit42_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    Jlist0=char(get(handles.listbox5,'String'));
+    Jlist0=char(get(handles.joblist,'String'));
     handles=rmfield(handles,handles.data.batchname);
     handles.data.batchname = get(hObject,'String');
     Jlist=cell(str2double(handles.Njob),1);
@@ -639,522 +392,366 @@ if str2double(handles.Njob)>0
         end
     end    
     handles=setfield(handles,handles.data.batchname,handles.data);
-    set(handles.listbox5,'String',char(Jlist));
+    set(handles.joblist,'String',char(Jlist));
     guidata(hObject,handles)
 end
-
-function edit42_CreateFcn(hObject, eventdata, handles)
+function currentjobname_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-%% pulse separation
-function edit43_Callback(hObject, eventdata, handles)
+% --- Image Directory Text Box ---
+function imagedirectory_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.wrsep = get(hObject,'String');
-    guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
-        set(hObject,'backgroundcolor','r')
-    else
-        set(hObject,'backgroundcolor',[1 1 1])
+    handles.data.imdirec = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
     end
+    load_imlist(handles);
+    guidata(hObject,handles)
 end
-
-function edit43_CreateFcn(hObject, eventdata, handles)
+function imagedirectory_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Load Image Directory Button ---
+function loadimagedirectorybutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.imdirec;
+    handles.data.imdirec = uigetdir(handles.data.imdirec);
+    if handles.data.imdirec==0
+        handles.data.imdirec = D;
+    end
+    set(handles.imagedirectory,'string',handles.data.imdirec);
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
 
-%% image file zeros
-function edit44_Callback(hObject, eventdata, handles)
+% --- Image Basename Text Box ---
+function imagebasename_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.imbase = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+function imagebasename_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Image Zeros Text Box ---
+function imagezeros_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imzeros = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
     load_imlist(handles);
     guidata(hObject,handles)
 end
-
-function edit44_CreateFcn(hObject, eventdata, handles)
+function imagezeros_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-%% validation method
-function popupmenu5_Callback(hObject, eventdata, handles)
+% --- Image File Extension Text Box ---
+function imageextension_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.valtype = num2str(get(hObject,''Value''));'])
-    guidata(hObject,handles)
-end
-
-function popupmenu5_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% velocity smoothing Gaussian width
-function edit45_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.velsmoothfilt=get(hObject,'String');
-    guidata(hObject,handles)
-end
-
-function edit45_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% image interpolation method
-function popupmenu6_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.iminterp=num2str(get(hObject,'Value'));
-    guidata(hObject,handles)
-end
-
-function popupmenu6_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% velocity smoothing switch
-function checkbox10_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.velsmooth = num2str(get(hObject,'Value'));
-    if get(hObject,'Value')==1 && get(handles.popupmenu3,'Value')>1
-        set(handles.edit45,'backgroundcolor',[1 1 1]);
+    handles.data.imext = get(hObject,'String');
+    if strcmp(handles.data.imext(1),'.')
+        set(hObject,'backgroundcolor','r');
     else
-        set(handles.edit45,'backgroundcolor',0.5*[1 1 1]);
+        set(hObject,'backgroundcolor',[1 1 1]);
     end
-    guidata(hObject,handles)
-end
-
-
-%% grid buffer
-function edit46_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if str2double(handles.data.method)==1
-        for e=1:str2double(handles.data.passes)
-            eval(['handles.data.PIV' num2str(e) '.gridbuf = get(hObject,''String'');'])
-        end
-    else
-        eval(['handles.data.PIV' handles.data.cpass '.gridbuf = get(hObject,''String'');'])
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
     end
-    guidata(hObject,handles)
-end
-
-function edit46_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% bulk window offset
-function edit47_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if str2double(handles.data.cpass)==1
-        eval(['handles.data.PIV' handles.data.cpass '.BWO = get(hObject,''String'');'])
-        guidata(hObject,handles)
-    else
-        eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.BWO)'])
-    end
-end
-
-function edit47_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% velocity interpolation method
-function popupmenu8_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.velinterp=num2str(get(hObject,'Value'));
-    guidata(hObject,handles)
-end
-
-function popupmenu8_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% load IM list
-function load_imlist(handles)
-dir_struct = dir(handles.data.imdirec);
-if isempty(dir_struct)
-    set(handles.edit32,'backgroundcolor','r');
-else
-    set(handles.edit32,'backgroundcolor',[1 1 1]);
-end
-N=length(str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend));
-files = cell(N,2);
-e=0;
-for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
-    e=e+1;
-    files(e,1)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
-    files(e,2)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
-end
-
-[sorted_names,sorted_index] = sortrows({dir_struct.name}');
-[files1,id,id1] = intersect(sorted_names,files(:,1));
-[files2,id,id2] = intersect(sorted_names,files(:,2));
-[idf]=intersect(id1,id2);
-if isempty(idf)
-    set(handles.listbox4,'backgroundcolor','r');
-else
-    set(handles.listbox4,'backgroundcolor',[1 1 1]);
-    if length(idf)~=size(files,1)
-        set(handles.listbox4,'backgroundcolor','r');
-    end
-end
-files=files(idf,:);
-filesf=cell(length(files),1);
-for e=1:size(files,1)
-    filesf(e)={[char(files(e,1)) ' and ' char(files(e,2))]};
-end
-set(handles.listbox4,'String',filesf,'Value',1)
-
-
-%% load PIV list
-function load_PIVlist(handles)
-f=cell(str2double(handles.data.passes),1);
-for e=1:str2double(handles.data.passes)
-    f(e)={['Pass ' num2str(e)]};
-end
-set(handles.listbox3,'String',f);
-
-
-%% load PIV data
-function handles=set_PIVcontrols(handles)
-N=get(handles.listbox3,'Value');
-A=eval(['handles.data.PIV' num2str(N)]);
-set(handles.edit23,'string',A.winres);
-set(handles.edit25,'string',A.winsize);
-set(handles.checkbox5,'Value',str2double(A.winauto));
-set(handles.edit24,'string',A.gridres);
-set(handles.edit46,'string',A.gridbuf);
-set(handles.edit47,'string',A.BWO);
-set(handles.popupmenu4,'Value',str2double(A.corr));
-set(handles.edit26,'string',str2double(A.RPCd));
-set(handles.checkbox6,'Value',str2double(A.val));
-set(handles.popupmenu5,'Value',str2double(A.valtype));
-set(handles.checkbox8,'Value',str2double(A.thresh));
-set(handles.edit27,'string',A.valsize);
-set(handles.edit30,'string',A.valthresh);
-set(handles.edit29,'string',A.valuthresh);
-set(handles.edit28,'string',A.valvthresh);
-set(handles.checkbox7,'Value',str2double(A.write));
-set(handles.edit31,'string',A.outbase);
-handles.data.cpass=num2str(N);
-
-if str2double(A.val)==1
-    set(handles.edit27,'backgroundcolor',[1 1 1]);
-    set(handles.edit30,'backgroundcolor',[1 1 1]);
-    set(handles.popupmenu5,'backgroundcolor',[1 1 1]);
-    if str2double(A.thresh)==1
-        a=get(handles.edit29,'String');
-        tx=str2double(a(1:(strfind(a,',')-1)));
-        ty=str2double(a((strfind(a,',')+1):end));
-        if tx>=ty
-            set(handles.edit29,'backgroundcolor','r');
-        else
-            set(handles.edit29,'backgroundcolor',[1 1 1]);
-        end
-        a=get(handles.edit28,'String');
-        tx=str2double(a(1:(strfind(a,',')-1)));
-        ty=str2double(a((strfind(a,',')+1):end));
-        if tx>=ty
-            set(handles.edit28,'backgroundcolor','r');
-        else
-            set(handles.edit28,'backgroundcolor',[1 1 1]);
-        end
-    else
-        set(handles.edit29,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.edit28,'backgroundcolor',0.5*[1 1 1]);
-    end
-else
-    set(handles.edit27,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit30,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.popupmenu5,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit29,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit28,'backgroundcolor',0.5*[1 1 1]);
-end
-
-if str2double(A.write)==1
-    set(handles.edit31,'backgroundcolor',[1 1 1]);
-else
-    set(handles.edit31,'backgroundcolor',0.5*[1 1 1]);
-end
-
-if str2double(A.winauto)==1
-    B=get(handles.edit23,'String');
-    Rx=str2double(B(1:(strfind(B,',')-1)));
-    Ry=str2double(B((strfind(B,',')+1):end));
-    Rx = 2^(ceil(log(2*Rx)/log(2)));
-    Ry = 2^(ceil(log(2*Ry)/log(2)));
-    set(handles.edit25,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit25,'String',[num2str(Rx) ',' num2str(Ry)]);
-    eval(['handles.data.PIV' handles.data.cpass '.winsize = get(handles.edit25,''String'');'])
-else
-    set(handles.edit25,'backgroundcolor',[1 1 1]);
-end
-
-if get(handles.popupmenu4,'Value')==2
-    if str2double(get(handles.edit26,'String'))<2
-        if str2double(get(handles.edit26,'String'))==0
-            set(handles.edit26,'backgroundcolor','r');
-        else
-            set(handles.edit26,'backgroundcolor',[1 0.5 0]);
-        end
-    else
-        set(handles.edit26,'backgroundcolor',[1 1 1]);
-    end
-else
-    set(handles.edit26,'backgroundcolor',0.5*[1 1 1]);
-end
-
-a=get(handles.edit23,'String');
-wx=str2double(a(1:(strfind(a,',')-1)));
-wy=str2double(a((strfind(a,',')+1):end));
-if wx*wy<256
-    set(handles.edit23,'backgroundcolor',[1 0.5 0]);
-else
-    set(handles.edit23,'backgroundcolor',[1 1 1]);
-end
-
-if get(handles.checkbox7,'Value')==0 && get(handles.listbox3,'Value')==str2double(handles.data.passes)
-    set(handles.checkbox7,'backgroundcolor',[1 0.5 0]);
-else
-    set(handles.checkbox7,'backgroundcolor',handles.syscolor);
-end
-
-
-
-%% load extra data
-function [handles]=load_data(handles)
-set(handles.edit32,'String',handles.data.imdirec);
-set(handles.edit34,'String',handles.data.imbase);
-set(handles.edit44,'String',handles.data.imzeros);
-set(handles.edit35,'String',handles.data.imext);
-set(handles.edit36,'String',handles.data.imcstep);
-set(handles.edit37,'String',handles.data.imfstep);
-set(handles.edit38,'String',handles.data.imfstart);
-set(handles.edit39,'String',handles.data.imfend);
-
-set(handles.edit40,'String',handles.data.wrmag);
-set(handles.edit43,'String',handles.data.wrsep);
-set(handles.edit48,'String',handles.data.wrsamp);
-set(handles.edit41,'String',handles.data.maskname);
-set(handles.edit42,'String',handles.data.batchname);
-set(handles.edit33,'String',handles.data.outdirec);
-
-set(handles.popupmenu3,'Value',str2double(handles.data.method));
-set(handles.popupmenu8,'Value',str2double(handles.data.velinterp));
-set(handles.popupmenu6,'Value',str2double(handles.data.iminterp));
-set(handles.edit45,'String',handles.data.velsmoothfilt);
-set(handles.checkbox10,'Value',str2double(handles.data.velsmooth));
-
-if get(handles.popupmenu3,'Value')>1
-    set(handles.popupmenu8,'backgroundcolor',[1 1 1]);
-    if get(handles.popupmenu3,'Value')==3
-        set(handles.popupmenu6,'backgroundcolor',[1 1 1]);
-    else
-        set(handles.popupmenu6,'backgroundcolor',0.5*[1 1 1]);
-    end
-    if get(handles.checkbox10,'Value')==1
-        set(handles.edit45,'backgroundcolor',[1 1 1]);
-    else
-        set(handles.edit45,'backgroundcolor',0.5*[1 1 1]);
-    end
-else
-    set(handles.popupmenu8,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.popupmenu6,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit45,'backgroundcolor',0.5*[1 1 1]);
-end
-
-if strcmp(handles.data.imext(1),'.')
-    set(handles.edit35,'backgroundcolor','r');
-else
-    set(handles.edit35,'backgroundcolor',[1 1 1]);
-end
-
-if isempty(dir(handles.data.imdirec))
-    set(handles.edit32,'backgroundcolor','r');
-else
-    set(handles.edit32,'backgroundcolor',[1 1 1]);
-end
-
-if str2double(get(handles.edit40,'String'))<=0
-    set(handles.edit40,'backgroundcolor','r')
-else
-    set(handles.edit40,'backgroundcolor',[1 1 1])
-end
-
-if str2double(get(handles.edit43,'String'))<=0
-    set(handles.edit43,'backgroundcolor','r')
-else
-    set(handles.edit43,'backgroundcolor',[1 1 1])
-end
-
-if str2double(get(handles.edit48,'String'))<=0
-    set(handles.edit48,'backgroundcolor','r')
-else
-    set(handles.edit48,'backgroundcolor',[1 1 1])
-end
-
-
-%% Update all data
-function handles=update_data(handles)
-if str2double(handles.Njob)==0
-    set(handles.listbox3,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.listbox4,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.listbox5,'String','','backgroundcolor','r');
-    set(handles.edit23,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit24,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit25,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit26,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit27,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit28,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit29,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit30,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit31,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit32,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit33,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit34,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit35,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit36,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit37,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit38,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit39,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit40,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit41,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit42,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit43,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit44,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit45,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit46,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit47,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.edit48,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.checkbox5,'Value',0,'backgroundcolor',handles.syscolor);
-    set(handles.checkbox6,'Value',0,'backgroundcolor',handles.syscolor);
-    set(handles.checkbox7,'Value',0,'backgroundcolor',handles.syscolor);
-    set(handles.checkbox8,'Value',0,'backgroundcolor',handles.syscolor);
-    set(handles.checkbox10,'Value',0,'backgroundcolor',handles.syscolor);
-    set(handles.popupmenu3,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.popupmenu4,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.popupmenu5,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.popupmenu6,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.popupmenu8,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-else
-    a=get(handles.listbox5,'String');
-    eval(['handles.data=handles.' char(a(str2double(handles.Cjob),:)) ';'])
-
-    set(handles.listbox3,'String','','backgroundcolor',[1 1 1]);
-    set(handles.listbox4,'String','','backgroundcolor',[1 1 1]);
-    set(handles.listbox5,'backgroundcolor',[1 1 1]);
-    set(handles.edit23,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit24,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit25,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit26,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit27,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit28,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit29,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit30,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit31,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit32,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit33,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit34,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit35,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit36,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit37,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit38,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit39,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit40,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit41,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit42,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit43,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit44,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit45,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit46,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit47,'String','','backgroundcolor',[1 1 1]);
-    set(handles.edit48,'String','','backgroundcolor',[1 1 1]);
-    set(handles.popupmenu3,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.popupmenu4,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.popupmenu5,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.popupmenu6,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.popupmenu8,'Value',1,'backgroundcolor',[1 1 1]);
-
     load_imlist(handles);
-    load_PIVlist(handles);
-    load_data(handles);
-    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+function imageextension_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
 
-
-%% select job file
-function listbox5_Callback(hObject, eventdata, handles)
+% --- Image Correlation Step Text Box ---
+function imagecorrelationstep_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    Jlist=char(get(handles.listbox5,'String'));
+    handles.data.imcstep = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+function imagecorrelationstep_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Image Frame Start Text Box ---
+function imageframestart_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.imfstart = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+function imageframestart_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Image Frame Step Text Box ---
+function imageframestep_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.imfstep = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+function imageframestep_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Image Frame End Text Box ---
+function imageframeend_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.imfend = get(hObject,'String');
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+function imageframeend_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Dynamic Mask Directory Text Box ---
+function maskdirectory_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    handles.data.maskdirec = get(hObject,'String');
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function maskdirectory_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Load Dynamic Mask Directory Button ---
+function loadmaskdirectorybutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    D = handles.data.maskdirec;
+    handles.data.maskdirec = uigetdir(handles.data.maskdirec);
+    if handles.data.maskdirec==0
+        handles.data.maskdirec = D;
+    end
+    set(handles.maskdirectory,'string',handles.data.maskdirec);
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function loadmaskdirectorybutton_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Dynamic Mask Basename Text Box ---
+function maskbasename_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    handles.data.maskbase = get(hObject,'String');
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function maskbasename_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Dynamic Mask Zeros Text Box ---
+function maskzeros_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    handles.data.maskzeros = get(hObject,'String');
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function maskzeros_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Dynamic Mask File Extension Text Box ---
+function maskextension_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    handles.data.maskext = get(hObject,'String');
+    if strcmp(handles.data.maskext(1),'.')
+        set(hObject,'backgroundcolor','r');
+    else
+        set(hObject,'backgroundcolor',[1 1 1]);
+    end
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function maskextension_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Dynamic Mask Frame Start Text Box ---
+function maskframestart_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    handles.data.maskfstart = get(hObject,'String');
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function maskframestart_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Dynamic Mask Frame Step Text Box ---
+function maskframestep_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
+    handles.data.maskfstep = get(hObject,'String');
+    load_masklist(handles);
+    guidata(hObject,handles)
+end
+function maskframestep_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Image Processing Order ---
+function imagelist_Callback(hObject, eventdata, handles)
+function imagelist_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Mask Processing Order ---
+function masklist_Callback(hObject, eventdata, handles)
+function masklist_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- No Processing Mask Radio Button ---
+function nomaskbutton_Callback(hObject, eventdata, handles)
+handles.data.masktype='none';
+set(hObject,'Value',1)
+set(handles.staticmaskbutton,'Value',0)
+set(handles.dynamicmaskbutton,'Value',0)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-    handles.Cjob=num2str(get(hObject,'Value'));
     handles=update_data(handles);
     guidata(hObject,handles)
 end
 
-function listbox5_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-%% sampling frequency
-function edit48_Callback(hObject, eventdata, handles)
+% --- Static Processing Mask Radio Button ---
+function staticmaskbutton_Callback(hObject, eventdata, handles)
+handles.data.masktype='static';
+set(hObject,'Value',1)
+set(handles.dynamicmaskbutton,'Value',0)
+set(handles.nomaskbutton,'Value',0)
 if str2double(handles.Njob)>0
-    handles.data.wrsamp = get(hObject,'String');
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    handles=update_data(handles);
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
-        set(hObject,'backgroundcolor','r')
-    else
-        set(hObject,'backgroundcolor',[1 1 1])
-    end
 end
 
-function edit48_CreateFcn(hObject, eventdata, handles)
+% --- Dynamic Masking Radio Button ---
+function dynamicmaskbutton_Callback(hObject, eventdata, handles)
+handles.data.masktype='dynamic';
+set(hObject,'Value',1)
+set(handles.nomaskbutton,'Value',0)
+set(handles.staticmaskbutton,'Value',0)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    if get(handles.passtype,'Value')==4 && get(hObject,'Value')==1
+        errordlg('Dynamic Masking is not compatible with the Ensemble correlation.','Warning')
+    end
+    handles=update_data(handles);
+    guidata(hObject,handles)
+end
 
+% --- Static Mask File Text Box ---
+function staticmaskfile_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.staticmaskbutton,'Value')==1
+    handles.data.staticmaskname = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function staticmaskfile_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Load Static Mask File Button ---
+function loadstaticmaskfile_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.staticmaskbutton,'Value')==1
+    D = handles.data.staticmaskname;
+    [a,b] = uigetfile('*.*');
+    handles.data.staticmaskname = [b a];
+    if handles.data.staticmaskname==0
+        handles.data.staticmaskname = D;
+    end
+    guidata(hObject,handles)
+    set(handles.staticmaskfile,'string',handles.data.staticmaskname);
+end
 
-
-
-
-%% mask preview button
-function pushbutton21_Callback(hObject, eventdata, handles)
+% --- Preview Image + Mask Button ---
+function impreview_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     try
-        if length(handles.data.maskname)>0
-            mask = double(imread(handles.data.maskname));
-            mask=flipud(mask);
-        else
-            if ispc
-                mask = 1+0*double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+        im1=double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+        im1=flipud(im1)/255;
+        try
+            if strcmp(handles.data.masktype,'static')
+                mask = double(imread(handles.data.staticmaskname));
+                mask = flipud(mask);
+            elseif strcmp(handles.data.masktype,'dynamic')
+                mask = double(imread([handles.data.maskdirec '\' handles.data.maskbase sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],str2double(handles.data.maskfstart))]));
+                mask = flipud(mask);
             else
-                mask = 1+0*double(imread([handles.data.imdirec '/' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+                mask = ones(size(im1));
             end
+            try
+                im1(mask==0)=0.5*im1(mask==0);
+        %         im1=im1.*mask;
+                e=0;
+            catch
+                msgbox('Mask / Image Not Compatible');
+                e=-1;
+            end
+        catch
+            msgbox('Mask Not Found');
+            e=-1;
         end
-        e=0;
     catch
-        msgbox('Mask or Image Frame not found');
+        msgbox('Image Frame Not Found');
         e=-1;
     end
+    
     if e==0
-        mask(mask>0)=1;
         figure,hold on
 
-        L=size(mask);
+        L=size(im1);
         Ps=get(0,'screensize');
         if (L(1)/Ps(4))>(L(2)/Ps(3))
             dy=0.8*Ps(4);
@@ -1165,15 +762,11 @@ if str2double(handles.Njob)>0
         end
         set(gcf,'position',[(Ps(3)-dx)/2 (Ps(4)-dy)/2 dx dy])
         set(gcf,'color',0.5*[1 1 1])
+        imagesc(im1,[0 1]),axis image,colormap gray,axis off,set(gca,'position',[0 0 1 1])
 
-        %     im1=double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
-        %     im1=flipud(im1)/255;
-        %     im1(mask==0)=0.5*im1(mask==0);
-        imagesc(mask,[0 1]),axis image,colormap gray,axis off,set(gca,'position',[0 0 1 1])
-
-        A=get(handles.edit46,'String');
+        A=get(handles.gridbuffer,'String');
         G=[str2double(A(1:(strfind(A,',')-1))) str2double(A((strfind(A,',')+1):end))];
-        A=get(handles.edit24,'String');
+        A=get(handles.gridres,'String');
         S=[str2double(A(1:(strfind(A,',')-1))) str2double(A((strfind(A,',')+1):end))];
 
         S=[S(2) S(1)];
@@ -1217,504 +810,1223 @@ if str2double(handles.Njob)>0
     end
 end
 
-
-
-
-%% File Menu
-function Untitled_1_Callback(hObject, eventdata, handles)
+% --- List of Passes ---
+function passlist_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    set(handles.Untitled_5,'Enable','on')
-    set(handles.Untitled_6,'Enable','on')
-    set(handles.Untitled_12,'Enable','on')
-else
-    set(handles.Untitled_5,'Enable','off')
-    set(handles.Untitled_6,'Enable','off')
-    set(handles.Untitled_12,'Enable','off')
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+function passlist_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
 
-
-%% New Job
-function Untitled_2_Callback(hObject, eventdata, handles)
+% --- Add Pass Button ---
+function addpassbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    Jlist=char(get(handles.listbox5,'String'));
-    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-end
-Data=handles.data0;
-vn=0;
-Data.batchname=char(inputdlg('Job Name?                  ','NEW JOB',1,{['PIV' num2str(str2double(handles.Njob)+1)]}));
-if isempty(Data.batchname)
-    vn=-1;
-end
-while vn==0
-    if isfield(handles,Data.batchname)
-        Data.batchname=char(inputdlg('Job already exists, rename?','NEW JOB',1,{['PIV' num2str(str2double(handles.Njob)+1)]}));
-        if isempty(Data.batchname)
-            vn=-1;
-        end
-    else
-        handles=setfield(handles,Data.batchname,Data);
-        vn=1;
-    end
-end
-if vn~=-1
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.listbox5,'String'));
-        Jlist={Jlist;Data.batchname};
-    else
-        Jlist={Data.batchname};
-    end
-    handles.Njob=num2str(str2double(handles.Njob)+1);
-    handles.Cjob=handles.Njob;
-    set(handles.listbox5,'String',Jlist,'Value',str2double(handles.Cjob));
-    handles=update_data(handles);
+    N=str2double(handles.data.passes);
+    eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
+    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
+    handles.data.passes=num2str(N+1);
+    load_PIVlist(handles);
+    handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
 
-
-%% Load Job
-function Untitled_4_Callback(hObject, eventdata, handles)
+% --- Delete Pass Button ---
+function deletepassbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    Jlist=char(get(handles.listbox5,'String'));
-    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-end
-handlesP=handles;
-[f,handles.loaddirec]=uigetfile('*.mat','LOAD JOB',handles.loaddirec,'multiselect','on');
-if ischar(f)==1
-    f={f};
-else
-    f=sort(f);
-end
-if isnumeric(f)==0
-    try
-        for pp=1:length(f)
-            load([handles.loaddirec char(f(pp))]);
-            if exist('Data')~=0
-                vn=0;
-                while vn==0
-                    if isfield(handles,Data.batchname)
-                        Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));
-                        if isempty(Data.batchname)
-                            vn=-1;
-                        end
-                    else
-                        handles=setfield(handles,Data.batchname,Data);
-                        vn=1;
-                    end
-                end
-                if vn~=-1
-                    if str2double(handles.Njob)>0
-                        Jlist=char(get(handles.listbox5,'String'));
-                        Jlist={Jlist;Data.batchname};
-                    else
-                        Jlist={Data.batchname};
-                    end
-                    handles.Njob=num2str(str2double(handles.Njob)+1);
-                    handles.Cjob=handles.Njob;
-                    set(handles.listbox5,'String',Jlist,'Value',str2double(handles.Cjob));
-
-                    handles=update_data(handles);
-                    guidata(hObject,handles)
-                end
+    if str2double(handles.data.passes)>1
+        p=get(handles.passlist,'Value');
+        eval(['handles.data=rmfield(handles.data,''PIV' num2str(p) ''');']);
+        for e=(p+1):str2double(handles.data.passes)
+            eval(['handles.data=setfield(handles.data,''PIV' num2str(e-1) ''',handles.data.PIV' num2str(e) ');']);
+            eval(['handles.data.PIV' num2str(e-1) '.outbase=[''Pass'' num2str(e-1) ''_''];']);
+            if e==str2double(handles.data.passes)
+                eval(['handles.data=rmfield(handles.data,''PIV' num2str(e) ''');']);
             end
         end
-    catch
-        handles=handlesP;
-        handles=update_data(handles);
-        guidata(hObject,handles)
-        beep,disp('ERROR: Invalid Data Format, Reloading Previous Settings')
-    end
-end
-
-%% Save Job
-function Untitled_5_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    Data=handles.data;
-    uisave('Data',[handles.loaddirec handles.data.batchname '.mat']);
-end
-
-
-%% Delete Job
-function Untitled_6_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    del=questdlg('Are You Sure?','Delete Job File','yes','no','yes');
-    if strcmp(del,'yes')==1
-        Jlist=char(get(handles.listbox5,'String'));
-        handles=rmfield(handles,Jlist(str2double(handles.Cjob),:));
-        id=setdiff(1:str2double(handles.Njob),str2double(handles.Cjob));
-        Jlist=Jlist(id,:);
-        set(handles.listbox5,'String',Jlist,'Value',1);
-        handles.Cjob='1';
-        handles.Njob=num2str(str2double(handles.Njob)-1);
-        handles=update_data(handles);
+        handles.data.passes=num2str(str2double(handles.data.passes)-1);
+        set(handles.passlist,'Value',1);
+        load_PIVlist(handles)
         guidata(hObject,handles)
     end
-end
-
-
-%% Run Job
-function Untitled_10_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    Data=handles.data;
-    PIVadvance3code(Data);
-end
-
-
-%% Run All
-function Untitled_11_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    Jlist=char(get(handles.listbox5,'String'));
-    for e=1:size(Jlist,1)
-        Data=eval(['handles.' Jlist(e,:)]);
-        PIVadvance3code(Data);
-    end
-end
-
-
-%% Execute Menu
-function Untitled_8_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(handles.Untitled_10,'Enable','on')
-    set(handles.Untitled_11,'Enable','on')
-else
-    set(handles.Untitled_10,'Enable','off')
-    set(handles.Untitled_11,'Enable','off')
-end
-
-%% Help Menu
-function Untitled_9_Callback(hObject, eventdata, handles)
-
-
-%% Copy Job
-function Untitled_12_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    Jlist=char(get(handles.listbox5,'String'));
-    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-end
-Data=handles.data;
-vn=0;
-Data.batchname=char(inputdlg('Job Name?                  ','NEW JOB',1,{strtrim(Jlist(str2double(handles.Cjob),:))}));
-if isempty(Data.batchname)
-    vn=-1;
-end
-while vn==0
-    if isfield(handles,Data.batchname)
-        Data.batchname=char(inputdlg('Job already exists, rename?','NEW JOB',1,{strtrim(Jlist(str2double(handles.Cjob),:))}));
-        if isempty(Data.batchname)
-            vn=-1;
-        end
-    else
-        handles=setfield(handles,Data.batchname,Data);
-        vn=1;
-    end
-end
-if vn~=-1
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.listbox5,'String'));
-        Jlist={Jlist;Data.batchname};
-    else
-        Jlist={Data.batchname};
-    end
-    handles.Njob=num2str(str2double(handles.Njob)+1);
-    handles.Cjob=handles.Njob;
-    set(handles.listbox5,'String',Jlist,'Value',str2double(handles.Cjob));
-    handles=update_data(handles);
+    handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
 
-%% Help PIV Controls > Processing
-function Untitled_18_Callback(hObject, eventdata, handles)
-PIVhelp(5);
-
-%% Help PIV Controls > Validation
-function Untitled_19_Callback(hObject, eventdata, handles)
-PIVhelp(6);
-
-%% Help Image Controls
-function Untitled_13_Callback(hObject, eventdata, handles)
-PIVhelp(2);
-
-%% Help Write Controls
-function Untitled_14_Callback(hObject, eventdata, handles)
-PIVhelp(3);
-
-%% Help PIV Controls
-function Untitled_15_Callback(hObject, eventdata, handles)
-
-%% Help Interpolation
-function Untitled_16_Callback(hObject, eventdata, handles)
-PIVhelp(8);
-
-%% Help Job List
-function Untitled_17_Callback(hObject, eventdata, handles)
-PIVhelp(9);
-
-
-%% Help About
-function Untitled_20_Callback(hObject, eventdata, handles)
-
-
-%% Help PIVadvance3
-function Untitled_21_Callback(hObject, eventdata, handles)
-PIVhelp(1);
-
-
-%% Help PIV Controls Methods
-function Untitled_22_Callback(hObject, eventdata, handles)
-PIVhelp(4);
-
-%% Help PIVcontrols Output
-function Untitled_27_Callback(hObject, eventdata, handles)
-PIVhelp(7)
-
-
-%% Load Images
-function Untitled_24_Callback(hObject, eventdata, handles)
+% --- Smoothing Check Box ---
+function smoothingcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    if ispc
-        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[handles.data.outdirec '\'],'Multiselect','on');
+    handles.data.velsmooth = num2str(get(hObject,'Value'));
+    if get(hObject,'Value')==1 && get(handles.passtype,'Value')>1
+        set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
     else
-        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[handles.data.outdirec '/'],'Multiselect','on');
+        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     end
-else
-    if ispc
-        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[pwd '\'],'Multiselect','on');
-    else
-        [A,d]=uigetfile('*.tif;*.tiff;*.bmp;*.jpg;*.jpeg','LOAD PLT FILES',[pwd '/'],'Multiselect','on');
-    end
-end
-for e=1:length(A)
-    im=imread([d A{e}]);
-    assignin('base',A{e}(1:(findstr(A{e},'.')-1)),im);
+    guidata(hObject,handles)
 end
 
-%% Load Plt
-function Untitled_25_Callback(hObject, eventdata, handles)
+% --- Smoothing Size Text Box ---
+function smoothingsize_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    if ispc
-        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[handles.data.outdirec '\'],'Multiselect','on');
+    handles.data.velsmoothfilt=get(hObject,'String');
+    guidata(hObject,handles)
+end
+function smoothingsize_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Velocity Interpolation Function Drop-Down Menu ---
+function velocityinterptype_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.velinterp=num2str(get(hObject,'Value'));
+    guidata(hObject,handles)
+end
+function velocityinterptype_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Image Interpolation Function Drop-Down Menu ---
+function imageinterptype_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.iminterp=num2str(get(hObject,'Value'));
+    guidata(hObject,handles)
+end
+function imageinterptype_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Maximum Framestep Drop-Down Menu ---
+function framestep_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.framestep=num2str(get(hObject,'Value'));
+    guidata(hObject,handles)
+end
+function framestep_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Pass Processing Type Drop-Down Menu ---
+function passtype_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.method=num2str(get(hObject,'Value'));
+    if get(hObject,'Value')==5
+        set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.framestep,'backgroundcolor',[1 1 1]);
+    elseif get(hObject,'Value')>1
+        set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
+        set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+        if get(hObject,'Value')==3
+            set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
+        else
+            set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        end
+        if get(handles.smoothingcheckbox,'Value')==1
+            set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
+        else
+            set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+        end 
     else
-        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[handles.data.outdirec '/'],'Multiselect','on');
+        set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
     end
-else
-    if ispc
-        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[pwd '\'],'Multiselect','on');
+    for e=1:str2double(handles.data.passes)
+        eval(['handles.data.PIV' num2str(e) '.gridres = get(handles.gridres,''String'');'])
+        eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.gridbuffer,''String'');'])
+    end
+    if get(hObject,'Value')==4 && strcmp(handles.data.masktype,'dynamic')
+        errordlg('Dynamic Masking is not compatible with the Ensemble correlation.','Warning')
+    end
+    load_data(handles);
+    guidata(hObject,handles)
+end
+function passtype_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Window Resolution Text Box ---
+function windowres_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.winres = get(hObject,''String'');'])
+    a=get(hObject,'String');
+    wx=str2double(a(1:(strfind(a,',')-1)));
+    wy=str2double(a((strfind(a,',')+1):end));
+    if get(handles.autowinsizecheckbox,'Value')==1
+        xbin = 2^(ceil(log(2*wx)/log(2)));
+        ybin = 2^(ceil(log(2*wy)/log(2)));
+        eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xbin) '','' num2str(ybin)];'])
+        eval(['set(handles.windowsize,''String'',handles.data.PIV' handles.data.cpass '.winsize)'])
+    end
+    if wx*wy<256
+        set(hObject,'backgroundcolor',[1 0.5 0]);
     else
-        [A,d]=uigetfile('*.plt','LOAD PLT FILES',[pwd '/'],'Multiselect','on');
+        set(hObject,'backgroundcolor',[1 1 1]);
+    end
+    if get(handles.setgridresbutton,'Value')==1
+        A=get(handles.gridres,'String');
+        gx=str2double(A(1:(strfind(A,',')-1)));
+        gy=str2double(A((strfind(A,',')+1):end));
+        overX=(wx-gx)/wx*100;
+        overY=(wy-gy)/wy*100;
+        eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
+    else
+        A=get(handles.winoverlap,'String');
+        overX=str2double(A(1:(strfind(A,',')-1)));
+        overY=str2double(A((strfind(A,',')+1):end));
+        gx=round(wx*(1-overX/100));
+        gy=round(wy*(1-overY/100));
+        eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
+    end
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+function windowres_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Window Size Text Box ---
+function windowsize_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if get(handles.autowinsizecheckbox,'Value')==0
+        A=get(hObject,'String');
+        Wx=str2double(A(1:(strfind(A,',')-1)));
+        Wy=str2double(A((strfind(A,',')+1):end));
+        B=get(handles.windowres,'String');
+        Rx=str2double(B(1:(strfind(B,',')-1)));
+        Ry=str2double(B((strfind(B,',')+1):end));
+        if Wx<Rx
+            Wx=Rx;
+            set(hObject,'String',[num2str(Wx) ',' num2str(Wy)]);
+        end
+        if Wy<Ry
+            Wy=Ry;
+            set(hObject,'String',[num2str(Wx) ',' num2str(Wy)]);
+        end
+        eval(['handles.data.PIV' handles.data.cpass '.winsize = get(hObject,''String'');'])
+        handles=set_PIVcontrols(handles);
+        guidata(hObject,handles)
+    else
+        eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winsize);'])
     end
 end
-A=sort(A);
-for e=1:length(A)
-    openplt([d A{e}]);
+function windowsize_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
 
-%% Load Menu
-function Untitled_23_Callback(hObject, eventdata, handles)
-
-
-
-%% Generic Open plt function
-function openplt(name)
-
-% if nargin==1
-    varlist='';
-% end
-    
-%opens file
-fid = fopen(name);
-if fid==-1
-    error('cannot open file')
+% --- Auto-Size Window Check Box ---
+function autowinsizecheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.winauto = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
 end
-status = 1;
 
-%default
-dataformat='point';
-
-while status==1
-    
-    %read a line from file
-    mark=ftell(fid);
-    temp=fgetl(fid);
-    c=sscanf(temp,'%s');
-    
-    %header lines
-    if isstrprop(c(1),'alpha')==1
-
-        %reads variable names
-        if length(strfind(lower(temp),'variables'))~=0
-            try
-                ind=strfind(temp,'"');
-                nvar=length(ind)/2;
-                q=0;
-                var=cell(nvar,1);
-                for n=1:2:2*nvar
-                    q=q+1;
-                    name=temp(ind(n)+1:ind(n+1)-1);
-                    var(q)={name(isspace(name)==0)};
-                end
-            catch
-                error('Cannot read variable names')
-            end
-            %replaces with new variable names
-            if length(varlist)~=0
-                if length(varlist)~=length(var)
-                    error('Input variable list does not match file list')
-                end
-                var=varlist;
-            end
+% --- Set Grid Resolution Radio Button ---
+function setgridresbutton_Callback(hObject, eventdata, handles)
+set(hObject,'Value',1)
+set(handles.setwinoverlapbutton,'Value',0)
+if str2double(handles.Njob)>0
+    if str2double(handles.data.method)==1
+        for e=1:str2double(handles.data.passes)
+            eval(['handles.data.PIV' num2str(e) '.gridtype = ''1'';']);
         end
-
-        %reads zone lengths
-        if length(strfind(lower(temp),'zone '))~=0
-            indi=(strfind(temp,'I=')+2):((strfind(temp,'I=')+2)+strfind(temp(strfind(temp,'I=')+2:end),' ')-2);
-            indj=(strfind(temp,'J=')+2):((strfind(temp,'J=')+2)+strfind(temp(strfind(temp,'J=')+2:end),' ')-2);
-            try
-                zstr=[strtrim(temp(indi)) ',' strtrim(temp(indj))];
-            catch
-                error('Cannot read zone lengths')
-            end
-            
-        end
-        
-        %reads solution time (needs to be generalized)
-        if length(strfind(lower(temp),'solutiontime '))~=0
-            inds=(strfind(temp,'SOLUTIONTIME = ')+15):length(temp);
-            try
-                time=str2double(strtrim(temp(inds)));
-            catch
-            end
-        end
-
-        %reads data format
-        if length(strfind(lower(temp),'datapacking'))~=0
-            ind=strfind(temp,'=');
-            try
-                dataformat = temp(ind+1:ind+5);
-            catch
-                error('Unrecognized datapacking format')
-            end
-        end
-
     else
-        %numeric data lines        
-        if length(temp)~=0
-            
-            %reads point format
-            if strcmp(dataformat,'point')
-                fseek(fid,mark,-1);
-                try
-                    variable=(fscanf(fid,'%g',[nvar inf]))';
-                catch
-                    error('Zone length does not match available data')
-                end
-                status=fclose(fid);
-                for q=1:nvar
-                    eval([char(var(q)) '=reshape(variable(:,q),' char(zstr) ');'])
-                end
-
-            %reads block format
-            elseif strcmp(dataformat,'block')
-                fseek(fid,mark,-1);
-                try
-                    for q=1:nvar
-                        eval([char(var(q)) '=' '(fscanf(fid,''%g'',[' zstr ']))'';'])
-                    end
-                catch
-                    error('Zone length does not match available data')
-                end
-                status=fclose(fid);
-
-            else
-                error('Unrecognized datapacking format')
-            end
-            
-        end
+        eval(['handles.data.PIV' handles.data.cpass '.gridtype = ''1'';']);
     end
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
 end
 
-
-%check for existing variables in the workspace
-evars=0;
-for q=1:nvar
-    tstr = ['exist(''' char(var(q)) ''',''var'')'];
-    Wans = evalc('evalin(''base'',tstr)');
-    evars = evars + str2num(sscanf(Wans(7:end),'%s'));
-end
-
-%for appending data to workspace variables
-if evars~=0
-    
-    %find existing variable dimensions
-    tstr=['ndims(' char(var(1)) ')'];
-    Wans=evalc('evalin(''base'',tstr)');
-    D   = str2num(sscanf(Wans(7:end),'%s'));
-    eval(['Din=ndims(' char(var(1)) ');']);
-
-    %when loading multiple frames
-    if Din==D-1
-        try
-            tstr=['size(' char(var(1)) ',' num2str(D) ')'];  
-            Wans=evalc('evalin(''base'',tstr)');
-            ldmax = str2num(sscanf(Wans(7:end),'%s'));
-            for qq=1:nvar
-                dstr='(';
-                for b=1:D-1
-                    dstr=[dstr ':,'];
-                end
-                dstr=[dstr num2str(ldmax+1) ')'];
-                assignin('base',['loaded_var_' num2str(qq)],eval(char(var(qq))));
-                evalin('base',[char(var(qq)) dstr '=' 'loaded_var_' num2str(qq) ';'])
-                evalin('base',['clear ' 'loaded_var_' num2str(qq) ';']);
-            end
-        catch
-            keyboard
-            error('problem appending data in multiple frames')
-        end
-
-        %when loading second frame
-    elseif Din==D
-        try
-            for qq=1:nvar
-                dstr='(';
-                for b=1:D
-                    dstr=[dstr ':,'];
-                end
-                dstr=[dstr '2)'];
-                assignin('base',['loaded_var_' num2str(qq)],eval(char(var(qq))));
-                evalin('base',[char(var(qq)) dstr '=' 'loaded_var_' num2str(qq) ';'])
-            end
-        catch
-            error('problem appending data to initial frame')
-        end
-        
-    %when dimensions do not agree
-    else
-        rem=input('workspace variable mismatch, clear conflicting variables (y/n)? >> ');
-        if strcmp(rem,'y')==1
-            for q=1:length(var)
-                evalin('base',['clear ' char(var(q)) ';']);
+% --- Grid Resolution Text Box ---
+function gridres_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if get(handles.setgridresbutton,'Value')==1
+        A=get(hObject,'String');
+        gx=str2double(A(1:(strfind(A,',')-1)));
+        gy=str2double(A((strfind(A,',')+1):end));
+        if str2double(handles.data.method)==1
+            for e=1:str2double(handles.data.passes)
+                eval(['A=handles.data.PIV', num2str(e) '.winres;'])
+                wx=str2double(A(1:(strfind(A,',')-1)));
+                wy=str2double(A((strfind(A,',')+1):end));
+                overX=(wx-gx)/wx*100;
+                overY=(wy-gy)/wy*100;
+                eval(['handles.data.PIV' num2str(e) '.gridres = get(hObject,''String'');'])
+                eval(['handles.data.PIV' num2str(e) '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
             end
         else
-            error('workspace variable mismatch, terminating loader')
+            A=get(handles.windowres,'String');
+            wx=str2double(A(1:(strfind(A,',')-1)));
+            wy=str2double(A((strfind(A,',')+1):end));
+            overX=(wx-gx)/wx*100;
+            overY=(wy-gy)/wy*100;
+            eval(['handles.data.PIV' handles.data.cpass '.gridres = get(hObject,''String'');'])
+            eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
         end
+        handles=set_PIVcontrols(handles);
+        guidata(hObject,handles)
+    else
+        eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.gridres);'])
     end
 end
-
-%for replacing/creating workspace variables
-if evars==0 
-    for qq=1:nvar
-        assignin('base',char(var(qq)),eval(char(var(qq))));
-    end
+function gridres_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
 
-%load solution time
-if evalin('base','exist(''T'',''var'')')==1
-    assignin('base','loaded_solution_time',time);
-    evalin('base','T(length(T)+1)=loaded_solution_time;');
-    evalin('base','clear loaded_solution_time');
+% --- Set Window Overlap Button ---
+function setwinoverlapbutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && str2double(handles.data.method)~=1
+    set(hObject,'Value',1)
+    set(handles.setgridresbutton,'Value',0)
+    eval(['handles.data.PIV' handles.data.cpass '.gridtype = ''2'';']);
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
 else
-    assignin('base','T',time);
+    set(hObject,'Value',0)
 end
 
-evalin('base','clear ans');
+% --- Window Overlap Text Box ---
+function winoverlap_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if get(handles.setwinoverlapbutton,'Value')==1
+        A=get(handles.windowres,'String');
+        wx=str2double(A(1:(strfind(A,',')-1)));
+        wy=str2double(A((strfind(A,',')+1):end));
+        A=get(hObject,'String');
+        overX=str2double(A(1:(strfind(A,',')-1)));
+        overY=str2double(A((strfind(A,',')+1):end));
+        gx=round(wx*(1-overX/100));
+        gy=round(wy*(1-overY/100));
+        eval(['handles.data.PIV' handles.data.cpass '.winoverlap = get(hObject,''String'');'])
+        eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
+        handles=set_PIVcontrols(handles);
+        guidata(hObject,handles)
+    else
+        eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winoverlap);'])
+    end
+end
+function winoverlap_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Grid Buffer Text Box ---
+function gridbuffer_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if str2double(handles.data.method)==1
+        for e=1:str2double(handles.data.passes)
+            eval(['handles.data.PIV' num2str(e) '.gridbuf = get(hObject,''String'');'])
+        end
+    else
+        eval(['handles.data.PIV' handles.data.cpass '.gridbuf = get(hObject,''String'');'])
+    end
+    guidata(hObject,handles)
+end
+function gridbuffer_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Bulk Window Offset Text Box ---
+function bulkwinoffset_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if str2double(handles.data.cpass)==1
+        eval(['handles.data.PIV' handles.data.cpass '.BWO = get(hObject,''String'');'])
+        guidata(hObject,handles)
+    else
+        eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.BWO)'])
+    end
+end
+function bulkwinoffset_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Correlation Type Drop-Down Menu ---
+function correlationtype_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.corr = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+    N=handles.data.cpass;
+    A=eval(['handles.data.PIV' num2str(N)]);
+    if str2double(A.corr)==1
+        set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
+    else
+        set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
+    end
+end
+function correlationtype_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- RPC Diameter Text Box ---
+function rpcdiameter_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.RPCd = get(hObject,''String'');'])
+    guidata(hObject,handles)
+    if get(handles.correlationtype,'Value')==2
+        if str2double(get(hObject,'String'))<2
+            if str2double(get(hObject,'String'))==0
+                set(hObject,'backgroundcolor','r');
+            else
+                set(hObject,'backgroundcolor',[1 0.5 0]);
+            end
+
+        else
+            set(hObject,'backgroundcolor',[1 1 1]);
+        end
+    else
+        set(hObject,'backgroundcolor',0.5*[1 1 1]);
+    end
+end
+function rpcdiameter_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Validation Check Box ---
+function validatecheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.val = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- Universal Outlier Detection Checkbox ---
+function uodcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.uod = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- UOD Type Drop-Down Menu ---
+function uod_type_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.uod_type = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+function uod_type_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- UOD Window Size Text Box ---
+function uod_window_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    A=get(hObject,'String');
+    if strcmp(A(end),';')
+        A=A(1:end-1);
+    end
+    set(hObject,'String',A)
+    eval(['handles.data.PIV' handles.data.cpass '.uod_window = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+function uod_window_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- UOD Threshold Text Box ---
+function uod_thresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.uod_thresh = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+function uod_thresh_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Bootstrapping Checkbox ---
+function bootstrapcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.bootstrap = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- Bootstrapping Percent Removed Text Box ---
+function bootstrap_percentsampled_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.bootstrap_percentsampled = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+function bootstrap_percentsampled_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 
+% --- Bootstrapping Interpolations per Frame Text Box ---
+function bootstrap_iterations_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.bootstrap_iterations = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+function bootstrap_iterations_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Bootstrapping Number of Passes Text Box ---
+function bootstrap_passes_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.bootstrap_passes = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+function bootstrap_passes_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Thresholding Check Box ---
+function thresholdingcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.thresh = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- U Threshold Text Box ---
+function thresh_U_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.valuthresh = get(hObject,''String'');'])
+    a=get(hObject,'String');
+    tx=str2double(a(1:(strfind(a,',')-1)));
+    ty=str2double(a((strfind(a,',')+1):end));
+    if get(handles.validatecheckbox,'Value')+get(handles.thresholdingcheckbox,'Value')==2
+        if tx>=ty
+            set(hObject,'backgroundcolor','r');
+        else
+            set(hObject,'backgroundcolor',[1 1 1]);
+        end
+    else
+        set(hObject,'backgroundcolor',0.5*[1 1 1]);
+    end
+    guidata(hObject,handles)
+end
+function thresh_U_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- V Threshold Text Box ---
+function thresh_V_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.valvthresh = get(hObject,''String'');'])
+    a=get(hObject,'String');
+    tx=str2double(a(1:(strfind(a,',')-1)));
+    ty=str2double(a((strfind(a,',')+1):end));
+    if get(handles.validatecheckbox,'Value')+get(handles.thresholdingcheckbox,'Value')==2
+        if tx>=ty
+            set(hObject,'backgroundcolor','r');
+        else
+            set(hObject,'backgroundcolor',[1 1 1]);
+        end
+    else
+        set(hObject,'backgroundcolor',0.5*[1 1 1]);
+    end
+    guidata(hObject,handles)
+end
+function thresh_V_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Validate Extra Peaks if Initial Validation Fails Checkbox ---
+function valextrapeaks_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.valextrapeaks = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+
+% --- Write Output Check Box ---
+function writeoutputcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if get(hObject,'Value')==0
+        set(handles.corrpeaknum,'BackgroundColor',0.5*[1 1 1])
+    else
+        set(handles.corrpeaknum,'BackgroundColor',[1 1 1])
+    end
+    eval(['handles.data.PIV' handles.data.cpass '.write = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- Save Additional Peak Information Checkbox ---
+function savepeakinfo_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.savepeakinfo = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- Number of Correlation Peaks to Save Drop-Down Menu ---
+function corrpeaknum_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.corrpeaknum = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+function corrpeaknum_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Save Peak Magnitude Checkbox ---
+function savepeakmag_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.savepeakmag = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+
+% --- Save Resulting Velocity Checkbox ---
+function savepeakvel_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.savepeakvel = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+
+% --- Output Basename Text Box ---
+function outputbasename_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.outbase = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+function outputbasename_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Output Directory Text Box ---
+function outputdirectory_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.outdirec = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function outputdirectory_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Load Ouput Directory Button ---
+function loadoutputdirectorybutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.outdirec;
+    handles.data.outdirec = uigetdir(handles.data.outdirec);
+    if handles.data.outdirec==0
+        handles.data.outdirec = D;
+    end
+    set(handles.outputdirectory,'string',handles.data.outdirec);
+    guidata(hObject,handles)
+end
+
+% --- Multiple .plt Files Checkbox ---
+function pltcheckbox_Callback(hObject, eventdata, handles)
+if get(hObject,'Value')==1 || (get(handles.multiplematcheckbox,'Value')==0 && get(handles.singlematcheckbox,'Value')==0)
+    set(hObject,'Value',1);
+    handles.data.pltout='1';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+else    
+    handles.data.pltout='0';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+end
+
+% --- Multiple .mat Files Checkbox ---
+function multiplematcheckbox_Callback(hObject, eventdata, handles)
+if get(hObject,'Value')==1 || (get(handles.pltcheckbox,'Value')==0 && get(handles.singlematcheckbox,'Value')==0)
+    set(hObject,'Value',1);
+    handles.data.multiplematout='1';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+else    
+    handles.data.multiplematout='0';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+end
+
+% --- Single .mat File Checkbox
+function singlematcheckbox_Callback(hObject, eventdata, handles)
+if get(hObject,'Value')==1 || (get(handles.pltcheckbox,'Value')==0 && get(handles.multiplematcheckbox,'Value')==0)
+    set(hObject,'Value',1);
+    handles.data.singlematout='1';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+else    
+    handles.data.singlematout='0';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+end
+
+% --- Magnification Text Box ---
+function magnification_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.wrmag = get(hObject,'String');
+    guidata(hObject,handles)
+    if str2double(get(hObject,'String'))<=0
+        set(hObject,'backgroundcolor','r')
+    else
+        set(hObject,'backgroundcolor',[1 1 1])
+    end
+end
+function magnification_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Pulse Separation Text Box ---
+function pulseseparation_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.wrsep = get(hObject,'String');
+    guidata(hObject,handles)
+    if str2double(get(hObject,'String'))<=0
+        set(hObject,'backgroundcolor','r')
+    else
+        set(hObject,'backgroundcolor',[1 1 1])
+    end
+end
+function pulseseparation_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Sampling Rate Text Box ---
+function samplingrate_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.wrsamp = get(hObject,'String');
+    guidata(hObject,handles)
+    if str2double(get(hObject,'String'))<=0
+        set(hObject,'backgroundcolor','r')
+    else
+        set(hObject,'backgroundcolor',[1 1 1])
+    end
+end
+function samplingrate_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Help Topics List ---
+function helplistbox_Callback(hObject, eventdata, handles)
+update_helptext(handles)
+function helplistbox_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Help Text Display ---
+function helptextbox_Callback(hObject, eventdata, handles)
+update_helptext(handles)
+function helptextbox_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Update All Data ---
+function handles=update_data(handles)
+if str2double(handles.Njob)==0
+    set(handles.passlist,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.joblist,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagelist,'String','','backgroundcolor','r');
+    set(handles.uod_window,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.bootstrap_percentsampled,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.bootstrap_iterations,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.bootstrap_passes,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.thresh_V,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.thresh_U,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.uod_thresh,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.corrpeaknum,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.outputbasename,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.outputdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagedirectory,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagebasename,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagezeros,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imageextension,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagecorrelationstep,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imageframestep,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imageframestart,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imageframeend,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.magnification,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.currentjobname,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.pulseseparation,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.samplingrate,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.smoothingsize,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.windowres,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.gridres,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.winoverlap,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.gridbuffer,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.windowsize,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.rpcdiameter,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.bulkwinoffset,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.writeoutputcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
+    set(handles.validatecheckbox,'Value',0,'backgroundcolor',handles.syscolor);
+    set(handles.writeoutputcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
+    set(handles.thresholdingcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
+    set(handles.smoothingcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
+    set(handles.imageinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.framestep,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.passtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.uod_type,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.correlationtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.velocityinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.staticmaskfile,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.maskzeros,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.maskextension,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.maskframestep,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.maskframestart,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.masklist,'String','','backgroundcolor',0.5*[1 1 1]);
+else
+    a=get(handles.joblist,'String');
+    eval(['handles.data=handles.' char(a(str2double(handles.Cjob),:)) ';']);
+
+    set(handles.passlist,'String','','backgroundcolor',[1 1 1]);
+    set(handles.joblist,'backgroundcolor',[1 1 1]);
+    set(handles.imagelist,'backgroundcolor',[1 1 1]);
+    set(handles.windowres,'String','','backgroundcolor',[1 1 1]);
+    set(handles.windowsize,'String','','backgroundcolor',[1 1 1]);
+    set(handles.gridres,'String','','backgroundcolor',[1 1 1]);
+    set(handles.gridbuffer,'String','','backgroundcolor',[1 1 1]);
+    set(handles.winoverlap,'String','','backgroundcolor',[1 1 1]);
+    set(handles.rpcdiameter,'String','','backgroundcolor',[1 1 1]);
+    set(handles.bulkwinoffset,'String','','backgroundcolor',[1 1 1]);
+    set(handles.uod_window,'String','','backgroundcolor',[1 1 1]);
+    set(handles.bootstrap_percentsampled,'String','','backgroundcolor',[1 1 1]);
+    set(handles.bootstrap_iterations,'String','','backgroundcolor',[1 1 1]);
+    set(handles.bootstrap_passes,'String','','backgroundcolor',[1 1 1]);
+    set(handles.thresh_V,'String','','backgroundcolor',[1 1 1]);
+    set(handles.thresh_U,'String','','backgroundcolor',[1 1 1]);
+    set(handles.uod_thresh,'String','','backgroundcolor',[1 1 1]);
+    set(handles.corrpeaknum,'backgroundcolor',[1 1 1]);
+    set(handles.outputbasename,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imagedirectory,'String','','backgroundcolor',[1 1 1]);
+    set(handles.outputdirectory,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imagebasename,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imagezeros,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imageextension,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imagecorrelationstep,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imageframestep,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imageframestart,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imageframeend,'String','','backgroundcolor',[1 1 1]);
+    set(handles.magnification,'String','','backgroundcolor',[1 1 1]);
+    set(handles.staticmaskfile,'String','','backgroundcolor',[1 1 1]);
+    set(handles.currentjobname,'String','','backgroundcolor',[1 1 1]);
+    set(handles.pulseseparation,'String','','backgroundcolor',[1 1 1]);
+    set(handles.samplingrate,'String','','backgroundcolor',[1 1 1]);
+    set(handles.smoothingsize,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imageinterptype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.passtype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.uod_type,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.correlationtype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.velocityinterptype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.framestep,'Value',1,'backgroundcolor',[1 1 1]);
+    
+    if strcmp(handles.data.masktype,'static')
+        set(handles.staticmaskfile,'String','','backgroundcolor',[1 1 1]);
+    else
+        set(handles.staticmaskfile,'String','','backgroundcolor',0.5*[1 1 1]);
+    end
+    if strcmp(handles.data.masktype,'dynamic')
+        set(handles.maskdirectory,'String','','backgroundcolor',[1 1 1]);
+        set(handles.maskbasename,'String','','backgroundcolor',[1 1 1]);
+        set(handles.maskzeros,'String','','backgroundcolor',[1 1 1]);
+        set(handles.maskextension,'String','','backgroundcolor',[1 1 1]);
+        set(handles.maskframestep,'String','','backgroundcolor',[1 1 1]);
+        set(handles.maskframestart,'String','','backgroundcolor',[1 1 1]);
+        set(handles.masklist,'String','','backgroundcolor',[1 1 1]);
+        load_masklist(handles);
+    else
+        set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.maskzeros,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.maskextension,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.maskframestep,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.maskframestart,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.masklist,'backgroundcolor',0.5*[1 1 1]);
+    end
+    if str2double(handles.data.pltout)==1
+        set(handles.pltcheckbox,'Value',1)
+    else
+        set(handles.pltcheckbox,'Value',0)
+    end
+    if str2double(handles.data.multiplematout)==1
+        set(handles.multiplematcheckbox,'Value',1)
+    else
+        set(handles.multiplematcheckbox,'Value',0)
+    end
+    if str2double(handles.data.singlematout)==1
+        set(handles.singlematcheckbox,'Value',1)
+    else
+        set(handles.singlematcheckbox,'Value',0)
+    end
+        
+    load_data(handles);
+    load_PIVlist(handles);
+    handles=set_PIVcontrols(handles);
+    load_imlist(handles);
+end
+
+% --- Load Image List ---
+function load_imlist(handles)
+dir_struct = dir(handles.data.imdirec);
+if isempty(dir_struct)
+    set(handles.imagedirectory,'backgroundcolor','r');
+else
+    set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
+end
+N=length(str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend));
+files = cell(N,2);
+e=0;
+for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
+    e=e+1;
+    files(e,1)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
+    files(e,2)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
+end
+
+[sorted_names,sorted_index] = sortrows({dir_struct.name}');
+[files1,id,id1] = intersect(sorted_names,files(:,1));
+[files2,id,id2] = intersect(sorted_names,files(:,2));
+[idf]=intersect(id1,id2);
+if isempty(idf)
+    set(handles.imagelist,'backgroundcolor','r');
+else
+    set(handles.imagelist,'backgroundcolor',[1 1 1]);
+    if length(idf)~=size(files,1)
+        set(handles.imagelist,'backgroundcolor','r');
+    end
+end
+files=files(idf,:);
+filesf=cell(length(files),1);
+for e=1:size(files,1)
+    filesf(e)={[char(files(e,1)) ' and ' char(files(e,2))]};
+end
+set(handles.imagelist,'String',filesf,'Value',1);
+
+% --- Load Mask List ---
+function load_masklist(handles)
+dir_struct = dir(handles.data.maskdirec);
+if isempty(dir_struct)
+    set(handles.maskdirectory,'backgroundcolor','r');
+else
+    set(handles.maskdirectory,'backgroundcolor',[1 1 1]);
+end
+
+maskfend=str2double(handles.data.maskfstart)+str2double(handles.data.maskfstep)*length(str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend))-1;
+N=length(str2double(handles.data.maskfstart):str2double(handles.data.maskfstep):maskfend);
+files = cell(N,1);
+e=0;
+for f=str2double(handles.data.maskfstart):str2double(handles.data.maskfstep):maskfend
+    e=e+1;
+    files(e,1)={[handles.data.maskbase sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],f)]};
+end
+
+[sorted_names,sorted_index] = sortrows({dir_struct.name}');
+[files1,id,id1] = intersect(sorted_names,files(:,1));
+
+if isempty(id1)
+    set(handles.masklist,'backgroundcolor','r');
+    set(handles.masklist,'UserData',[]);
+else
+    set(handles.masklist,'backgroundcolor',[1 1 1]);
+    if length(id1)~=size(files,1)
+        set(handles.masklist,'backgroundcolor','r');
+        set(handles.masklist,'UserData',[]);
+    end
+end
+files=files(id1,:);
+filesf=cell(length(files),1);
+for e=1:size(files,1)
+    filesf(e)={[char(files(e,1))]};
+end
+set(handles.masklist,'String',filesf,'Value',1);
+
+% --- Load PIV Pass List ---
+function load_PIVlist(handles)
+f=cell(str2double(handles.data.passes),1);
+for e=1:str2double(handles.data.passes)
+    f(e)={['Pass ' num2str(e)]};
+end
+set(handles.passlist,'String',f);
+
+% --- Load PIV Data ---
+function handles=set_PIVcontrols(handles)
+N=get(handles.passlist,'Value');
+A=eval(['handles.data.PIV' num2str(N)]);
+set(handles.windowres,'string',A.winres);
+set(handles.windowsize,'string',A.winsize);
+set(handles.autowinsizecheckbox,'Value',str2double(A.winauto));
+set(handles.gridres,'string',A.gridres);
+set(handles.winoverlap,'string',A.winoverlap);
+set(handles.gridbuffer,'string',A.gridbuf);
+set(handles.bulkwinoffset,'string',A.BWO);
+set(handles.correlationtype,'Value',str2double(A.corr));
+set(handles.rpcdiameter,'string',str2double(A.RPCd));
+set(handles.validatecheckbox,'Value',str2double(A.val));
+set(handles.uod_type,'Value',str2double(A.uod_type));
+set(handles.thresholdingcheckbox,'Value',str2double(A.thresh));
+set(handles.uod_window,'string',A.uod_window);
+set(handles.uod_thresh,'string',A.uod_thresh);
+set(handles.bootstrap_percentsampled,'String',A.bootstrap_percentsampled);
+set(handles.bootstrap_iterations,'String',A.bootstrap_iterations);
+set(handles.bootstrap_passes,'String',A.bootstrap_passes);
+set(handles.thresh_U,'string',A.valuthresh);
+set(handles.thresh_V,'string',A.valvthresh);
+set(handles.valextrapeaks,'value',str2double(A.valextrapeaks));
+set(handles.corrpeaknum,'value',str2double(A.corrpeaknum));
+set(handles.savepeakinfo,'value',str2double(A.savepeakinfo));
+set(handles.savepeakmag,'value',str2double(A.savepeakmag));
+set(handles.savepeakvel,'value',str2double(A.savepeakvel));
+set(handles.writeoutputcheckbox,'Value',str2double(A.write));
+set(handles.outputbasename,'string',A.outbase);
+handles.data.cpass=num2str(N);
+
+if str2double(A.val)==1
+    if strcmp(A.uod,'1')
+        set(handles.uodcheckbox,'Value',1);
+        set(handles.uod_window,'backgroundcolor',[1 1 1]);
+        set(handles.uod_thresh,'backgroundcolor',[1 1 1]);
+        set(handles.uod_type,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.uodcheckbox,'Value',0);
+        set(handles.uod_window,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.uod_thresh,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.uod_type,'backgroundcolor',0.5*[1 1 1]);
+    end
+    if strcmp(A.bootstrap,'1')
+        set(handles.bootstrapcheckbox,'Value',1)
+        set(handles.bootstrap_percentsampled,'backgroundcolor',[1 1 1]);
+        set(handles.bootstrap_iterations,'backgroundcolor',[1 1 1]);
+        set(handles.bootstrap_passes,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.bootstrapcheckbox,'Value',0)
+        set(handles.bootstrap_percentsampled,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.bootstrap_iterations,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.bootstrap_passes,'backgroundcolor',0.5*[1 1 1]);
+    end
+    if str2double(A.thresh)==1
+        a=get(handles.thresh_U,'String');
+        tx=str2double(a(1:(strfind(a,',')-1)));
+        ty=str2double(a((strfind(a,',')+1):end));
+        if tx>=ty
+            set(handles.thresh_U,'backgroundcolor','r');
+        else
+            set(handles.thresh_U,'backgroundcolor',[1 1 1]);
+        end
+        a=get(handles.thresh_V,'String');
+        tx=str2double(a(1:(strfind(a,',')-1)));
+        ty=str2double(a((strfind(a,',')+1):end));
+        if tx>=ty
+            set(handles.thresh_V,'backgroundcolor','r');
+        else
+            set(handles.thresh_V,'backgroundcolor',[1 1 1]);
+        end
+    else
+        set(handles.thresh_U,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.thresh_V,'backgroundcolor',0.5*[1 1 1]);
+    end
+else
+    set(handles.bootstrap_percentsampled,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.bootstrap_iterations,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.bootstrap_passes,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.uod_window,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.uod_thresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.uod_type,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.thresh_U,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.thresh_V,'backgroundcolor',0.5*[1 1 1]);
+end
+if str2double(A.write)==1
+    set(handles.outputbasename,'backgroundcolor',[1 1 1]);
+    if str2double(A.savepeakinfo)==1
+        set(handles.corrpeaknum,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.corrpeaknum,'backgroundcolor',0.5*[1 1 1]);
+    end
+else
+    set(handles.corrpeaknum,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.outputbasename,'backgroundcolor',0.5*[1 1 1]);
+end
+if str2double(A.winauto)==1
+    B=get(handles.windowres,'String');
+    Rx=str2double(B(1:(strfind(B,',')-1)));
+    Ry=str2double(B((strfind(B,',')+1):end));
+    Rx = 2^(ceil(log(2*Rx)/log(2)));
+    Ry = 2^(ceil(log(2*Ry)/log(2)));
+    set(handles.windowsize,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.windowsize,'String',[num2str(Rx) ',' num2str(Ry)]);
+    eval(['handles.data.PIV' handles.data.cpass '.winsize = get(handles.windowsize,''String'');'])
+else
+    set(handles.windowsize,'backgroundcolor',[1 1 1]);
+end
+
+if strcmp(A.gridtype,'2')
+    set(handles.setgridresbutton,'Value',0)
+    set(handles.setwinoverlapbutton,'Value',1)
+    set(handles.gridres,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.winoverlap,'backgroundcolor',[1 1 1])
+else
+    set(handles.setgridresbutton,'Value',1)
+    set(handles.setwinoverlapbutton,'Value',0)
+    set(handles.gridres,'backgroundcolor',[1 1 1]);
+    set(handles.winoverlap,'backgroundcolor',0.5*[1 1 1]);
+end
+if get(handles.correlationtype,'Value')==2
+    if str2double(get(handles.rpcdiameter,'String'))<2
+        if str2double(get(handles.rpcdiameter,'String'))==0
+            set(handles.rpcdiameter,'backgroundcolor','r');
+        else
+            set(handles.rpcdiameter,'backgroundcolor',[1 0.5 0]);
+        end
+    else
+        set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
+    end
+else
+    set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
+end
+a=get(handles.windowres,'String');
+wx=str2double(a(1:(strfind(a,',')-1)));
+wy=str2double(a((strfind(a,',')+1):end));
+if wx*wy<256
+    set(handles.windowres,'backgroundcolor',[1 0.5 0]);
+else
+    set(handles.windowres,'backgroundcolor',[1 1 1]);
+end
+if get(handles.writeoutputcheckbox,'Value')==0 && get(handles.passlist,'Value')==str2double(handles.data.passes)
+    set(handles.writeoutputcheckbox,'backgroundcolor',[1 0.5 0]);
+else
+    set(handles.writeoutputcheckbox,'backgroundcolor',handles.syscolor);
+end
+
+% --- Load Extra Data ---
+function [handles]=load_data(handles)
+set(handles.imagedirectory,'String',handles.data.imdirec);
+set(handles.imagebasename,'String',handles.data.imbase);
+set(handles.imagezeros,'String',handles.data.imzeros);
+set(handles.imageextension,'String',handles.data.imext);
+set(handles.imagecorrelationstep,'String',handles.data.imcstep);
+set(handles.imageframestep,'String',handles.data.imfstep);
+set(handles.imageframestart,'String',handles.data.imfstart);
+set(handles.imageframeend,'String',handles.data.imfend);
+
+set(handles.staticmaskfile,'String',handles.data.staticmaskname)
+set(handles.maskdirectory,'String',handles.data.maskdirec);
+set(handles.maskbasename,'String',handles.data.maskbase);
+set(handles.maskzeros,'String',handles.data.maskzeros);
+set(handles.maskextension,'String',handles.data.maskext);
+set(handles.maskframestep,'String',handles.data.maskfstep);
+set(handles.maskframestart,'String',handles.data.maskfstart);
+if strcmp(handles.data.masktype,'none')
+    set(handles.nomaskbutton,'Value',1)
+    set(handles.staticmaskbutton,'Value',0)
+    set(handles.dynamicmaskbutton,'Value',0)
+elseif strcmp(handles.data.masktype,'static')
+    set(handles.nomaskbutton,'Value',0)
+    set(handles.staticmaskbutton,'Value',1)
+    set(handles.dynamicmaskbutton,'Value',0)
+elseif strcmp(handles.data.masktype,'dynamic')
+    set(handles.nomaskbutton,'Value',0)
+    set(handles.staticmaskbutton,'Value',0)
+    set(handles.dynamicmaskbutton,'Value',1)
+end
+
+set(handles.magnification,'String',handles.data.wrmag);
+set(handles.pulseseparation,'String',handles.data.wrsep);
+set(handles.samplingrate,'String',handles.data.wrsamp);
+set(handles.currentjobname,'String',handles.data.batchname);
+set(handles.outputdirectory,'String',handles.data.outdirec);
+
+set(handles.passtype,'Value',str2double(handles.data.method));
+set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
+set(handles.imageinterptype,'Value',str2double(handles.data.iminterp));
+set(handles.smoothingsize,'String',handles.data.velsmoothfilt);
+set(handles.smoothingcheckbox,'Value',str2double(handles.data.velsmooth));
+set(handles.framestep,'Value',str2double(handles.data.framestep));
+
+if get(handles.passtype,'Value')==5
+    set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.framestep,'backgroundcolor',[1 1 1]);
+elseif get(handles.passtype,'Value')>1
+    set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
+    if get(handles.passtype,'Value')==3
+        set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+    end
+    if get(handles.smoothingcheckbox,'Value')==1
+        set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+    end
+else
+    set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+end
+
+if strcmp(handles.data.imext(1),'.')
+    set(handles.imageextension,'backgroundcolor','r');
+else
+    set(handles.imageextension,'backgroundcolor',[1 1 1]);
+end
+
+if isempty(dir(handles.data.imdirec))
+    set(handles.imagedirectory,'backgroundcolor','r');
+else
+    set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
+end
+
+if str2double(get(handles.magnification,'String'))<=0
+    set(handles.magnification,'backgroundcolor','r')
+else
+    set(handles.magnification,'backgroundcolor',[1 1 1])
+end
+
+if str2double(get(handles.pulseseparation,'String'))<=0
+    set(handles.pulseseparation,'backgroundcolor','r')
+else
+    set(handles.pulseseparation,'backgroundcolor',[1 1 1])
+end
+
+if str2double(get(handles.samplingrate,'String'))<=0
+    set(handles.samplingrate,'backgroundcolor','r')
+else
+    set(handles.samplingrate,'backgroundcolor',[1 1 1])
+end
