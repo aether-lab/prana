@@ -144,7 +144,7 @@ end
 %% --- Evaluate Image Sequence ---
 switch char(M)
 
-    case 'Multipass'
+    case {'Multipass','Multigrid','Deform'}
 
         for q=1:length(I1)
             
@@ -169,33 +169,34 @@ switch char(M)
                 mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
                 mask = flipud(mask);
             end
-            
-            %downsample mask to fit data grid
-            maskds=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
 
             %initialize grid and evaluation matrix
-            [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-            X=X(:);Y=Y(:);
-            eval=maskds;
-            eval(eval==0)=-1;
-            eval(eval>0)=0;
+            [XI,YI]=IMgrid(L,[0 0]);
 
-            Ub = BWO(1)*ones(size(X));
-            Vb = BWO(2)*ones(size(X));
+            UI = BWO(1)*ones(size(XI));
+            VI = BWO(2)*ones(size(XI));
 
             for e=1:P
+                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+                S=size(X);X=X(:);Y=Y(:);
+                
+                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                maskds=Eval;
+                Eval(Eval==0)=-1;
+                Eval(Eval>0)=0;
+
                 %correlate image pair
                 [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                     U=zeros(size(X,1),3);
                     V=zeros(size(X,1),3);
                     C=zeros(size(X,1),3);
-                    Eval=repmat(eval,[1 3]);
+                    Eval=repmat(Eval,[1 3]);
                     C(Eval>=0)=Cc;
                 else
-                    U=zeros(size(X));V=zeros(size(X));
-                    Eval=eval;
-                    C=[];
+                    U=zeros(size(X));V=zeros(size(X));C=[];
                 end
                 U(Eval>=0)=Uc;V(Eval>=0)=Vc;
 
@@ -210,28 +211,55 @@ switch char(M)
                     else
                         j=1;
                     end
+                    Uval=U(:,1); Vval=V(:,1); Evalval=Eval(:,1);
+                    if ~isempty(C)
+                        Cval=C(:,1);
+                    end
                     for i=1:j
-                        keyboard
                         if Threshswitch(e)
-                            [U(:,i),V(:,1),Eval(:,i)] = Thresh(X,Y,U(:,i),V(:,i),Uthresh(e,:),Vthresh(e,:),Eval);
+                            [Uval,Vval,Evalval] = Thresh(X,Y,Uval,Vval,Uthresh(e,:),Vthresh(e,:),Evalval);
                         end
                         if UODswitch(e)
                             t=permute(UODwinsize(e,:,:),[2 3 1]);
                             t=t(:,t(1,:)~=0);
-                            [utemp,vtemp,evaltemp] = UOD(X,Y,U(:,i),V(:,i),t',UODthresh(e,UODthresh(e,:)~=0)',Eval);
+                            [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh(e,UODthresh(e,:)~=0)',Evalval);
                         end
                         if Bootswitch(e)
-                            [utemp,vtemp,evaltemp] = bootstrapping(X,Y,U(:,1),V(:,1),Bootper(e),Bootiter(e),Bootkmax(e),Eval);
+                            [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper(e),Bootiter(e),Bootkmax(e),Evalval);
+                        end
+                        disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
+                        if extrapeaks(e) && i<3
+                            Uval(Evalval>0)=U(Evalval>0,i+1);
+                            Vval(Evalval>0)=V(Evalval>0,i+1);
+                            Evalval(Evalval>0)=Eval(Evalval>0,i+1);
+                            Cval(Evalval>0)=C(Evalval>0,i+1);
                         end
                     end
+                    if Writeswitch(e)
+                        if Peakswitch(e)
+                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
+                            if PeakVel(e)
+                                U=[Uval,U(:,1:PeakNum(e))];
+                                V=[Vval,V(:,1:PeakNum(e))];
+                            else
+                                U=Uval; V=Vval;
+                            end
+                            if PeakMag(e)
+                                C=[Cval,C(:,1:PeakNum(e))];
+                            else
+                                C=Cval;
+                            end
+                        else
+                            U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                        end
+                    else
+                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                    end
+                    if i==j
+                        eltime=cputime-t1;
+                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    end
                 end
-                eltime=cputime-t1;
-                fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-
-                
-                %reset DWO for subsequent passes
-                Ub=U(:,1);
-                Vb=V(:,1);
                 
                 %write output
                 if Writeswitch(e)==1
@@ -239,7 +267,7 @@ switch char(M)
                         fprintf('saving...                        ')
                         t1=cputime;
                     end
-
+                    
                     %convert to physical units
                     X=X*Mag;
                     Y=Y*Mag;
@@ -252,12 +280,12 @@ switch char(M)
                     end
 
                     %remove nans from data, replace with zeros
-                    U(repmat(Eval,[1 1 size(U,3)])<0)=0;
-                    V(repmat(Eval,[1 1 size(V,3)])<0)=0;
+                    U(Eval<0)=0;
+                    V(Eval<0)=0;
 
                     if str2double(Data.pltout)
                         time=(q-1)/Freq;
-                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,maskds,time,title);
+                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
@@ -265,408 +293,139 @@ switch char(M)
                     if str2double(Data.singlematout)
                         X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
                         U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
-                        Eval_write{e}(:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
+                        Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
                         if strcmp(Data.masktype,'dynamic')
                             mask_write{e}(:,:,q)=maskds;
                         end
                     end
                     
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end
-                end
-
-            end
-            
-            eltime=cputime-tf;
-            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-            
-        end
-
-
-    case 'Multigrid'
-
-        for q=1:length(I1)
-            
-            tf=cputime;
-            
-            %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
-            fprintf('\n----------------------------------------------------\n')
-            fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
-            fprintf('----------------------------------------------------\n')
-            
-            %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
-            im1=flipud(im1);
-            im2=flipud(im2);
-            L=size(im1);
-            
-            %load dynamic mask and flip coordinates
-            if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
-                mask = flipud(mask);
-            end
-
-            %initialize grid and evaluation matrix
-            [XI,YI]=IMgrid(L,[0 0]);
-            UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(XI));
-
-            for e=1:P
-                %find grid and evaluation matrix for each pass
-                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
-                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval = reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval(Eval==0)=-1;
-                Eval(Eval>0)=0;
-                
-                %downsample mask to fit data grid
-                maskds=mask(Gbuf(e,2):Gres(e,2):size(mask,1)-Gbuf(e,2),Gbuf(e,1):Gres(e,1):size(mask,2)-Gbuf(e,1));
-
-                %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e));
-                if Peakswitch(e)
-                    U=zeros(size(X,1),PeakNum(e));
-                    V=zeros(size(X,1),PeakNum(e));
-                    C=zeros(size(X,1),PeakNum(e));
-                    U(repmat(Eval>=0,[1 3]))=Uc;
-                    V(repmat(Eval>=0,[1 3]))=Vc;
-                    C(repmat(Eval>=0,[1 3]))=Cc;
-                else
-                    U=zeros(size(X));V=zeros(size(X));
-                    U(Eval>=0)=Uc;V(Eval>=0)=Vc;
-                    C=[];
-                end
-
-                %validation
-                if Valswitch(e)==1
-                    t=permute(Valsize(e,:,:),[2 3 1]);
-                    t=t(:,t(1,:)~=0);
-                    [U(:,1),V(:,1),Eval] = VAL(X,Y,U(:,1),V(:,1),t',Valthresh(e,Valthresh(e,:)~=0)',Uthresh(e,:),Vthresh(e,:),Eval);
-                end
-                
-                %write output
-                if Writeswitch(e)==1
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
-                        fprintf('saving...                        ')
-                        t1=cputime;
-                    end
-
-                    %convert to physical units
-                    X=X*Mag;
-                    Y=Y*Mag;
-                    U=U*Mag/dt;
-                    V=V*Mag/dt;
-
-                    %convert to matrix if necessary
-                    if size(X,2)==1
-                        [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
-                    end
-
-                    %remove nans from data, replace with zeros
-                    U(repmat(Eval,[1 1 size(U,3)])<0)=0;
-                    V(repmat(Eval,[1 1 size(V,3)])<0)=0;
-
-                    if str2double(Data.pltout)
-                        time=(q-1)/Freq;
-                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,maskds,time,title);
-                    end
-                    if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
-                    end
-                    if str2double(Data.singlematout)
-                        X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
-                        U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
-                        Eval_write{e}(:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                        if strcmp(Data.masktype,'dynamic')
-                            mask_write{e}(:,:,q)=maskds;
-                        end
-                    end
-                                       
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end
-                    
+                    X=X(:);Y=Y(:);
                     U=U(:,:,1);V=V(:,:,1);
                     U=U(:);V=V(:);
+
+                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                        eltime=cputime-t1;
+                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    end
                 end
-
+        
                 if e~=P
-
-                    fprintf('interpolating velocity...        ')
-                    t1=cputime;
-
                     %reshape from list of grid points to matrix
                     X=reshape(X,[S(1),S(2)]);
                     Y=reshape(Y,[S(1),S(2)]);
                     U=reshape(U(:,1),[S(1),S(2)]);
                     V=reshape(V(:,1),S(1),S(2));
+                    
+                    if strcmp(M,'Multigrid') || strcmp(M,'Deform')
 
-                    %velocity smoothing
-                    if Velsmoothswitch==1
-                        [U,V]=VELfilt(U,V,Velsmoothfilt);
-                    end
-
-                    %velocity interpolation
-                    UI = VFinterp(X,Y,U,XI,YI,Velinterp);
-                    VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-
-                    eltime=cputime-t1;
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-
-                end
-
-            end
-            
-            eltime=cputime-tf;
-            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-            
-        end
-
-
-    case 'Deform'
-
-        for q=1:length(I1)
-            
-            tf=cputime;
-            
-            %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
-            fprintf('\n----------------------------------------------------\n')
-            fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
-            fprintf('----------------------------------------------------\n')
-            
-            %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
-            im1=flipud(im1);
-            im2=flipud(im2);
-            L=size(im1);
-
-            %initialize deformed images
-            im1d=im1;
-            im2d=im2;
-            
-            %load dynamic mask and flip coordinates
-            if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
-                mask = flipud(mask);
-            end
-
-            %initialize grid and evaluation matrix
-            [XI,YI]=IMgrid(L,[0 0]);
-            UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(XI));
-
-            for e=1:P
-
-                %find grid and evaluation matrix for each pass
-                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
-                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval = reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval(Eval==0)=-1;
-                Eval(Eval>0)=0;
-                
-                %downsample mask to fit data grid
-                maskds=mask(Gbuf(e,2):Gres(e,2):size(mask,1)-Gbuf(e,2),Gbuf(e,1):Gres(e,1):size(mask,2)-Gbuf(e,1));
-
-                %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),PeakNum(e),PeakLoc(e));
-                if PeakLoc(e)
-                    U=zeros(size(X,1),PeakNum(e)-1);V=zeros(size(X,1),PeakNum(e)-1);
-                    U(repmat(Eval>=0,[1 PeakNum(e)-1]))=Uc;
-                    V(repmat(Eval>=0,[1 PeakNum(e)-1]))=Vc;
-                end
-                if PeakNum(e)==1 || PeakLoc(e)==0
-                    U=zeros(size(X));V=zeros(size(X));
-                    U(Eval>=0)=Uc;V(Eval>=0)=Vc;
-                end
-                if PeakNum(e)>1
-                    C=zeros(size(X,1),PeakNum(e)-1);
-                    C(repmat(Eval>=0,[1 PeakNum(e)-1]))=Cc;
-                else
-                    C=[];
-                end
-                
-                U=U+Ub;
-                V=V+Vb;
-                
-                %validation
-                if Valswitch(e)==1
-                    t=permute(Valsize(e,:,:),[2 3 1]);
-                    t=t(:,t(1,:)~=0);
-                    [U(:,1),V(:,1),Eval] = VAL(X,Y,U(:,1),V(:,1),t',Valthresh(e,Valthresh(e,:)~=0)',Uthresh(e,:),Vthresh(e,:),Eval);
-                end
-                
-                %write output
-                if Writeswitch(e)==1
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
-                        fprintf('saving...                        ')
+                        fprintf('interpolating velocity...        ')
                         t1=cputime;
-                    end
 
-                    %convert to physical units
-                    X=X*Mag;
-                    Y=Y*Mag;
-                    U=U*Mag/dt;
-                    V=V*Mag/dt;
-
-                    %convert to matrix if necessary
-                    if size(X,2)==1
-                        [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
-                    end
-
-                    %remove nans from data, replace with zeros
-                    U(repmat(Eval,[1 1 size(U,3)])<0)=0;
-                    V(repmat(Eval,[1 1 size(V,3)])<0)=0;
-
-                    if str2double(Data.pltout)
-                        time=(q-1)/Freq;
-                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,maskds,time,title);
-                    end
-                    if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
-                    end
-                    if str2double(Data.singlematout)
-                        X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
-                        U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
-                        Eval_write{e}(:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                        if strcmp(Data.masktype,'dynamic')
-                            mask_write{e}(:,:,q)=maskds;
+                        %velocity smoothing
+                        if Velsmoothswitch==1
+                            [U,V]=VELfilt(U,V,Velsmoothfilt);
                         end
-                    end
-                                       
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+
+                        %velocity interpolation
+                        UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+                        VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+
                         eltime=cputime-t1;
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end
-                    
-                    U=U(:,:,1);V=V(:,:,1);
-                    U=U(:);V=V(:);
-                end
+                        
+                        if strcmp(M,'Deform')
+                            fprintf('deforming images...              ')
+                            t1=cputime;
+                            
+                            %translate pixel locations
+                            XD1 = XI+UI/2;
+                            YD1 = YI+VI/2;
+                            XD2 = XI-UI/2;
+                            YD2 = YI-VI/2;
 
-                if e~=P
+                            %preallocate deformed images
+                            im1d = zeros(L);
+                            im2d = zeros(L);
 
-                    fprintf('interpolating velocity...        ')
-                    t1=cputime;
+                            %cardinal function interpolation
+                            if Iminterp==1
+                                for i=1:L(1)
+                                    for j=1:L(2)
 
-                    %reshape from list of grid points to matrix
-                    X=reshape(X,S(1),S(2));
-                    Y=reshape(Y,S(1),S(2));
-                    U=reshape(U(:,1),S(1),S(2));
-                    V=reshape(V(:,1),S(1),S(2));
+                                        %image 1 interpolation
+                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                            end
+                                        end
 
-                    %velocity smoothing
-                    if Velsmoothswitch==1
-                        [U,V]=VELfilt(U,V,Velsmoothfilt);
-                    end
+                                        %image 2 interpolation
+                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                            end
+                                        end
 
-                    %velocity interpolation
-                    UI = VFinterp(X,Y,U,XI,YI,Velinterp);
-                    VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-
-                    %translate pixel locations
-                    XD1 = XI+UI/2;
-                    YD1 = YI+VI/2;
-                    XD2 = XI-UI/2;
-                    YD2 = YI-VI/2;
-
-                    %output text
-                    eltime=cputime-t1;
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    fprintf('deforming images...              ')
-                    t1=cputime;
-
-                    %preallocate deformed images
-                    im1d = zeros(L);
-                    im2d = zeros(L);
-
-                    %cardinal function interpolation
-                    if Iminterp==1
-
-                        for i=1:L(1)
-                            for j=1:L(2)
-
-                                %image 1 interpolation
-                                nmin=max([1 (round(YD1(i,j))-3)]);
-                                nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                mmin=max([1 (round(XD1(i,j))-3)]);
-                                mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                for n=nmin:nmax
-                                    for m=mmin:mmax
-                                        wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                        im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
                                     end
                                 end
 
-                                %image 2 interpolation
-                                nmin=max([1 (round(YD2(i,j))-3)]);
-                                nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                mmin=max([1 (round(XD2(i,j))-3)]);
-                                mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                for n=nmin:nmax
-                                    for m=mmin:mmax
-                                        wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                        im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                    end
-                                end
+                            %cardinal function interpolation with Blackman filter
+                            elseif Iminterp==2
 
-                            end
-                        end
+                                for i=1:L(1)
+                                    for j=1:L(2)
 
-                    %cardinal function interpolation with Blackman filter
-                    elseif Iminterp==2
+                                        %image 1 interpolation
+                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                                bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                            end
+                                        end
 
-                        for i=1:L(1)
-                            for j=1:L(2)
+                                        %image 2 interpolation
+                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                                bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                            end
+                                        end
 
-                                %image 1 interpolation
-                                nmin=max([1 (round(YD1(i,j))-3)]);
-                                nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                mmin=max([1 (round(XD1(i,j))-3)]);
-                                mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                for n=nmin:nmax
-                                    for m=mmin:mmax
-                                        wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                        bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                        im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                    end
-                                end
-
-                                %image 2 interpolation
-                                nmin=max([1 (round(YD2(i,j))-3)]);
-                                nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                mmin=max([1 (round(XD2(i,j))-3)]);
-                                mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                for n=nmin:nmax
-                                    for m=mmin:mmax
-                                        wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                        bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                        im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
                                     end
                                 end
 
                             end
+
+                            %clip lower values of deformed images
+                            im1d(im1d<0)=0;
+                            im2d(im2d<0)=0;
+                            
+                            im1=im1d; im2=im2d;
+
+                            eltime=cputime-t1;
+                            fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                         end
-
                     end
-
-                    %clip lower values of deformed images
-                    im1d(im1d<0)=0;
-                    im2d(im2d<0)=0;
-
-                    eltime=cputime-t1;
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
             end
             
@@ -810,7 +569,294 @@ switch char(M)
         
         
     case 'Multiframe'
+        
+        for q=1:length(I1)
+            
+            tf=cputime;
+            
+            %output text
+            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
+            fprintf('\n----------------------------------------------------\n')
+            fprintf(['Job: ',Data.batchname,'\n'])
+            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
+            fprintf('----------------------------------------------------\n')
 
+            %load image pair and flip coordinates
+            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
+            im1=flipud(im1);
+            im2=flipud(im2);
+            L=size(im1);
+            
+            %load dynamic mask and flip coordinates
+            if strcmp(Data.masktype,'dynamic')
+                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = flipud(mask);
+            end
+
+            %initialize grid and evaluation matrix
+            [XI,YI]=IMgrid(L,[0 0]);
+
+            UI = BWO(1)*ones(size(XI));
+            VI = BWO(2)*ones(size(XI));
+
+            for e=1:P
+                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+                S=size(X);X=X(:);Y=Y(:);
+                
+                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                maskds=Eval;
+                Eval(Eval==0)=-1;
+                Eval(Eval>0)=0;
+
+                %correlate image pair
+                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                    U=zeros(size(X,1),3);
+                    V=zeros(size(X,1),3);
+                    C=zeros(size(X,1),3);
+                    Eval=repmat(Eval,[1 3]);
+                    C(Eval>=0)=Cc;
+                else
+                    U=zeros(size(X));V=zeros(size(X));C=[];
+                end
+                U(Eval>=0)=Uc;V(Eval>=0)=Vc;
+
+                %validation
+                if Valswitch(e)
+                    %output text
+                    fprintf('validating...                    ')
+                    t1=cputime;
+
+                    if extrapeaks(e)
+                        j=3;
+                    else
+                        j=1;
+                    end
+                    Uval=U(:,1); Vval=V(:,1); Evalval=Eval(:,1);
+                    if ~isempty(C)
+                        Cval=C(:,1);
+                    end
+                    for i=1:j
+                        if Threshswitch(e)
+                            [Uval,Vval,Evalval] = Thresh(X,Y,Uval,Vval,Uthresh(e,:),Vthresh(e,:),Evalval);
+                        end
+                        if UODswitch(e)
+                            t=permute(UODwinsize(e,:,:),[2 3 1]);
+                            t=t(:,t(1,:)~=0);
+                            [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh(e,UODthresh(e,:)~=0)',Evalval);
+                        end
+                        if Bootswitch(e)
+                            [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper(e),Bootiter(e),Bootkmax(e),Evalval);
+                        end
+                        disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
+                        if extrapeaks(e) && i<3
+                            Uval(Evalval>0)=U(Evalval>0,i+1);
+                            Vval(Evalval>0)=V(Evalval>0,i+1);
+                            Evalval(Evalval>0)=Eval(Evalval>0,i+1);
+                            Cval(Evalval>0)=C(Evalval>0,i+1);
+                        end
+                    end
+                    if Writeswitch(e)
+                        if Peakswitch(e)
+                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
+                            if PeakVel(e)
+                                U=[Uval,U(:,1:PeakNum(e))];
+                                V=[Vval,V(:,1:PeakNum(e))];
+                            else
+                                U=Uval; V=Vval;
+                            end
+                            if PeakMag(e)
+                                C=[Cval,C(:,1:PeakNum(e))];
+                            else
+                                C=Cval;
+                            end
+                        else
+                            U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                        end
+                    else
+                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                    end
+                    if i==j
+                        eltime=cputime-t1;
+                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    end
+                end
+                
+                %write output
+                if Writeswitch(e)==1
+                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                        fprintf('saving...                        ')
+                        t1=cputime;
+                    end
+                    
+                    %convert to physical units
+                    X=X*Mag;
+                    Y=Y*Mag;
+                    U=U*Mag/dt;
+                    V=V*Mag/dt;
+
+                    %convert to matrix if necessary
+                    if size(X,2)==1
+                        [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+                    end
+
+                    %remove nans from data, replace with zeros
+                    U(Eval<0)=0;
+                    V(Eval<0)=0;
+
+                    if str2double(Data.pltout)
+                        time=(q-1)/Freq;
+                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                    end
+                    if str2double(Data.multiplematout)
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
+                    end
+                    if str2double(Data.singlematout)
+                        X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
+                        U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
+                        Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
+                        if strcmp(Data.masktype,'dynamic')
+                            mask_write{e}(:,:,q)=maskds;
+                        end
+                    end
+                    
+                    X=X(:);Y=Y(:);
+                    U=U(:,:,1);V=V(:,:,1);
+                    U=U(:);V=V(:);
+
+                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                        eltime=cputime-t1;
+                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    end
+                end
+        
+                if e~=P
+                    %reshape from list of grid points to matrix
+                    X=reshape(X,[S(1),S(2)]);
+                    Y=reshape(Y,[S(1),S(2)]);
+                    U=reshape(U(:,1),[S(1),S(2)]);
+                    V=reshape(V(:,1),S(1),S(2));
+                    
+                    if strcmp(M,'Multigrid') || strcmp(M,'Deform')
+
+                        fprintf('interpolating velocity...        ')
+                        t1=cputime;
+
+                        %velocity smoothing
+                        if Velsmoothswitch==1
+                            [U,V]=VELfilt(U,V,Velsmoothfilt);
+                        end
+
+                        %velocity interpolation
+                        UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+                        VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+
+                        eltime=cputime-t1;
+                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                        
+                        if strcmp(M,'Deform')
+                            fprintf('deforming images...              ')
+                            t1=cputime;
+                            
+                            %translate pixel locations
+                            XD1 = XI+UI/2;
+                            YD1 = YI+VI/2;
+                            XD2 = XI-UI/2;
+                            YD2 = YI-VI/2;
+
+                            %preallocate deformed images
+                            im1d = zeros(L);
+                            im2d = zeros(L);
+
+                            %cardinal function interpolation
+                            if Iminterp==1
+                                for i=1:L(1)
+                                    for j=1:L(2)
+
+                                        %image 1 interpolation
+                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                            end
+                                        end
+
+                                        %image 2 interpolation
+                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                            end
+                                        end
+
+                                    end
+                                end
+
+                            %cardinal function interpolation with Blackman filter
+                            elseif Iminterp==2
+
+                                for i=1:L(1)
+                                    for j=1:L(2)
+
+                                        %image 1 interpolation
+                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                                bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                            end
+                                        end
+
+                                        %image 2 interpolation
+                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                                bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                            end
+                                        end
+
+                                    end
+                                end
+
+                            end
+
+                            %clip lower values of deformed images
+                            im1d(im1d<0)=0;
+                            im2d(im2d<0)=0;
+                            
+                            im1=im1d; im2=im2d;
+
+                            eltime=cputime-t1;
+                            fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                        end
+                    end
+                end
+            end
+            
+            eltime=cputime-tf;
+            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            
+        end
 end
 
 % Write Single .mat File
@@ -991,7 +1037,7 @@ switch upper(tcorr)
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
-
+            
             %apply the image spatial filter
             region1 = (zone1).*sfilt;
             region2 = (zone2).*sfilt;
@@ -1345,11 +1391,11 @@ else
         peakmat=G.*A;
         for i=2:3
             peakmat(peakmat==M(i-1))=0;
-            [M(i),I(i)]=max(max(peakmat));
+            [M(i),I(i)]=max(peakmat(:));
         end
         j=length(M);
     else
-        j=1;
+        j=1;    
     end
 
     for i=1:j
@@ -1449,8 +1495,10 @@ for i=1:S(1)
         if Eval(i,j)==0
             %velocity threshold condition
             if U(i,j)<uthreshold(1) || U(i,j)>uthreshold(2) || V(i,j)<vthreshold(1) || V(i,j)>vthreshold(2)
-                U(i,j)=nan;
-                V(i,j)=nan;
+%                 U(i,j)=nan;
+%                 V(i,j)=nan;
+                U(i,j)=0;
+                V(i,j)=0;
                 Eval(i,j)=100;
             end
         elseif Eval(i,j)==-1
@@ -1616,7 +1664,7 @@ else
     end
 end
 
-function [U,V,Eval] = bootstrapping(x,y,u,v,per,iter,kmax,Eval)
+function [U,V,Eval] = bootstrapping(xin,yin,uin,vin,per,iter,kmax,evalin)
 % Bootstrapping Validation Subfunction 
 %
 % [U,V,Eval] = bootstraping(x,y,u,v,per,iter,kmax,Eval)
@@ -1625,15 +1673,27 @@ function [U,V,Eval] = bootstrapping(x,y,u,v,per,iter,kmax,Eval)
 % iter = number of interpolations per frame (for histogram)
 % kmax = number of passes 
 
-
-n = size(u);
-M = zeros(n(1),n(2),iter);
-
 if nargin<8
-    Eval = zeros(size(x));
+    evalin = zeros(size(xin));
 end
 
-tol = 0.3;
+%vector size
+n_in=size(xin);
+
+%convert to matrix
+if n_in(2)==1
+    [X,Y,U,V,Eval]=matrixform(xin,yin,uin,vin,evalin,[]);
+    n=size(X);
+else
+    U=uin;
+    V=vin;
+    Eval=evalin;
+    n=n_in;
+end
+
+M = zeros(n(1),n(2),iter);
+
+tol = 0.2;
 ktol = 1;
 
 while tol > 0 && ktol <= kmax+1
@@ -1646,17 +1706,17 @@ while tol > 0 && ktol <= kmax+1
         % Data Removal
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-        [m]= bootstrapping_sub(size(u),per,sum(Eval,3));
+        [m]= bootstrapping_dataremove(size(U),per,sum(Eval,3));
 
-        S(:,1) = x(m==1);
-        S(:,2) = y(m==1);
+        S(:,1) = X(m==1);
+        S(:,2) = Y(m==1);
 
-        Up = u(m==1);
-        Vp = v(m==1);
+        Up = U(m==1);
+        Vp = V(m==1);
         M(:,:,i) = m;
         
-        Ui = gridfit(S(:,1),S(:,2),Up,x(1,:),y(:,1));
-        Vi = gridfit(S(:,1),S(:,2),Vp,x(1,:),y(:,1));
+        Ui = gridfit(S(:,1),S(:,2),Up,X(1,:),Y(:,1));
+        Vi = gridfit(S(:,1),S(:,2),Vp,X(1,:),Y(:,1));
         U(:,:,i) = Ui;
         V(:,:,i) = Vi;
 
@@ -1673,11 +1733,11 @@ while tol > 0 && ktol <= kmax+1
                     modeU = HX.U(H.U==max(H.U));
                     modeV = HX.V(H.V==max(H.V));
 
-                    tU = abs((modeU - u(j,k))/modeU);
-                    tV = abs((modeV - v(j,k))/modeV);
+                    tU = abs((modeU - U(j,k))/modeU);
+                    tV = abs((modeV - V(j,k))/modeV);
                     if tU > tol || tV > tol && Eval(j,k) ~= -1
-                        u(j,k) = modeU(1);
-                        v(j,k) = modeV(1);
+                        U(j,k) = modeU(1);
+                        V(j,k) = modeV(1);
                         if Eval(j,k)<200
                             Eval(j,k) = 200;
                         else
@@ -1697,7 +1757,12 @@ while tol > 0 && ktol <= kmax+1
     tol = tol-(tol/(kmax-1))*(ktol-1);
 end
 
-function [M1] = bootstrapping_sub(DSIZE,ENUM,MASK)
+if n_in(2)==1
+    %convert back to vector
+    [U,V,Eval]=vectorform(xin,yin,U,V,Eval);
+end
+
+function [M1] = bootstrapping_dataremove(DSIZE,ENUM,MASK)
 % --- Bootstrapping Data Removal ---
 
 Nx = DSIZE(1);
@@ -1715,6 +1780,434 @@ while sum(M1(:))/(Nx*Ny) < ENUM && EN < 1
 end
 
 M1 = double(M1);
+
+function [zgrid,xgrid,ygrid] = gridfit(x,y,z,xnodes,ynodes,varargin)
+% gridfit: estimates a surface on a 2d grid, based on scattered data
+%          Replicates are allowed. All methods extrapolate to the grid
+%          boundaries. Gridfit uses a modified ridge estimator to
+%          generate the surface, where the bias is toward smoothness.
+%
+%          Gridfit is not an interpolant. Its goal is a smooth surface
+%          that approximates your data, but allows you to control the
+%          amount of smoothing.
+%
+% usage #1: zgrid = gridfit(x,y,z,xnodes,ynodes);
+% usage #2: [zgrid,xgrid,ygrid] = gridfit(x,y,z,xnodes,ynodes);
+% usage #3: zgrid = gridfit(x,y,z,xnodes,ynodes,prop,val,prop,val,...);
+%
+% Arguments: (input)
+%  x,y,z - vectors of equal lengths, containing arbitrary scattered data
+%          The only constraint on x and y is they cannot ALL fall on a
+%          single line in the x-y plane. Replicate points will be treated
+%          in a least squares sense.
+%
+%          ANY points containing a NaN are ignored in the estimation
+%
+%  xnodes - vector defining the nodes in the grid in the independent
+%          variable (x). xnodes need not be equally spaced. xnodes
+%          must completely span the data. If they do not, then the
+%          'extend' property is applied, adjusting the first and last
+%          nodes to be extended as necessary. See below for a complete
+%          description of the 'extend' property.
+%
+%          If xnodes is a scalar integer, then it specifies the number
+%          of equally spaced nodes between the min and max of the data.
+%
+%  ynodes - vector defining the nodes in the grid in the independent
+%          variable (y). ynodes need not be equally spaced.
+%
+%          If ynodes is a scalar integer, then it specifies the number
+%          of equally spaced nodes between the min and max of the data.
+
+% set defaults
+params.smoothness = 1;
+params.interp = 'triangle';
+params.regularizer = 'gradient';
+params.solver = 'normal';
+params.maxiter = [];
+params.extend = 'warning';
+
+% and check for any overrides
+params = parse_pv_pairs(params,varargin);
+
+% check the parameters for acceptability
+% smoothness == 1 by default
+if isempty(params.smoothness)
+  params.smoothness = 1;
+else
+  if (params.smoothness<=0)
+    error 'Smoothness must be real, finite, and positive.'
+  end
+end
+% regularizer  - must be one of 4 options - the second and
+% third are actually synonyms.
+valid = {'springs', 'diffusion', 'laplacian', 'gradient'};
+if isempty(params.regularizer)
+  params.regularizer = 'diffusion';
+end
+ind = strmatch(lower(params.regularizer),valid);
+if (length(ind)==1)
+  params.regularizer = valid{ind};
+else
+  error(['Invalid regularization method: ',params.regularizer])
+end
+
+% interp must be one of:
+%    'bilinear', 'nearest', or 'triangle'
+% but accept any shortening thereof.
+valid = {'bilinear', 'nearest', 'triangle'};
+if isempty(params.interp)
+  params.interp = 'triangle';
+end
+ind = strmatch(lower(params.interp),valid);
+if (length(ind)==1)
+  params.interp = valid{ind};
+else
+  error(['Invalid interpolation method: ',params.interp])
+end
+
+% solver must be one of:
+%    'backslash', '\', 'symmlq', 'lsqr', or 'normal'
+% but accept any shortening thereof.
+valid = {'backslash', '\', 'symmlq', 'lsqr', 'normal'};
+if isempty(params.solver)
+  params.solver = '\';
+end
+ind = strmatch(lower(params.solver),valid);
+if (length(ind)==1)
+  params.solver = valid{ind};
+else
+  error(['Invalid solver option: ',params.solver])
+end
+
+% extend must be one of:
+%    'never', 'warning', 'always'
+% but accept any shortening thereof.
+valid = {'never', 'warning', 'always'};
+if isempty(params.extend)
+  params.extend = 'warning';
+end
+ind = strmatch(lower(params.extend),valid);
+if (length(ind)==1)
+  params.extend = valid{ind};
+else
+  error(['Invalid extend option: ',params.extend])
+end
+
+% ensure all of x,y,z,xnodes,ynodes are column vectors,
+% also drop any NaN data
+x=x(:);
+y=y(:);
+z=z(:);
+k = isnan(x) | isnan(y) | isnan(z);
+if any(k)
+  x(k)=[];
+  y(k)=[];
+  z(k)=[];
+end
+xmin = min(x);
+xmax = max(x);
+ymin = min(y);
+ymax = max(y);
+
+% did they supply a scalar for the nodes?
+if length(xnodes)==1
+  xnodes = linspace(xmin,xmax,xnodes)';
+  xnodes(end) = xmax; % make sure it hits the max
+end
+if length(ynodes)==1
+  ynodes = linspace(ymin,ymax,ynodes)';
+  ynodes(end) = ymax; % make sure it hits the max
+end
+
+xnodes=xnodes(:);
+ynodes=ynodes(:);
+dx = diff(xnodes);
+dy = diff(ynodes);
+nx = length(xnodes);
+ny = length(ynodes);
+ngrid = nx*ny;
+
+% default for maxiter?
+if isempty(params.maxiter)
+  params.maxiter = min(10000,nx*ny);
+end
+
+% check lengths of the data
+n = length(x);
+if (length(y)~=n)||(length(z)~=n)
+  error 'Data vectors are incompatible in size.'
+end
+if n<3
+  error 'Insufficient data for surface estimation.'
+end
+
+% verify the nodes are distinct
+if any(diff(xnodes)<=0)||any(diff(ynodes)<=0)
+  error 'xnodes and ynodes must be monotone increasing'
+end
+
+% do we need to tweak the first or last node in x or y?
+if xmin<xnodes(1)
+    xnodes(1) = xmin;
+end
+if xmax>xnodes(end)
+    xnodes(end) = xmax;
+end
+if ymin<ynodes(1)
+    ynodes(1) = ymin;
+end
+if ymax>ynodes(end)
+    ynodes(end) = ymax;
+end
+
+% only generate xgrid and ygrid if requested.
+if nargout>1
+  [xgrid,ygrid]=meshgrid(xnodes,ynodes);
+end
+
+% determine which cell in the array each point lies in
+[junk,indx] = histc(x,xnodes);
+[junk,indy] = histc(y,ynodes);
+% any point falling at the last node is taken to be
+% inside the last cell in x or y.
+k=(indx==nx);
+indx(k)=indx(k)-1;
+k=(indy==ny);
+indy(k)=indy(k)-1;
+
+% interpolation equations for each point
+tx = min(1,max(0,(x - xnodes(indx))./dx(indx)));
+ty = min(1,max(0,(y - ynodes(indy))./dy(indy)));
+ind = indy + ny*(indx-1);
+% Future enhancement: add cubic interpolant
+switch params.interp
+  case 'triangle'
+    % linear interpolation inside each triangle
+    k = (tx > ty);
+    L = ones(n,1);
+    L(k) = ny;
+    
+    t1 = min(tx,ty);
+    t2 = max(tx,ty);
+    A = sparse(repmat((1:n)',1,3),[ind,ind+ny+1,ind+L], ...
+       [1-t2,t1,t2-t1],n,ngrid);
+    
+  case 'nearest'
+    % nearest neighbor interpolation in a cell
+    k = round(1-ty) + round(1-tx)*ny;
+    A = sparse((1:n)',ind+k,ones(n,1),n,ngrid);
+    
+  case 'bilinear'
+    % bilinear interpolation in a cell
+    A = sparse(repmat((1:n)',1,4),[ind,ind+1,ind+ny,ind+ny+1], ...
+       [(1-tx).*(1-ty), (1-tx).*ty, tx.*(1-ty), tx.*ty], ...
+       n,ngrid);
+    
+end
+rhs = z;
+
+% Build regularizer. Add del^4 regularizer one day.
+switch params.regularizer
+  case 'springs'
+    % zero "rest length" springs
+    [i,j] = meshgrid(1:nx,1:(ny-1));
+    ind = j(:) + ny*(i(:)-1);
+    m = nx*(ny-1);
+    stiffness = 1./dy;
+    Areg = sparse(repmat((1:m)',1,2),[ind,ind+1], ...
+       stiffness(j(:))*[-1 1],m,ngrid);
+    
+    [i,j] = meshgrid(1:(nx-1),1:ny);
+    ind = j(:) + ny*(i(:)-1);
+    m = (nx-1)*ny;
+    stiffness = 1./dx;
+    Areg = [Areg;sparse(repmat((1:m)',1,2),[ind,ind+ny], ...
+       stiffness(i(:))*[-1 1],m,ngrid)];
+    
+    [i,j] = meshgrid(1:(nx-1),1:(ny-1));
+    ind = j(:) + ny*(i(:)-1);
+    m = (nx-1)*(ny-1);
+    stiffness = 1./sqrt(dx(i(:)).^2 + dy(j(:)).^2);
+    Areg = [Areg;sparse(repmat((1:m)',1,2),[ind,ind+ny+1], ...
+       stiffness*[-1 1],m,ngrid)];
+    
+    Areg = [Areg;sparse(repmat((1:m)',1,2),[ind+1,ind+ny], ...
+       stiffness*[-1 1],m,ngrid)];
+    
+  case {'diffusion' 'laplacian'}
+    % thermal diffusion using Laplacian (del^2)
+    [i,j] = meshgrid(1:nx,2:(ny-1));
+    ind = j(:) + ny*(i(:)-1);
+    dy1 = dy(j(:)-1);
+    dy2 = dy(j(:));
+    
+    Areg = sparse(repmat(ind,1,3),[ind-1,ind,ind+1], ...
+      [-2./(dy1.*(dy1+dy2)), 2./(dy1.*dy2), ...
+       -2./(dy2.*(dy1+dy2))],ngrid,ngrid);
+    
+    [i,j] = meshgrid(2:(nx-1),1:ny);
+    ind = j(:) + ny*(i(:)-1);
+    dx1 = dx(i(:)-1);
+    dx2 = dx(i(:));
+    
+    Areg = Areg + sparse(repmat(ind,1,3),[ind-ny,ind,ind+ny], ...
+      [-2./(dx1.*(dx1+dx2)), 2./(dx1.*dx2), ...
+       -2./(dx2.*(dx1+dx2))],ngrid,ngrid);
+    
+  case 'gradient'
+    % Subtly different from the Laplacian. A point for future
+    % enhancement is to do it better for the triangle interpolation
+    % case.
+    [i,j] = meshgrid(1:nx,2:(ny-1));
+    ind = j(:) + ny*(i(:)-1);
+    dy1 = dy(j(:)-1);
+    dy2 = dy(j(:));
+
+    Areg = sparse(repmat(ind,1,3),[ind-1,ind,ind+1], ...
+      [-2./(dy1.*(dy1+dy2)), 2./(dy1.*dy2), ...
+      -2./(dy2.*(dy1+dy2))],ngrid,ngrid);
+
+    [i,j] = meshgrid(2:(nx-1),1:ny);
+    ind = j(:) + ny*(i(:)-1);
+    dx1 = dx(i(:)-1);
+    dx2 = dx(i(:));
+
+    Areg = [Areg;sparse(repmat(ind,1,3),[ind-ny,ind,ind+ny], ...
+      [-2./(dx1.*(dx1+dx2)), 2./(dx1.*dx2), ...
+      -2./(dx2.*(dx1+dx2))],ngrid,ngrid)];
+
+end
+nreg = size(Areg,1);
+
+% Append the regularizer to the interpolation equations,
+% scaling the problem first. Use the 1-norm for speed.
+NA = norm(A,1);
+NR = norm(Areg,1);
+A = [A;Areg*(params.smoothness*NA/NR)];
+rhs = [rhs;zeros(nreg,1)];
+
+% solve the full system, with regularizer attached
+switch params.solver
+  case {'\' 'backslash'}
+    % permute for minimum fill in for R (in the QR)
+    p = colamd(A);
+    zgrid=zeros(ny,nx);
+    zgrid(p) = A(:,p)\rhs;
+    
+  case 'normal'
+    % The normal equations, solved with \. Can be fast
+    % for huge numbers of data points.
+    
+    % Permute for minimum fill-in for \ (in chol)
+    APA = A'*A;
+    p = symamd(APA);
+    zgrid=zeros(ny,nx);
+    zgrid(p) = APA(p,p)\(A(:,p)'*rhs);
+    
+  case 'symmlq'
+    % iterative solver - symmlq - requires a symmetric matrix,
+    % so use it to solve the normal equations. No preconditioner.
+    tol = abs(max(z)-min(z))*1.e-13;
+    [zgrid,flag] = symmlq(A'*A,A'*rhs,tol,params.maxiter);
+    zgrid = reshape(zgrid,ny,nx);
+    
+    % display a warning if convergence problems
+    switch flag
+      case 0
+        % no problems with convergence
+      case 1
+        % SYMMLQ iterated MAXIT times but did not converge.
+        warning(['Symmlq performed ',num2str(params.maxiter), ...
+          ' iterations but did not converge.'])
+      case 3
+        % SYMMLQ stagnated, successive iterates were the same
+        warning 'Symmlq stagnated without apparent convergence.'
+      otherwise
+        warning(['One of the scalar quantities calculated in',...
+          ' symmlq was too small or too large to continue computing.'])
+    end
+    
+  case 'lsqr'
+    % iterative solver - lsqr. No preconditioner here.
+    tol = abs(max(z)-min(z))*1.e-13;
+    [zgrid,flag] = lsqr(A,rhs,tol,params.maxiter);
+    zgrid = reshape(zgrid,ny,nx);
+    
+    % display a warning if convergence problems
+    switch flag
+      case 0
+        % no problems with convergence
+      case 1
+        % lsqr iterated MAXIT times but did not converge.
+        warning(['Lsqr performed ',num2str(params.maxiter), ...
+          ' iterations but did not converge.'])
+      case 3
+        % lsqr stagnated, successive iterates were the same
+        warning 'Lsqr stagnated without apparent convergence.'
+      case 4
+        warning(['One of the scalar quantities calculated in',...
+          ' LSQR was too small or too large to continue computing.'])
+    end
+    
+end
+
+function params=parse_pv_pairs(params,pv_pairs)
+% parse_pv_pairs: parses sets of property value pairs
+% usage: params=parse_pv_pairs(default_params,pv_pairs)
+%
+% arguments: (input)
+%  default_params - structure, with one field for every potential
+%             property/value pair. Each field will contain the default
+%             value for that property. If no default is supplied for a
+%             given property, then that field must be empty.
+%
+%  pv_array - cell array of property/value pairs.
+%             Case is ignored when comparing properties to the list
+%             of field names. Also, any unambiguous shortening of a
+%             field/property name is allowed.
+%
+% arguments: (output)
+%  params   - parameter struct that reflects any updated property/value
+%             pairs in the pv_array.
+
+npv = length(pv_pairs);
+n = npv/2;
+
+if n~=floor(n)
+  error 'Property/value pairs must come in PAIRS.'
+end
+if n<=0
+  % just return the defaults
+  return
+end
+
+if ~isstruct(params)
+  error 'No structure for defaults was supplied'
+end
+
+% there was at least one pv pair. process any supplied
+propnames = fieldnames(params);
+lpropnames = lower(propnames);
+for i=1:n
+  pi = lower(pv_pairs{2*i-1});
+  vi = pv_pairs{2*i};
+  
+  ind = strmatch(pi,lpropnames,'exact');
+  if isempty(ind)
+    ind = strmatch(pi,lpropnames);
+    if isempty(ind)
+      error(['No matching property found for: ',pv_pairs{2*i-1}])
+    elseif length(ind)>1
+      error(['Ambiguous property name: ',pv_pairs{2*i-1}])
+    end
+  end
+  pi = propnames{ind};
+  
+  % override the corresponding default in params
+  params = setfield(params,pi,vi);
+  
+end
 
 function [X,Y,U,V,Eval,C]=matrixform(x,y,u,v,eval,c)
 % --- Vector to Matrix Subfunction ---
@@ -1739,7 +2232,7 @@ for i=1:size(U,3)
         J=find(a==x(n));
         U(I,J,i) = u(n,i);
         V(I,J,i) = v(n,i);
-        Eval(I,J) = eval(n);
+        Eval(I,J,i) = eval(n);
     end
 end
 if ~isempty(c)
@@ -1749,6 +2242,7 @@ if ~isempty(c)
             I= b==y(n);
             J= a==x(n);
             C(I,J,i)=c(n,i);
+            Eval(I,J,i) = eval(n);
         end
     end
 else
@@ -1778,7 +2272,7 @@ for n=1:N
     eval(n) = Eval(I,J);
 end
 
-function []=write_plt_val_C(fname,X,Y,U,V,Eval,C,mask,T,title)
+function []=write_plt_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
 % --- .plt Writer Subfunction ---
 
 %find I,J for plt
@@ -1796,26 +2290,26 @@ if ~isempty(C)
     varnum=varnum+1;
     if size(U,3)>1
         for i=2:size(U,3)
-            varlist=[varlist,', "U',num2str(i),'", "V',num2str(i),'", "C',num2str(i),'"'];
+            varlist=[varlist,', "U',num2str(i-1),'", "V',num2str(i-1),'", "C',num2str(i-1),'"'];
             varnum=varnum+3;
         end
     elseif size(C,3)>1
         for i=2:size(C,3)
-            varlist=[varlist,', "C',num2str(i),'"'];
+            varlist=[varlist,', "C',num2str(i-1),'"'];
             varnum=varnum+1;
         end
     end
 end
-if min(min(mask))<1
-    varlist=[varlist,', "mask"'];
-    varnum=varnum+1;
-end
+% if min(min(mask))<1
+%     varlist=[varlist,', "mask"'];
+%     varnum=varnum+1;
+% end
     
 
 %header lines
 fprintf(fid,['TITLE        = "' title '"\n']);
 fprintf(fid,['VARIABLES    = ',varlist,'\n']);
-fprintf(fid,'ZONE T="Time=%0.6f" I=%i J=%i C=BLACK STRANDID=1 SOLUTIONTIME = %0.6f\n',T,S(2),S(1),T);
+fprintf(fid,'ZONE T="Time=%0.6f" I=%i J=%i C=BLACK STRANDID=%i SOLUTIONTIME = %0.6f\n',T,S(2),S(1),strand,T);
     
 
 %write data
@@ -1854,23 +2348,23 @@ for i=1:S(1)
             end
         end
         
-        if min(min(mask))<1
-            fprintf(fid,' %14.6e',0);
-        end
+%         if min(min(mask))<1
+%             fprintf(fid,' %14.6e',0);
+%         end
         
         fprintf(fid,'\n');
     end
 end
 
-if min(min(mask))<1;
-    %mask zone header lines
-    fprintf(fid,['\nZONE T="mask_Time=%0.6f" I=%i J=%i C=BLACK STRANDID=2 SOLUTIONTIME = %0.6f VARSHARELIST=([1-',num2str(varnum-1),']=1)\n'],T,S(2),S(1),T);
-    for i=1:S(1)
-        for j=1:S(2)
-            fprintf(fid,'%14.6e\n',~mask(i,j));
-        end
-    end
-end
+% if min(min(mask))<1;
+%     %mask zone header lines
+%     fprintf(fid,['\nZONE T="mask_Time=%0.6f" I=%i J=%i C=BLACK STRANDID=2 SOLUTIONTIME = %0.6f VARSHARELIST=([1-',num2str(varnum-1),']=1)\n'],T,S(2),S(1),T);
+%     for i=1:S(1)
+%         for j=1:S(2)
+%             fprintf(fid,'%14.6e\n',~mask(i,j));
+%         end
+%     end
+% end
     
 fclose(fid);
 
