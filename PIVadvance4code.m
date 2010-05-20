@@ -32,11 +32,13 @@ P=str2double(Data.passes);
 Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
 M=Method(str2double(Data.method));
 
-%interpolation and smoothing
+%algorithm options
 Velsmoothswitch=str2double(Data.velsmooth);
 Velsmoothfilt=str2double(Data.velsmoothfilt);
 Velinterp=str2double(Data.velinterp);
 Iminterp=str2double(Data.iminterp);
+Nmax=str2double(Data.framestep);
+ds=0.1;% PIV error (pix)
 
 %physical parameters
 Mag = str2double(Data.wrmag);
@@ -174,7 +176,7 @@ switch char(M)
             [XI,YI]=IMgrid(L,[0 0]);
 
             UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(XI));
+            VI = BWO(2)*ones(size(YI));
 
             for e=1:P
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
@@ -435,142 +437,142 @@ switch char(M)
         end
 
 
-    case 'Ensemble'
-        
-        %initialize grid and evaluation matrix
-        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
-        L=size(im1);
-        [XI,YI]=IMgrid(L,[0 0]);
-        UI = BWO(1)*ones(size(XI));
-        VI = BWO(2)*ones(size(XI));
-            
-        for e=1:P
-
-            %find grid and evaluation matrix for each pass
-            [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-            S=size(X);X=X(:);Y=Y(:);
-            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Eval = reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Eval(Eval==0)=-1;
-            Eval(Eval>0)=0;
-            
-            %downsample mask to fit data grid
-            maskds=mask(Gbuf(e,2):Gres(e,2):size(mask,1)-Gbuf(e,2),Gbuf(e,1):Gres(e,1):size(mask,2)-Gbuf(e,1));
-
-            %initializeoutputs
-            if PeakLoc(e)
-                U=zeros(size(X,1),PeakNum(e)-1);V=zeros(size(X,1),PeakNum(e)-1);
-                U(repmat(Eval>=0,[1 PeakNum(e)-1]))=Uc;
-                V(repmat(Eval>=0,[1 PeakNum(e)-1]))=Vc;
-            end
-            if PeakNum(e)==1 || PeakLoc(e)==0
-                U=zeros(size(X));V=zeros(size(X));
-                U(Eval>=0)=Uc;V(Eval>=0)=Vc;
-            end
-            if PeakNum(e)>1
-                C=zeros(size(X,1),PeakNum(e)-1);
-                C(repmat(Eval>=0,[1 PeakNum(e)-1]))=Cc;
-            else
-                C=[];
-            end
-            
-            %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
-            fprintf('\n----------------------------------------------------\n')
-            fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Ensemble Correlation ' title '\n'])
-            fprintf('----------------------------------------------------\n')
-
-            for q=1:length(I1)
-
-                %load image pair and flip coordinates
-                im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-                im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
-                im1=flipud(im1);
-                im2=flipud(im2);
-                L=size(im1);
-                
-                %correlate image pair and average correlations
-                [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                if q==1
-                    CCm=CC/length(I1);
-                else
-                    CCm=CCm+CC/length(I1);
-                end
-                fprintf(['(' sprintf(['%0.' num2str(length(num2str(length(I1)))) 'i' ],q) '/' num2str(length(I1)) ')\n'])
-
-            end
-            fprintf('----------------------------------------------------\n\n')                       
-                
-            %subpixel estimation of averaged correlation
-            [utemp,vtemp,ctemp]=subpixel(G,Nx,Ny,cnorm,PeakNum,PeakLoc);
-            if PeakNum>1 && PeakLoc
-                U(n,1:PeakNum-1)=utemp;V(n,1:PeakNum-1)=vtemp;C(n,1:PeakNum-1)=ctemp;
-            elseif PeakNum>1 && ~PeakLoc
-                U(n)=utemp;V(n)=vtemp;C(n,1:PeakNum-1)=ctemp;
-            else
-                U(n)=utemp;V(n)=vtemp;
-            end
-            %evaluate subpixel displacement of averaged correlation
-            Z=size(CCm);
-            Uc=zeros(Z(3),1);
-            Vc=zeros(Z(3),1);
-            Cc=zeros(Z(3),1);
-            ZZ=ones(Z(1),Z(2));
-            for s=1:length(Xc)
-                subpixel(G,ccsizex,ccsizey,W,PeakNum,PeakLoc)
-                [Uc(s),Vc(s),Cc(s)]=subpixel_C(CCm(:,:,s),Z(2),Z(1),ZZ,PeakNum);
-            end
-            U(Eval>=0)=Uc+round(Ub(Eval>=0));
-            V(Eval>=0)=Vc+round(Vb(Eval>=0));
-            C(Eval>=0)=Cc;
-
-            %validation
-            if Valswitch(e)==1
-                t=permute(Valsize(e,:,:),[2 3 1]);
-                t=t(:,t(1,:)~=0);
-                [U,V,Eval] = VAL(X,Y,U,V,t',Valthresh(e,Valthresh(e,:)~=0)',Uthresh(e,:),Vthresh(e,:),Eval);
-            end
-
-            %write output
-            if Writeswitch(e)==1
-                %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
-                write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,C,maskds,0,title);
-            end
-            
-            if e~=P
-
-                fprintf('interpolating velocity...        ')
-                t1=cputime;
-
-                %reshape from list of grid points to matrix
-                X=reshape(X,S(1),S(2));
-                Y=reshape(Y,S(1),S(2));
-                U=reshape(U,S(1),S(2));
-                V=reshape(V,S(1),S(2));
-
-                %velocity smoothing
-                if Velsmoothswitch==1
-                    [U,V]=VELfilt(U,V,Velsmoothfilt);
-                end
-
-                %velocity interpolation
-                UI = VFinterp(X,Y,U,XI,YI,Velinterp);
-                VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-
-                %output text
-                eltime=cputime-t1;
-                fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-
-            end
-
-        end
+%     case 'Ensemble'
+%         
+%         %initialize grid and evaluation matrix
+%         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+%         L=size(im1);
+%         [XI,YI]=IMgrid(L,[0 0]);
+%         UI = BWO(1)*ones(size(XI));
+%         VI = BWO(2)*ones(size(XI));
+%             
+%         for e=1:P
+% 
+%             %find grid and evaluation matrix for each pass
+%             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+%             S=size(X);X=X(:);Y=Y(:);
+%             Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%             Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%             Eval = reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%             Eval(Eval==0)=-1;
+%             Eval(Eval>0)=0;
+%             
+%             %downsample mask to fit data grid
+%             maskds=mask(Gbuf(e,2):Gres(e,2):size(mask,1)-Gbuf(e,2),Gbuf(e,1):Gres(e,1):size(mask,2)-Gbuf(e,1));
+% 
+%             %initializeoutputs
+%             if PeakLoc(e)
+%                 U=zeros(size(X,1),PeakNum(e)-1);V=zeros(size(X,1),PeakNum(e)-1);
+%                 U(repmat(Eval>=0,[1 PeakNum(e)-1]))=Uc;
+%                 V(repmat(Eval>=0,[1 PeakNum(e)-1]))=Vc;
+%             end
+%             if PeakNum(e)==1 || PeakLoc(e)==0
+%                 U=zeros(size(X));V=zeros(size(X));
+%                 U(Eval>=0)=Uc;V(Eval>=0)=Vc;
+%             end
+%             if PeakNum(e)>1
+%                 C=zeros(size(X,1),PeakNum(e)-1);
+%                 C(repmat(Eval>=0,[1 PeakNum(e)-1]))=Cc;
+%             else
+%                 C=[];
+%             end
+%             
+%             %output text
+%             title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
+%             fprintf('\n----------------------------------------------------\n')
+%             fprintf(['Job: ',Data.batchname,'\n'])
+%             fprintf(['Ensemble Correlation ' title '\n'])
+%             fprintf('----------------------------------------------------\n')
+% 
+%             for q=1:length(I1)
+% 
+%                 %load image pair and flip coordinates
+%                 im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+%                 im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
+%                 im1=flipud(im1);
+%                 im2=flipud(im2);
+%                 L=size(im1);
+%                 
+%                 %correlate image pair and average correlations
+%                 [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+%                 if q==1
+%                     CCm=CC/length(I1);
+%                 else
+%                     CCm=CCm+CC/length(I1);
+%                 end
+%                 fprintf(['(' sprintf(['%0.' num2str(length(num2str(length(I1)))) 'i' ],q) '/' num2str(length(I1)) ')\n'])
+% 
+%             end
+%             fprintf('----------------------------------------------------\n\n')                       
+%                 
+%             %subpixel estimation of averaged correlation
+%             [utemp,vtemp,ctemp]=subpixel(G,Nx,Ny,cnorm,PeakNum,PeakLoc);
+%             if PeakNum>1 && PeakLoc
+%                 U(n,1:PeakNum-1)=utemp;V(n,1:PeakNum-1)=vtemp;C(n,1:PeakNum-1)=ctemp;
+%             elseif PeakNum>1 && ~PeakLoc
+%                 U(n)=utemp;V(n)=vtemp;C(n,1:PeakNum-1)=ctemp;
+%             else
+%                 U(n)=utemp;V(n)=vtemp;
+%             end
+%             %evaluate subpixel displacement of averaged correlation
+%             Z=size(CCm);
+%             Uc=zeros(Z(3),1);
+%             Vc=zeros(Z(3),1);
+%             Cc=zeros(Z(3),1);
+%             ZZ=ones(Z(1),Z(2));
+%             for s=1:length(Xc)
+%                 subpixel(G,ccsizex,ccsizey,W,PeakNum,PeakLoc)
+%                 [Uc(s),Vc(s),Cc(s)]=subpixel_C(CCm(:,:,s),Z(2),Z(1),ZZ,PeakNum);
+%             end
+%             U(Eval>=0)=Uc+round(Ub(Eval>=0));
+%             V(Eval>=0)=Vc+round(Vb(Eval>=0));
+%             C(Eval>=0)=Cc;
+% 
+%             %validation
+%             if Valswitch(e)==1
+%                 t=permute(Valsize(e,:,:),[2 3 1]);
+%                 t=t(:,t(1,:)~=0);
+%                 [U,V,Eval] = VAL(X,Y,U,V,t',Valthresh(e,Valthresh(e,:)~=0)',Uthresh(e,:),Vthresh(e,:),Eval);
+%             end
+% 
+%             %write output
+%             if Writeswitch(e)==1
+%                 %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
+%                 write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,C,maskds,0,title);
+%             end
+%             
+%             if e~=P
+% 
+%                 fprintf('interpolating velocity...        ')
+%                 t1=cputime;
+% 
+%                 %reshape from list of grid points to matrix
+%                 X=reshape(X,S(1),S(2));
+%                 Y=reshape(Y,S(1),S(2));
+%                 U=reshape(U,S(1),S(2));
+%                 V=reshape(V,S(1),S(2));
+% 
+%                 %velocity smoothing
+%                 if Velsmoothswitch==1
+%                     [U,V]=VELfilt(U,V,Velsmoothfilt);
+%                 end
+% 
+%                 %velocity interpolation
+%                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+%                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+% 
+%                 %output text
+%                 eltime=cputime-t1;
+%                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+% 
+%             end
+% 
+%         end
         
         
     case 'Multiframe'
         
-        for q=1:length(I1)
+        for q=3:length(I1)
             
             tf=cputime;
             
@@ -581,13 +583,22 @@ switch char(M)
             fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
             fprintf('----------------------------------------------------\n')
 
-            %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
-            im1=flipud(im1);
-            im2=flipud(im2);
+            %load image pairs and flip coordinates
+            if q-Nmax<1 && q+Nmax>length(I1)
+                j=min([q,length(I1)-q+1]);
+            elseif q-Nmax<1
+                j=q;
+            elseif q+Nmax>length(I1)
+                j=length(I1)-q+1;
+            else
+                j=Nmax+1;
+            end
+            for i=1:j
+                im1(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q-i+1))]))-IMmin);
+                im2(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q+i-1))]))-IMmin);
+            end
             L=size(im1);
-            
+
             %load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
                 mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
@@ -598,7 +609,7 @@ switch char(M)
             [XI,YI]=IMgrid(L,[0 0]);
 
             UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(XI));
+            VI = BWO(2)*ones(size(YI));
 
             for e=1:P
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
@@ -610,7 +621,7 @@ switch char(M)
                 maskds=Eval;
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
-
+                
                 %correlate image pair
                 [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
@@ -732,125 +743,7 @@ switch char(M)
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                     end
                 end
-        
-                if e~=P
-                    %reshape from list of grid points to matrix
-                    X=reshape(X,[S(1),S(2)]);
-                    Y=reshape(Y,[S(1),S(2)]);
-                    U=reshape(U(:,1),[S(1),S(2)]);
-                    V=reshape(V(:,1),S(1),S(2));
-                    
-                    if strcmp(M,'Multigrid') || strcmp(M,'Deform')
 
-                        fprintf('interpolating velocity...        ')
-                        t1=cputime;
-
-                        %velocity smoothing
-                        if Velsmoothswitch==1
-                            [U,V]=VELfilt(U,V,Velsmoothfilt);
-                        end
-
-                        %velocity interpolation
-                        UI = VFinterp(X,Y,U,XI,YI,Velinterp);
-                        VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                        
-                        if strcmp(M,'Deform')
-                            fprintf('deforming images...              ')
-                            t1=cputime;
-                            
-                            %translate pixel locations
-                            XD1 = XI+UI/2;
-                            YD1 = YI+VI/2;
-                            XD2 = XI-UI/2;
-                            YD2 = YI-VI/2;
-
-                            %preallocate deformed images
-                            im1d = zeros(L);
-                            im2d = zeros(L);
-
-                            %cardinal function interpolation
-                            if Iminterp==1
-                                for i=1:L(1)
-                                    for j=1:L(2)
-
-                                        %image 1 interpolation
-                                        nmin=max([1 (round(YD1(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1 (round(XD1(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                            end
-                                        end
-
-                                        %image 2 interpolation
-                                        nmin=max([1 (round(YD2(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1 (round(XD2(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                            end
-                                        end
-
-                                    end
-                                end
-
-                            %cardinal function interpolation with Blackman filter
-                            elseif Iminterp==2
-
-                                for i=1:L(1)
-                                    for j=1:L(2)
-
-                                        %image 1 interpolation
-                                        nmin=max([1 (round(YD1(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1 (round(XD1(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                            end
-                                        end
-
-                                        %image 2 interpolation
-                                        nmin=max([1 (round(YD2(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1 (round(XD2(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                            end
-                                        end
-
-                                    end
-                                end
-
-                            end
-
-                            %clip lower values of deformed images
-                            im1d(im1d<0)=0;
-                            im2d(im2d<0)=0;
-                            
-                            im1=im1d; im2=im2d;
-
-                            eltime=cputime-t1;
-                            fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                        end
-                    end
-                end
             end
             
             eltime=cputime-tf;
