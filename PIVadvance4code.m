@@ -190,7 +190,7 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),ds);
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                     U=zeros(size(X,1),3);
                     V=zeros(size(X,1),3);
@@ -572,7 +572,7 @@ switch char(M)
         
     case 'Multiframe'
         
-        for q=3:length(I1)
+        for q=1:length(I1)
             
             tf=cputime;
             
@@ -583,6 +583,12 @@ switch char(M)
             fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
             fprintf('----------------------------------------------------\n')
 
+            %load dynamic mask and flip coordinates
+            if strcmp(Data.masktype,'dynamic')
+                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = flipud(mask);
+            end
+            
             %load image pairs and flip coordinates
             if q-Nmax<1 && q+Nmax>length(I1)
                 j=min([q,length(I1)-q+1]);
@@ -593,27 +599,22 @@ switch char(M)
             else
                 j=Nmax+1;
             end
+            im1=zeros(size(mask,1),size(mask,2),j); im2=im1;
             for i=1:j
                 im1(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q-i+1))]))-IMmin);
                 im2(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q+i-1))]))-IMmin);
             end
             L=size(im1);
 
-            %load dynamic mask and flip coordinates
-            if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
-                mask = flipud(mask);
-            end
-
             %initialize grid and evaluation matrix
             [XI,YI]=IMgrid(L,[0 0]);
 
-            UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(YI));
+            UI = zeros(size(XI));
+            VI = zeros(size(YI));
 
             for e=1:P
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
+                X=X(:);Y=Y(:);
                 
                 Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
@@ -623,7 +624,7 @@ switch char(M)
                 Eval(Eval>0)=0;
                 
                 %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),ds);
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                     U=zeros(size(X,1),3);
                     V=zeros(size(X,1),3);
@@ -733,10 +734,6 @@ switch char(M)
                             mask_write{e}(:,:,q)=maskds;
                         end
                     end
-                    
-                    X=X(:);Y=Y(:);
-                    U=U(:,:,1);V=V(:,:,1);
-                    U=U(:);V=V(:);
 
                     if str2double(Data.pltout) || str2double(Data.multiplematout)
                         eltime=cputime-t1;
@@ -777,7 +774,7 @@ beep,pause(0.2),beep
 %                           END MAIN FUNCTION                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin,Peakswitch)
+function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin,Peakswitch,ds)
 % --- DPIV Correlation ---
 t1=cputime;
 
@@ -785,6 +782,11 @@ t1=cputime;
 im1=double(im1);
 im2=double(im2);
 L = size(im1);
+if size(im1,3)>1
+    Peakreturn=1;
+else
+    Peakreturn=Peakswitch;
+end
 
 %convert to gridpoint list
 X=X(:);
@@ -861,38 +863,58 @@ switch upper(tcorr)
             ymin2 = y2-Ny/2+1;
             ymax2 = y2+Ny/2;
 
-            %find the image windows
-            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
-            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
-            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
-                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
-                zone1 = w1;
-            end
-            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
-                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
-                zone2 = w2;
-            end
-            
-            %apply the image spatial filter
-            region1 = (zone1).*sfilt;
-            region2 = (zone2).*sfilt;
+            for t=1:size(im1,3)
+                dt=2*t-1;
+                
+                %find the image windows
+                zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]), t);
+                zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]), t);
+                if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                    w1 = zeros(Ny,Nx);
+                    w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                    zone1 = w1;
+                end
+                if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                    w2 = zeros(Ny,Nx);
+                    w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                    zone2 = w2;
+                end
 
-            %FFTs and Cross-Correlation
-            f1   = fftn(region1,[Sy Sx]);
-            f2   = fftn(region2,[Sy Sx]);
-            P21  = f2.*conj(f1);
+                %apply the image spatial filter
+                region1 = (zone1).*sfilt;
+                region2 = (zone2).*sfilt;
 
-            %Standard Fourier Based Cross-Correlation
-            G = ifftn(P21,'symmetric');
-            G = G(fftindy,fftindx);
-            G = abs(G);
-            
-            %subpixel estimation
-            [U(n,:),V(n,:),ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
+                %FFTs and Cross-Correlation
+                f1   = fftn(region1,[Sy Sx]);
+                f2   = fftn(region2,[Sy Sx]);
+                P21  = f2.*conj(f1);
+
+                %Standard Fourier Based Cross-Correlation
+                G = ifftn(P21,'symmetric');
+                G = G(fftindy,fftindx);
+                G = abs(G);
+
+                %subpixel estimation
+                [Utemp(t,:),Vtemp(t,:),Ctemp(t,:)]=subpixel(G,Nx,Ny,cnorm,Peakreturn);
+                Utemp(t,:)=Utemp(t,:)/dt;Vtemp(t,:)=Vtemp(t,:)/dt;
+                if Peakreturn
+                    velmag=sqrt(Utemp(t,1)^2+Vtemp(t,1)^2);
+                    Qp(t)=Ctemp(t,1)/Ctemp(t,2)*(1-ds/velmag);
+                else
+                    Qp(t)=-1;
+                end
+            end
+            [temp,t_opt]=max(Qp);
+            if t_opt~=1
+                keyboard
+            end
             if Peakswitch
-                C(n,:)=ctemp;
+                U(n,:)=Utemp(t_opt,:);
+                V(n,:)=Vtemp(t_opt,:);
+                C(n,:)=Ctemp(t_opt,:);
+            else
+                U(n)=Utemp(t_opt,1);
+                V(n)=Vtemp(t_opt,1);
             end
         end
 
@@ -916,45 +938,65 @@ switch upper(tcorr)
             ymax1 = y1+Ny/2;
             ymin2 = y2-Ny/2+1;
             ymax2 = y2+Ny/2;
-
-            %find the image windows
-            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
-            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
-            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
-                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
-                zone1 = w1;
-            end
-            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
-                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
-                zone2 = w2;
-            end
             
-            %apply the image spatial filter
-            region1 = (zone1).*sfilt;
-            region2 = (zone2).*sfilt;
+             for t=1:size(im1,3)
+                dt=2*t-1;
 
-            %FFTs and Cross-Correlation
-            f1   = fftn(region1,[Sy Sx]);
-            f2   = fftn(region2,[Sy Sx]);
-            P21  = f2.*conj(f1);
+                %find the image windows
+                zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
+                zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
+                if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                    w1 = zeros(Ny,Nx);
+                    w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                    zone1 = w1;
+                end
+                if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                    w2 = zeros(Ny,Nx);
+                    w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                    zone2 = w2;
+                end
 
-            %Phase Correlation
-            W = ones(Sy,Sx);
-            Wden = sqrt(P21.*conj(P21));
-            W(P21~=0) = Wden(P21~=0);
-            R = P21./W;
+                %apply the image spatial filter
+                region1 = (zone1).*sfilt;
+                region2 = (zone2).*sfilt;
 
-            %Robust Phase Correlation with spectral energy filter
-            G = ifftn(R.*spectral,'symmetric');
-            G = G(fftindy,fftindx);
-            G = abs(G);
+                %FFTs and Cross-Correlation
+                f1   = fftn(region1,[Sy Sx]);
+                f2   = fftn(region2,[Sy Sx]);
+                P21  = f2.*conj(f1);
 
-            %subpixel estimation
-            [U(n,:),V(n,:),ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
+                %Phase Correlation
+                W = ones(Sy,Sx);
+                Wden = sqrt(P21.*conj(P21));
+                W(P21~=0) = Wden(P21~=0);
+                R = P21./W;
+
+                %Robust Phase Correlation with spectral energy filter
+                G = ifftn(R.*spectral,'symmetric');
+                G = G(fftindy,fftindx);
+                G = abs(G);
+                
+                %subpixel estimation
+                [Utemp(t,:),Vtemp(t,:),Ctemp(t,:)]=subpixel(G,Nx,Ny,cnorm,Peakreturn);
+                Utemp(t,:)=Utemp(t,:)/dt;Vtemp(t,:)=Vtemp(t,:)/dt;
+                if Peakreturn
+                    velmag=sqrt(Utemp(t,1)^2+Vtemp(t,1)^2);
+                    Qp(t)=Ctemp(t,1)/Ctemp(t,2)*(1-ds/velmag);
+                else
+                    Qp(t)=-1;
+                end
+             end
+            [temp,t_opt]=max(Qp);
+            if t_opt~=1
+                keyboard
+            end
             if Peakswitch
-                C(n,:)=ctemp;
+                U(n,:)=Utemp(t_opt,:);
+                V(n,:)=Vtemp(t_opt,:);
+                C(n,:)=Ctemp(t_opt,:);
+            else
+                U(n)=Utemp(t_opt,1);
+                V(n)=Vtemp(t_opt,1);
             end
         end
 end
@@ -1586,7 +1628,7 @@ end
 
 M = zeros(n(1),n(2),iter);
 
-tol = 0.2;
+tol = 0.3;
 ktol = 1;
 
 while tol > 0 && ktol <= kmax+1
