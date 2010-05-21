@@ -2363,7 +2363,7 @@ for i=1:str2double(Data.passes)
         fprintf(fid,['Save Add. Peak Info?:          ',y_n{str2double(A.savepeakinfo)+1},'\n']);
         if str2double(A.savepeakinfo)
             peaks={'1','1,2','1,2,3'};
-            fprintf(fid,['Save Data for Peaks:           ',peaks{str2double(corrpeaknum)},'\n']);
+            fprintf(fid,['Save Data for Peaks:           ',peaks{str2double(A.corrpeaknum)},'\n']);
             fprintf(fid,['Save Peak Magnitude?:          ',y_n{str2double(A.savepeakmag)+1},'\n']);
             fprintf(fid,['Save Resulting Vel.?:          ',y_n{str2double(A.savepeakvel)+1},'\n']);
         end

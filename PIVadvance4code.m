@@ -185,8 +185,8 @@ switch char(M)
                 
                 Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                maskds=Eval;
+                maskds=downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))';
+                Eval=reshape(maskds,length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
 
@@ -288,7 +288,7 @@ switch char(M)
 
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
@@ -317,7 +317,7 @@ switch char(M)
                     X=reshape(X,[S(1),S(2)]);
                     Y=reshape(Y,[S(1),S(2)]);
                     U=reshape(U(:,1),[S(1),S(2)]);
-                    V=reshape(V(:,1),S(1),S(2));
+                    V=reshape(V(:,1),[S(1),S(2)]);
                     
                     if strcmp(M,'Multigrid') || strcmp(M,'Deform')
 
@@ -539,7 +539,7 @@ switch char(M)
 %             %write output
 %             if Writeswitch(e)==1
 %                 %write_dat_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
-%                 write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,C,maskds,0,title);
+%                 write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,C,maskds,e,0,title);
 %             end
 %             
 %             if e~=P
@@ -619,8 +619,8 @@ switch char(M)
                 
                 Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                maskds=Eval;
+                maskds=downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))';
+                Eval=reshape(maskds,length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
                 
@@ -722,7 +722,7 @@ switch char(M)
 
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
@@ -2208,7 +2208,7 @@ for n=1:N
     eval(n) = Eval(I,J);
 end
 
-function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
+function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,mask,strand,T,title)
 % --- .dat Writer Subfunction ---
 
 %find I,J for plt
@@ -2220,26 +2220,26 @@ if fid==-1
     error(['error creating file ',fname])
 end
 
-varlist='"X", "Y", "U", "V", "Eval"';varnum=5;
+varlist='"X" "Y" "U" "V" "Eval"';varnum=5;
 if ~isempty(C)
     varlist=[varlist,' "C"'];
     varnum=varnum+1;
     if size(U,3)>1
         for i=2:size(U,3)
-            varlist=[varlist,', "U',num2str(i-1),'", "V',num2str(i-1),'", "C',num2str(i-1),'"'];
+            varlist=[varlist,' "U',num2str(i-1),'" "V',num2str(i-1),'" "C',num2str(i-1),'"'];
             varnum=varnum+3;
         end
     elseif size(C,3)>1
         for i=2:size(C,3)
-            varlist=[varlist,', "C',num2str(i-1),'"'];
+            varlist=[varlist,' "C',num2str(i-1),'"'];
             varnum=varnum+1;
         end
     end
 end
-% if min(min(mask))<1
-%     varlist=[varlist,', "mask"'];
-%     varnum=varnum+1;
-% end
+if min(min(mask))<1
+    varlist=[varlist,' "mask"'];
+    varnum=varnum+1;
+end
     
 
 %header lines
@@ -2284,9 +2284,9 @@ for i=1:S(1)
             end
         end
         
-%         if min(min(mask))<1
-%             fprintf(fid,' %14.6e',0);
-%         end
+        if min(min(mask))<1
+            fprintf(fid,' %14.6e',~mask(i,j));
+        end
         
         fprintf(fid,'\n');
     end
