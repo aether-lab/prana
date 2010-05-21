@@ -41,24 +41,8 @@
    </packaging>
    <MATLABPath>
       <Directory>$(MATLABROOT)/toolbox/compiler/deploy</Directory>
-      <Directory>W:\bdrew\PIVadvance4</Directory>
-      <Directory>C:\Documents and Settings\bdrew\My Documents\MATLAB</Directory>
-      <Directory>C:\matlab functions</Directory>
-      <Directory>C:\matlab functions\3pi</Directory>
-      <Directory>C:\matlab functions\PIVcode2007</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\3pi</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\3pi\version1</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\3pi\version2</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\Edge Detection Algorithmns</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\PIVadvance</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\PIVadvance2</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\PIVoption</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\POD</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\POD reconstruction function</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\Read_Write</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\Validation</Directory>
-      <Directory>C:\matlab functions\PIVcode2007\vortex ID function</Directory>
-      <Directory>W:\bdrew\Summer08\particle sizing 2008-2-08</Directory>
+      <Directory>$(PROJECTDIR)/</Directory>
+      <Directory>C:\Users\bdrew\Documents\MATLAB</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/general</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/ops</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/lang</Directory>
@@ -87,7 +71,7 @@
       <Directory>$(MATLABROOT)/toolbox/matlab/codetools</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/helptools</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/winfun</Directory>
-      <Directory>$(MATLABROOT)/toolbox/matlab/winfun/net</Directory>
+      <Directory>$(MATLABROOT)/toolbox/matlab/winfun/NET</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/demos</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/timeseries</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/hds</Directory>
@@ -116,7 +100,7 @@
       <Directory>$(MATLABROOT)/toolbox/shared/sigbldr</Directory>
       <Directory>$(MATLABROOT)/toolbox/simulink/simulink/modeladvisor</Directory>
       <Directory>$(MATLABROOT)/toolbox/simulink/simulink/modeladvisor/fixpt</Directory>
-      <Directory>$(MATLABROOT)/toolbox/simulink/simulink/mplayio</Directory>
+      <Directory>$(MATLABROOT)/toolbox/simulink/simulink/MPlayIO</Directory>
       <Directory>$(MATLABROOT)/toolbox/simulink/simulink/dataobjectwizard</Directory>
       <Directory>$(MATLABROOT)/toolbox/shared/hdlshared</Directory>
       <Directory>$(MATLABROOT)/toolbox/rtw/accel</Directory>
@@ -131,10 +115,10 @@
       <Directory>$(MATLABROOT)/toolbox/rtw/targets/common/tgtcommon</Directory>
       <Directory>$(MATLABROOT)/toolbox/rtw/targets/connectivity</Directory>
       <Directory>$(MATLABROOT)/toolbox/rtw/targets/pil</Directory>
-      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/datadiff/gui</Directory>
-      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/datadiff/gui/icons</Directory>
-      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/datadiff/api</Directory>
-      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/cgv/api</Directory>
+      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/datadiff/GUI</Directory>
+      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/datadiff/GUI/Icons</Directory>
+      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/datadiff/API</Directory>
+      <Directory>$(MATLABROOT)/toolbox/rtw/rtw/cgv/API</Directory>
       <Directory>$(MATLABROOT)/toolbox/bioinfo/bioinfo</Directory>
       <Directory>$(MATLABROOT)/toolbox/bioinfo/biolearning</Directory>
       <Directory>$(MATLABROOT)/toolbox/bioinfo/microarray</Directory>
@@ -270,8 +254,8 @@
       <Directory>$(MATLABROOT)/toolbox/physmod/pmir/pmir</Directory>
       <Directory>$(MATLABROOT)/toolbox/physmod/pm_sli/pm_sli</Directory>
       <Directory>$(MATLABROOT)/toolbox/physmod/pm_visimpl/pm_visimpl</Directory>
-      <Directory>$(MATLABROOT)/toolbox/physmod/powersys/dr/dr</Directory>
-      <Directory>$(MATLABROOT)/toolbox/physmod/powersys/dr/drdemo</Directory>
+      <Directory>$(MATLABROOT)/toolbox/physmod/powersys/DR/DR</Directory>
+      <Directory>$(MATLABROOT)/toolbox/physmod/powersys/DR/DRdemo</Directory>
       <Directory>$(MATLABROOT)/toolbox/physmod/powersys/drives/drives</Directory>
       <Directory>$(MATLABROOT)/toolbox/physmod/powersys/drives/drivesdemo</Directory>
       <Directory>$(MATLABROOT)/toolbox/physmod/powersys/facts/facts</Directory>

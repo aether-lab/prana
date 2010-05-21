@@ -16,7 +16,7 @@ The file W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\mccExcludedFi
 3 item(s) added. 
 Generating MATLAB path for the compiled application... 
 Created 48 path items. 
-Begin validation of MEX files: Fri May 21 11:08:41 2010  
+Begin validation of MEX files: Fri May 21 14:59:38 2010  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\images\bin\win32\libippmw.dll'.  
 No conflicting M-file found.  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\images\images\private\imfilter_mex.mexw32'.  
@@ -48,7 +48,7 @@ Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobol
 No conflicting M-file found.  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobolSequence.mexw32'.  
 No conflicting M-file found.  
-End validation of MEX files: Fri May 21 11:08:42 2010  
+End validation of MEX files: Fri May 21 14:59:38 2010  
 Parsing file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
 	(Referenced from: "Compiler Command Line").  
 Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\deployprint.m" 
@@ -56,34 +56,34 @@ Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\deployprint
 Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\printdlg.m" 
 	(Referenced from: "Compiler Command Line").  
 Deleting 14 temporary MEX authorization files.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_25530_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_28448_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_4223_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_5338_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_29908_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_32764_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_21145_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_23155_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_29405_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_32506_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_23268_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_6592_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_29286_564.auth'.  
-Removing: 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_4980_564.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_931_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_22498_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_3135_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_20742_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_15753_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_28360_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_15955_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_26153_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_1471_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_24512_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_11543_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_9342_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_2466_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_29918_1940.auth'.  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\readme.txt".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c".  
-Contents of temporary response file 'C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_32629':  
+Contents of temporary response file 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_25311':  
  ......................  
 ' -O -v -output "PIVadvance4" -I"W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c" -link exe  -env MCR_DELAYLOAD=/delayload:mclmcrrt710.dll -env MCR_DELAYLIB=delayimp.lib -outdir "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src"'  
 ......................  
-Executing command: mbuild  "@C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_32629"  
+Executing command: mbuild  "@C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_25311"  
  This is mbuild Copyright 1984-2006 The MathWorks, Inc. 
  
--> Default options filename found in C:\Documents and Settings\bdrew\Application Data\MathWorks\MATLAB\R2009a 
+-> Default options filename found in C:\Users\bdrew\AppData\Roaming\MathWorks\MATLAB\R2009a 
 ---------------------------------------------------------------- 
-->    Options file           = C:\Documents and Settings\bdrew\Application Data\MathWorks\MATLAB\R2009a\compopts.bat 
+->    Options file           = C:\Users\bdrew\AppData\Roaming\MathWorks\MATLAB\R2009a\compopts.bat 
 ->    COMPILER               = lcc 
 ->    Compiler flags: 
          COMPFLAGS           = -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup 
@@ -105,25 +105,25 @@ Executing command: mbuild  "@C:\DOCUME~1\bdrew\LOCALS~1\Temp\mathworks_tmp_564_3
 ---------------------------------------------------------------- 
  
  
---> lcc  -IW:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup -FoC:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\PIVadvance4_main.obj -IC:\PROGRA~1\MATLAB\R2009a\extern\include -IC:\PROGRA~1\MATLAB\R2009a\simulink\include -DNDEBUG W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c 
+--> lcc  -IW:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup -FoC:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\PIVadvance4_main.obj -IC:\PROGRA~1\MATLAB\R2009a\extern\include -IC:\PROGRA~1\MATLAB\R2009a\simulink\include -DNDEBUG W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c 
  
  
---> lcc  -IW:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup -FoC:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\PIVadvance4_delay_load.obj -IC:\PROGRA~1\MATLAB\R2009a\extern\include -IC:\PROGRA~1\MATLAB\R2009a\simulink\include -DNDEBUG W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c 
+--> lcc  -IW:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup -FoC:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\PIVadvance4_delay_load.obj -IC:\PROGRA~1\MATLAB\R2009a\extern\include -IC:\PROGRA~1\MATLAB\R2009a\simulink\include -DNDEBUG W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c 
  
 Warning W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c: 21  static `void function(void) FailedToLoadMCR' is not referenced 
 0 errors, 1 warnings 
  
---> lcc  -IW:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup -FoC:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\PIVadvance4_mcc_component_data.obj -IC:\PROGRA~1\MATLAB\R2009a\extern\include -IC:\PROGRA~1\MATLAB\R2009a\simulink\include -DNDEBUG W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c 
+--> lcc  -IW:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC -c -Zp8 -I"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\include" -noregistrylookup -FoC:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\PIVadvance4_mcc_component_data.obj -IC:\PROGRA~1\MATLAB\R2009a\extern\include -IC:\PROGRA~1\MATLAB\R2009a\simulink\include -DNDEBUG W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c 
  
-    Contents of C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\mbuild_tmp.rsp: 
-  C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\PIVadvance4_main.obj  C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\PIVadvance4_delay_load.obj  C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\PIVadvance4_mcc_component_data.obj 
- 
- 
---> lcclnk -o "W:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC\PIVadvance4.exe" -tmpdir "W:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC\." -L"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\lib" -libpath "C:\PROGRA~1\MATLAB\R2009a\extern\lib\win32\lcc"  @C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\MBUILD~1.RSP  mclmcrrt.lib 
+    Contents of C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\mbuild_tmp.rsp: 
+  C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\PIVadvance4_main.obj  C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\PIVadvance4_delay_load.obj  C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\PIVadvance4_mcc_component_data.obj 
  
  
---> "if exist C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\templib.def del C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\templib.def" 
+--> lcclnk -o "W:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC\PIVadvance4.exe" -tmpdir "W:\MATLAB~1\PIVADV~1\PIVADV~3\PIVADV~1\SRC\." -L"C:\PROGRA~1\MATLAB\R2009a\sys\lcc\lib" -libpath "C:\PROGRA~1\MATLAB\R2009a\extern\lib\win32\lcc"  @C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\MBUILD~1.RSP  mclmcrrt.lib 
  
  
---> "if exist C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\templib_stub.obj del C:\DOCUME~1\BDREW\LOCALS~1\TEMP\MBUILD~1\templib_stub.obj" 
+--> "if exist C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\templib.def del C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\templib.def" 
+ 
+ 
+--> "if exist C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\templib_stub.obj del C:\USERS\BDREW\APPDATA\LOCAL\TEMP\MBUILD~1\templib_stub.obj" 
  

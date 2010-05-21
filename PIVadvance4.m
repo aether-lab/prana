@@ -947,6 +947,10 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- ? Button Next to Algorithm Drop-Down Menu ---
+function algorithmhelp_Callback(hObject, eventdata, handles)
+PIVhelp(4)
+
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -1221,6 +1225,10 @@ if str2double(handles.Njob)>0
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
+
+% --- ? Button Next to Validation Options ---
+function validationhelp_Callback(hObject, eventdata, handles)
+PIVhelp(6)
 
 % --- Universal Outlier Detection Checkbox ---
 function uodcheckbox_Callback(hObject, eventdata, handles)

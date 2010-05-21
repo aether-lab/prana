@@ -1,6 +1,6 @@
 /*
  * MATLAB Compiler: 4.10 (R2009a)
- * Date: Fri May 21 11:08:54 2010
+ * Date: Fri May 21 14:59:46 2010
  * Arguments: "-B" "macro_default" "-o" "PIVadvance4" "-W"
  * "WinMain:PIVadvance4" "-d"
  * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "-T" "link:exe"
@@ -75,7 +75,7 @@ bool MW_CALL_CONV PIVadvance4InitializeWithHandlers(
                                                      &__MCC_PIVadvance4_component_data,
                                                      true, NoObjectType,
                                                      ExeTarget, error_handler,
-                                                     print_handler, 1078691, NULL))
+                                                     print_handler, 1080740, NULL))
     return false;
   return true;
 }

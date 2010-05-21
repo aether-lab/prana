@@ -1,6 +1,6 @@
 /*
  * MATLAB Compiler: 4.10 (R2009a)
- * Date: Fri May 21 11:08:54 2010
+ * Date: Fri May 21 14:59:46 2010
  * Arguments: "-B" "macro_default" "-o" "PIVadvance4" "-W"
  * "WinMain:PIVadvance4" "-d"
  * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "-T" "link:exe"
@@ -13,24 +13,24 @@
 extern "C" {
 #endif
 const unsigned char __MCC_PIVadvance4_session_key[] = {
-    '5', 'E', '6', '3', 'E', 'A', '6', 'C', 'E', '5', '2', 'A', 'A', '2', 'A',
-    '0', 'A', 'A', 'A', '5', '7', '2', 'F', '5', '4', '8', 'B', '0', '8', 'E',
-    'E', 'B', '5', 'E', '2', 'A', '9', 'C', 'F', '6', '2', '7', 'E', '1', '1',
-    '7', '5', 'D', '1', 'D', 'B', '5', '3', '5', 'F', '8', 'D', 'B', 'F', '3',
-    '8', '6', '1', 'E', '4', 'E', 'D', '0', 'F', '3', '4', '6', '3', 'B', 'C',
-    '5', '8', '5', '8', '4', '4', '6', 'F', '4', 'D', 'C', '7', 'F', '3', '9',
-    '7', '8', '7', '9', 'E', 'A', 'E', '9', '8', 'B', '1', '6', '7', '6', '9',
-    '4', '9', '2', '1', 'F', 'B', '0', 'D', '9', '4', '1', '9', '8', '6', '7',
-    '3', 'A', 'C', '1', '0', '0', '3', '1', '6', '3', '5', '6', 'B', '0', 'C',
-    'D', 'E', 'D', '3', '9', '5', '2', '9', '6', '4', '7', '6', 'C', '7', '1',
-    '7', '7', '5', 'D', 'C', 'A', 'B', 'C', '1', '0', '5', '6', '5', '3', '3',
-    '5', 'F', 'C', '7', 'E', 'E', '0', 'B', '4', 'E', 'F', '7', 'C', 'B', '8',
-    'C', '3', 'F', '7', 'B', '2', '2', 'E', '2', '1', '6', 'F', 'D', 'A', '9',
-    '7', 'C', '8', '9', 'B', '1', 'A', 'D', 'E', '8', '0', 'F', '2', '4', '9',
-    'F', '5', '7', '4', 'E', '7', 'C', 'F', '2', '5', 'D', 'D', 'E', '3', '8',
-    '6', '4', '4', '5', '8', '6', 'A', 'D', '9', '9', '4', 'B', 'B', '6', '9',
-    'A', '3', '2', '0', 'F', '0', 'B', '1', '2', '5', '8', 'B', 'F', 'F', '7',
-    '1', '\0'};
+    '5', 'C', '3', '3', 'E', 'F', 'C', '5', '2', '0', 'C', '8', '0', '7', '0',
+    '8', '9', '8', '7', '0', 'F', 'A', '9', '3', '8', '7', '1', 'E', 'E', '6',
+    '7', '9', '6', '4', '7', '0', '2', 'B', 'D', 'F', '4', '7', '1', 'F', 'D',
+    'C', '6', '5', 'F', 'F', 'B', '9', 'A', 'F', 'D', '4', 'B', 'B', 'A', 'C',
+    'F', 'D', '3', 'D', '3', 'B', '0', '3', '8', '5', '9', '9', 'C', '1', 'D',
+    'B', '0', '2', '4', 'C', 'C', '2', 'B', '3', '4', '8', '4', 'E', '3', '5',
+    '9', '7', '9', '0', '4', '7', 'A', 'D', '3', '7', 'B', '1', 'B', 'F', 'F',
+    'C', '4', '7', '9', 'A', 'D', '7', 'B', 'A', 'F', 'F', '8', 'F', '1', '2',
+    'E', 'F', '9', '4', '8', '0', 'D', '0', '1', 'E', 'B', 'E', '3', '5', '9',
+    '3', 'A', '0', '7', '5', 'A', '5', '7', 'D', '1', 'B', 'B', '3', 'B', '1',
+    'C', 'B', '5', '2', '2', '5', '8', 'A', '9', '6', '4', '9', '2', '8', 'C',
+    '4', '6', 'C', 'D', '2', '1', '7', 'D', 'C', '0', '9', 'F', 'A', '7', '0',
+    '0', '4', '5', '6', '0', '4', 'A', '6', '9', '7', '3', '9', '3', 'B', '8',
+    'F', '9', 'F', '9', 'D', 'F', 'F', '8', '9', 'B', 'E', 'F', '9', '9', '6',
+    'A', 'C', 'F', 'E', '6', 'E', '3', '9', '3', '2', 'F', '0', '5', 'D', '4',
+    'C', 'B', 'F', '3', 'B', '7', '5', '8', 'F', 'E', '1', '5', 'F', '0', '3',
+    'B', 'A', '5', '7', 'F', '5', 'F', '6', 'E', '0', 'B', '2', '8', 'E', '5',
+    'D', '\0'};
 
 const unsigned char __MCC_PIVadvance4_public_key[] = {
     '3', '0', '8', '1', '9', 'D', '3', '0', '0', 'D', '0', '6', '0', '9', '2',
@@ -71,7 +71,7 @@ static const char * MCC_PIVadvance4_matlabpath_data[] =
     "$TOOLBOXMATLABDIR/audiovideo/", "$TOOLBOXMATLABDIR/timefun/",
     "$TOOLBOXMATLABDIR/datatypes/", "$TOOLBOXMATLABDIR/verctrl/",
     "$TOOLBOXMATLABDIR/codetools/", "$TOOLBOXMATLABDIR/helptools/",
-    "$TOOLBOXMATLABDIR/winfun/", "$TOOLBOXMATLABDIR/winfun/net/",
+    "$TOOLBOXMATLABDIR/winfun/", "$TOOLBOXMATLABDIR/winfun/NET/",
     "$TOOLBOXMATLABDIR/demos/", "$TOOLBOXMATLABDIR/timeseries/",
     "$TOOLBOXMATLABDIR/hds/", "$TOOLBOXMATLABDIR/guide/",
     "$TOOLBOXMATLABDIR/plottools/", "toolbox/local/",
@@ -138,7 +138,7 @@ mclComponentData __MCC_PIVadvance4_component_data = {
   0,
   
   /* Component preferences directory */
-  "PIVadvance4_C15D9D83987697A437A66793B0D7804B",
+  "PIVadvance4_8FCEE5122AF38E4FA5746553BE27FEEC",
 
   /* MCR warning status data */
   MCC_PIVadvance4_warning_state_data,

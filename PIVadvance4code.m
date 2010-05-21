@@ -208,74 +208,49 @@ switch char(M)
                     %output text
                     fprintf('validating...                    ')
                     t1=cputime;
-
-                    if extrapeaks(e)
-                        j=3;
-                    else
-                        j=1;
-                    end
-                    Uval=U(:,1); Vval=V(:,1); Evalval=Eval(:,1);
+                    
+                    [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',...
+                        Bootper(e),Bootiter(e),Bootkmax(e),Writeswitch(e),Peakswitch(e),PeakNum(e),PeakVel(e),PeakMag(e));
+                    
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                else
+                    Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                     if ~isempty(C)
                         Cval=C(:,1);
-                    end
-                    for i=1:j
-                        if Threshswitch(e)
-                            [Uval,Vval,Evalval] = Thresh(X,Y,Uval,Vval,Uthresh(e,:),Vthresh(e,:),Evalval);
-                        end
-                        if UODswitch(e)
-                            t=permute(UODwinsize(e,:,:),[2 3 1]);
-                            t=t(:,t(1,:)~=0);
-                            [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh(e,UODthresh(e,:)~=0)',Evalval);
-                        end
-                        if Bootswitch(e)
-                            [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper(e),Bootiter(e),Bootkmax(e),Evalval);
-                        end
-                        disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
-                        if extrapeaks(e) && i<3
-                            Uval(Evalval>0)=U(Evalval>0,i+1);
-                            Vval(Evalval>0)=V(Evalval>0,i+1);
-                            Evalval(Evalval>0)=Eval(Evalval>0,i+1);
-                            Cval(Evalval>0)=C(Evalval>0,i+1);
-                        end
-                    end
-                    if Writeswitch(e)
-                        if Peakswitch(e)
-                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
-                            if PeakVel(e)
-                                U=[Uval,U(:,1:PeakNum(e))];
-                                V=[Vval,V(:,1:PeakNum(e))];
-                            else
-                                U=Uval; V=Vval;
-                            end
-                            if PeakMag(e)
-                                C=[Cval,C(:,1:PeakNum(e))];
-                            else
-                                C=Cval;
-                            end
-                        else
-                            U=Uval; V=Vval; Eval=Evalval; C=Cval;
-                        end
                     else
-                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
-                    end
-                    if i==j
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                        Cval=[];
                     end
                 end
                 
                 %write output
-                if Writeswitch(e)==1
+                if Writeswitch(e) 
                     if str2double(Data.datout) || str2double(Data.multiplematout)
                         fprintf('saving...                        ')
                         t1=cputime;
                     end
-                    
+                                        
+                    if Peakswitch(e)
+                        Eval=[Evalval,Eval(:,1:PeakNum(e))];
+                        if PeakVel(e)
+                            U=[Uval,U(:,1:PeakNum(e))];
+                            V=[Vval,V(:,1:PeakNum(e))];
+                        else
+                            U=Uval; V=Vval;
+                        end
+                        if PeakMag
+                            C=[Cval,C(:,1:PeakNum(e))];
+                        else
+                            C=Cval;
+                        end
+                    else
+                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                    end
+
                     %convert to physical units
-                    X=X*Mag;
-                    Y=Y*Mag;
-                    U=U*Mag/dt;
-                    V=V*Mag/dt;
+                    X=X*Mag;Y=Y*Mag;
+                    U=U*Mag/dt;V=V*Mag/dt;
 
                     %convert to matrix if necessary
                     if size(X,2)==1
@@ -283,9 +258,8 @@ switch char(M)
                     end
 
                     %remove nans from data, replace with zeros
-                    U(Eval<0)=0;
-                    V(Eval<0)=0;
-
+                    U(Eval<0)=0;V(Eval<0)=0;
+                    
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
                         write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
@@ -293,6 +267,7 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
                     end
+
                     if str2double(Data.singlematout)
                         X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
                         U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
@@ -302,15 +277,12 @@ switch char(M)
                         end
                     end
                     
-                    X=X(:);Y=Y(:);
-                    U=U(:,:,1);V=V(:,:,1);
-                    U=U(:);V=V(:);
-
                     if str2double(Data.datout) || str2double(Data.multiplematout)
                         eltime=cputime-t1;
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end
+                    end  
                 end
+                U=Uval; V=Vval;
         
                 if e~=P
                     %reshape from list of grid points to matrix
@@ -438,137 +410,191 @@ switch char(M)
         end
 
 
-%     case 'Ensemble'
-%         
-%         %initialize grid and evaluation matrix
-%         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
-%         L=size(im1);
-%         [XI,YI]=IMgrid(L,[0 0]);
-%         UI = BWO(1)*ones(size(XI));
-%         VI = BWO(2)*ones(size(XI));
-%             
-%         for e=1:P
-% 
-%             %find grid and evaluation matrix for each pass
-%             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-%             S=size(X);X=X(:);Y=Y(:);
-%             Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-%             Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-%             Eval = reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-%             Eval(Eval==0)=-1;
-%             Eval(Eval>0)=0;
-%             
-%             %downsample mask to fit data grid
-%             maskds=mask(Gbuf(e,2):Gres(e,2):size(mask,1)-Gbuf(e,2),Gbuf(e,1):Gres(e,1):size(mask,2)-Gbuf(e,1));
-% 
-%             %initializeoutputs
-%             if PeakLoc(e)
-%                 U=zeros(size(X,1),PeakNum(e)-1);V=zeros(size(X,1),PeakNum(e)-1);
-%                 U(repmat(Eval>=0,[1 PeakNum(e)-1]))=Uc;
-%                 V(repmat(Eval>=0,[1 PeakNum(e)-1]))=Vc;
-%             end
-%             if PeakNum(e)==1 || PeakLoc(e)==0
-%                 U=zeros(size(X));V=zeros(size(X));
-%                 U(Eval>=0)=Uc;V(Eval>=0)=Vc;
-%             end
-%             if PeakNum(e)>1
-%                 C=zeros(size(X,1),PeakNum(e)-1);
-%                 C(repmat(Eval>=0,[1 PeakNum(e)-1]))=Cc;
-%             else
-%                 C=[];
-%             end
-%             
-%             %output text
-%             title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
-%             fprintf('\n----------------------------------------------------\n')
-%             fprintf(['Job: ',Data.batchname,'\n'])
-%             fprintf(['Ensemble Correlation ' title '\n'])
-%             fprintf('----------------------------------------------------\n')
-% 
-%             for q=1:length(I1)
-% 
-%                 %load image pair and flip coordinates
-%                 im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-%                 im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
-%                 im1=flipud(im1);
-%                 im2=flipud(im2);
-%                 L=size(im1);
-%                 
-%                 %correlate image pair and average correlations
-%                 [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-%                 if q==1
-%                     CCm=CC/length(I1);
-%                 else
-%                     CCm=CCm+CC/length(I1);
-%                 end
-%                 fprintf(['(' sprintf(['%0.' num2str(length(num2str(length(I1)))) 'i' ],q) '/' num2str(length(I1)) ')\n'])
-% 
-%             end
-%             fprintf('----------------------------------------------------\n\n')                       
-%                 
-%             %subpixel estimation of averaged correlation
-%             [utemp,vtemp,ctemp]=subpixel(G,Nx,Ny,cnorm,PeakNum,PeakLoc);
-%             if PeakNum>1 && PeakLoc
-%                 U(n,1:PeakNum-1)=utemp;V(n,1:PeakNum-1)=vtemp;C(n,1:PeakNum-1)=ctemp;
-%             elseif PeakNum>1 && ~PeakLoc
-%                 U(n)=utemp;V(n)=vtemp;C(n,1:PeakNum-1)=ctemp;
-%             else
-%                 U(n)=utemp;V(n)=vtemp;
-%             end
-%             %evaluate subpixel displacement of averaged correlation
-%             Z=size(CCm);
-%             Uc=zeros(Z(3),1);
-%             Vc=zeros(Z(3),1);
-%             Cc=zeros(Z(3),1);
-%             ZZ=ones(Z(1),Z(2));
-%             for s=1:length(Xc)
-%                 subpixel(G,ccsizex,ccsizey,W,PeakNum,PeakLoc)
-%                 [Uc(s),Vc(s),Cc(s)]=subpixel_C(CCm(:,:,s),Z(2),Z(1),ZZ,PeakNum);
-%             end
-%             U(Eval>=0)=Uc+round(Ub(Eval>=0));
-%             V(Eval>=0)=Vc+round(Vb(Eval>=0));
-%             C(Eval>=0)=Cc;
-% 
-%             %validation
-%             if Valswitch(e)==1
-%                 t=permute(Valsize(e,:,:),[2 3 1]);
-%                 t=t(:,t(1,:)~=0);
-%                 [U,V,Eval] = VAL(X,Y,U,V,t',Valthresh(e,Valthresh(e,:)~=0)',Uthresh(e,:),Vthresh(e,:),Eval);
-%             end
-% 
-%             %write output
-%             if Writeswitch(e)==1
-%                 %write_dat_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
-%                 write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,C,maskds,e,0,title);
-%             end
-%             
-%             if e~=P
-% 
-%                 fprintf('interpolating velocity...        ')
-%                 t1=cputime;
-% 
-%                 %reshape from list of grid points to matrix
-%                 X=reshape(X,S(1),S(2));
-%                 Y=reshape(Y,S(1),S(2));
-%                 U=reshape(U,S(1),S(2));
-%                 V=reshape(V,S(1),S(2));
-% 
-%                 %velocity smoothing
-%                 if Velsmoothswitch(e)==1
-%                     [U,V]=VELfilt(U,V,Velsmoothfilt(e));
-%                 end
-% 
-%                 %velocity interpolation
-%                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
-%                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-% 
-%                 %output text
-%                 eltime=cputime-t1;
-%                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-% 
-%             end
-% 
-%         end
+    case 'Ensemble'
+        
+        %initialize grid and evaluation matrix
+        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+        L=size(im1);
+        [XI,YI]=IMgrid(L,[0 0]);
+        UI = BWO(1)*ones(size(XI));
+        VI = BWO(2)*ones(size(XI));
+            
+        for e=1:P
+            [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+            S=size(X);X=X(:);Y=Y(:);
+            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+            maskds=downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))';
+            Eval=reshape(maskds,length(X),1);
+            Eval(Eval==0)=-1;
+            Eval(Eval>0)=0;
+            
+            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                U=zeros(size(X,1),3);
+                V=zeros(size(X,1),3);
+                C=zeros(size(X,1),3);
+            else
+                U=zeros(size(X));V=zeros(size(X));C=[];
+            end
+            
+            %output text
+            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
+            fprintf('\n----------------------------------------------------\n')
+            fprintf(['Job: ',Data.batchname,'\n'])
+            fprintf(['Ensemble Correlation ' title '\n'])
+            fprintf('----------------------------------------------------\n')
+
+            for q=1:length(I1)
+
+                %load image pair and flip coordinates
+                im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
+                im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
+                im1=flipud(im1);
+                im2=flipud(im2);
+                L=size(im1);
+
+                %correlate image pair and average correlations
+                [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                if q==1
+                    CCm=CC/length(I1);
+                else
+                    CCm=CCm+CC/length(I1);
+                end
+                fprintf(['(' sprintf(['%0.' num2str(length(num2str(length(I1)))) 'i' ],q) '/' num2str(length(I1)) ')\n'])
+
+            end
+            fprintf('----------------------------------------------------\n\n')                       
+                
+            %evaluate subpixel displacement of averaged correlation
+            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                Uc=zeros(size(X,1),3);
+                Vc=zeros(size(X,1),3);
+                Cc=zeros(size(X,1),3);
+                Ub=repmat(Ub,[1 3]);
+                Vb=repmat(Vb,[1 3]);
+                Eval=repmat(Eval,[1 3]);
+            else
+                Uc=zeros(size(X));Vc=zeros(size(X));Cc=[];
+            end
+            Z=size(CCm);
+            ZZ=ones(Z(1),Z(2));
+            for s=1:length(Xc)
+                [Uc(s,:),Vc(s,:),Ctemp]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                if ~isempty(Cc)
+                    Cc(s,:)=Ctemp;
+                end
+            end
+
+            U(Eval>=0)=Uc(Eval>=0)+round(Ub(Eval>=0));
+            V(Eval>=0)=Vc(Eval>=0)+round(Vb(Eval>=0));
+            if ~isempty(Cc)
+                C(Eval>=0)=Cc(Eval>=0);
+            end
+
+            %validation
+            if Valswitch(e)
+                %output text
+                fprintf('validating...                    ')
+                t1=cputime;
+
+                [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',...
+                    Bootper(e),Bootiter(e),Bootkmax(e),Writeswitch(e),Peakswitch(e),PeakNum(e),PeakVel(e),PeakMag(e));
+
+                eltime=cputime-t1;
+                fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            else
+                Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
+                if ~isempty(C)
+                    Cval=C(:,1);
+                else
+                    Cval=[];
+                end
+            end
+                
+            %write output
+            if Writeswitch(e) 
+                if str2double(Data.datout) || str2double(Data.multiplematout)
+                    fprintf('saving...                        ')
+                    t1=cputime;
+                end
+
+                if Peakswitch(e)
+                    Eval=[Evalval,Eval(:,1:PeakNum(e))];
+                    if PeakVel(e)
+                        U=[Uval,U(:,1:PeakNum(e))];
+                        V=[Vval,V(:,1:PeakNum(e))];
+                    else
+                        U=Uval; V=Vval;
+                    end
+                    if PeakMag
+                        C=[Cval,C(:,1:PeakNum(e))];
+                    else
+                        C=Cval;
+                    end
+                else
+                    U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                end
+
+                %convert to physical units
+                X=X*Mag;Y=Y*Mag;
+                U=U*Mag/dt;V=V*Mag/dt;
+
+                %convert to matrix if necessary
+                if size(X,2)==1
+                    [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+                end
+
+                %remove nans from data, replace with zeros
+                U(Eval<0)=0;V(Eval<0)=0;
+
+                if str2double(Data.datout)
+                    time=(q-1)/Freq;
+                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
+                end
+                if str2double(Data.multiplematout)
+                    save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
+                end
+
+                if str2double(Data.singlematout)
+                    X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
+                    U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
+                    Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
+                    if strcmp(Data.masktype,'dynamic')
+                        mask_write{e}(:,:,q)=maskds;
+                    end
+                end
+
+                if str2double(Data.datout) || str2double(Data.multiplematout)
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                end  
+            end
+            U=Uval; V=Vval;
+        
+            if e~=P
+                %reshape from list of grid points to matrix
+                X=reshape(X,[S(1),S(2)]);
+                Y=reshape(Y,[S(1),S(2)]);
+                U=reshape(U(:,1),[S(1),S(2)]);
+                V=reshape(V(:,1),[S(1),S(2)]);
+
+                fprintf('interpolating velocity...        ')
+                t1=cputime;
+
+                %velocity smoothing
+                if Velsmoothswitch(e)==1
+                    [U,V]=VELfilt(U,V,Velsmoothfilt(e));
+                end
+
+                %velocity interpolation
+                UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+                VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+
+                eltime=cputime-t1;
+                fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            end
+        end
         
         
     case 'Multiframe'
@@ -642,74 +668,49 @@ switch char(M)
                     %output text
                     fprintf('validating...                    ')
                     t1=cputime;
-
-                    if extrapeaks(e)
-                        j=3;
-                    else
-                        j=1;
-                    end
-                    Uval=U(:,1); Vval=V(:,1); Evalval=Eval(:,1);
+                    
+                    [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',...
+                        Bootper(e),Bootiter(e),Bootkmax(e),Writeswitch(e),Peakswitch(e),PeakNum(e),PeakVel(e),PeakMag(e));
+                    
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                else
+                    Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                     if ~isempty(C)
                         Cval=C(:,1);
-                    end
-                    for i=1:j
-                        if Threshswitch(e)
-                            [Uval,Vval,Evalval] = Thresh(X,Y,Uval,Vval,Uthresh(e,:),Vthresh(e,:),Evalval);
-                        end
-                        if UODswitch(e)
-                            t=permute(UODwinsize(e,:,:),[2 3 1]);
-                            t=t(:,t(1,:)~=0);
-                            [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh(e,UODthresh(e,:)~=0)',Evalval);
-                        end
-                        if Bootswitch(e)
-                            [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper(e),Bootiter(e),Bootkmax(e),Evalval);
-                        end
-                        disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
-                        if extrapeaks(e) && i<3
-                            Uval(Evalval>0)=U(Evalval>0,i+1);
-                            Vval(Evalval>0)=V(Evalval>0,i+1);
-                            Evalval(Evalval>0)=Eval(Evalval>0,i+1);
-                            Cval(Evalval>0)=C(Evalval>0,i+1);
-                        end
-                    end
-                    if Writeswitch(e)
-                        if Peakswitch(e)
-                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
-                            if PeakVel(e)
-                                U=[Uval,U(:,1:PeakNum(e))];
-                                V=[Vval,V(:,1:PeakNum(e))];
-                            else
-                                U=Uval; V=Vval;
-                            end
-                            if PeakMag(e)
-                                C=[Cval,C(:,1:PeakNum(e))];
-                            else
-                                C=Cval;
-                            end
-                        else
-                            U=Uval; V=Vval; Eval=Evalval; C=Cval;
-                        end
                     else
-                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
-                    end
-                    if i==j
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                        Cval=[];
                     end
                 end
                 
                 %write output
-                if Writeswitch(e)==1
+                if Writeswitch(e) 
                     if str2double(Data.datout) || str2double(Data.multiplematout)
                         fprintf('saving...                        ')
                         t1=cputime;
                     end
-                    
+                                        
+                    if Peakswitch(e)
+                        Eval=[Evalval,Eval(:,1:PeakNum(e))];
+                        if PeakVel(e)
+                            U=[Uval,U(:,1:PeakNum(e))];
+                            V=[Vval,V(:,1:PeakNum(e))];
+                        else
+                            U=Uval; V=Vval;
+                        end
+                        if PeakMag
+                            C=[Cval,C(:,1:PeakNum(e))];
+                        else
+                            C=Cval;
+                        end
+                    else
+                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                    end
+
                     %convert to physical units
-                    X=X*Mag;
-                    Y=Y*Mag;
-                    U=U*Mag/dt;
-                    V=V*Mag/dt;
+                    X=X*Mag;Y=Y*Mag;
+                    U=U*Mag/dt;V=V*Mag/dt;
 
                     %convert to matrix if necessary
                     if size(X,2)==1
@@ -717,9 +718,8 @@ switch char(M)
                     end
 
                     %remove nans from data, replace with zeros
-                    U(Eval<0)=0;
-                    V(Eval<0)=0;
-
+                    U(Eval<0)=0;V(Eval<0)=0;
+                    
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
                         write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
@@ -727,6 +727,7 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
                     end
+
                     if str2double(Data.singlematout)
                         X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
                         U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
@@ -735,13 +736,12 @@ switch char(M)
                             mask_write{e}(:,:,q)=maskds;
                         end
                     end
-
+                    
                     if str2double(Data.datout) || str2double(Data.multiplematout)
                         eltime=cputime-t1;
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end
+                    end  
                 end
-
             end
             
             eltime=cputime-tf;
@@ -1397,7 +1397,40 @@ else
     end
 end
 
-function [U,V,Eval] = Thresh(xin,yin,uin,vin,uthreshold,vthreshold,evalin)
+function [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax,Writeswitch,Peakswitch,PeakNum,PeakVel,PeakMag)
+% --- Validation Subfunction ---
+
+if extrapeaks
+    j=3;
+else
+    j=1;
+end
+Uval=U(:,1); Vval=V(:,1); Evalval=Eval(:,1);
+if ~isempty(C)
+    Cval=C(:,1);
+end
+for i=1:j
+    if Threshswitch
+        [Uval,Vval,Evalval] = Thresh(X,Y,Uval,Vval,Uthresh,Vthresh,Evalval);
+    end
+    if UODswitch
+        t=permute(UODwinsize,[2 3 1]);
+        t=t(:,t(1,:)~=0);
+        [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh,Evalval);
+    end
+    if Bootswitch
+        [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
+    end
+    disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
+    if extrapeaks && i<3
+        Uval(Evalval>0)=U(Evalval>0,i+1);
+        Vval(Evalval>0)=V(Evalval>0,i+1);
+        Evalval(Evalval>0)=Eval(Evalval>0,i+1);
+        Cval(Evalval>0)=C(Evalval>0,i+1);
+    end
+end
+
+function [Uf,Vf,Eval] = Thresh(xin,yin,uin,vin,uthreshold,vthreshold,evalin)
 % --- Thresholding Validation Subfunction ---
 
 %preallocate evaluation matrix
@@ -1431,10 +1464,8 @@ for i=1:S(1)
         if Eval(i,j)==0
             %velocity threshold condition
             if U(i,j)<uthreshold(1) || U(i,j)>uthreshold(2) || V(i,j)<vthreshold(1) || V(i,j)>vthreshold(2)
-%                 U(i,j)=nan;
-%                 V(i,j)=nan;
-                U(i,j)=0;
-                V(i,j)=0;
+                U(i,j)=nan;
+                V(i,j)=nan;
                 Eval(i,j)=100;
             end
         elseif Eval(i,j)==-1
@@ -1445,9 +1476,54 @@ for i=1:S(1)
     end
 end
 
+%initialize output velocity
+Uf=U;
+Vf=V;
+
+%replacement
+for i=1:S(1)
+    for j=1:S(2)
+        
+        if Eval(i,j) ~= 0
+
+            %initialize replacement search size
+            q=0;
+            s=0;
+
+            %get replacement block with at least 8 valid points
+            while s==0
+                q=q+1;
+                Imin = max([i-q 1   ]);
+                Imax = min([i+q S(1)]);
+                Jmin = max([j-q 1   ]);
+                Jmax = min([j+q S(2)]);
+                Iind = Imin:Imax;
+                Jind = Jmin:Jmax;
+                Ublock = U(Iind,Jind);
+                if length(Ublock(~isnan(Ublock)))>=8
+                    Xblock = X(Iind,Jind)-X(i,j);
+                    Yblock = Y(Iind,Jind)-Y(i,j);
+                    Vblock = V(Iind,Jind);
+                    s=1;
+                end
+            end
+            
+            %distance from erroneous vector
+            Dblock = (Xblock.^2+Yblock.^2).^0.5;
+            Dblock(isnan(Ublock))=nan;
+
+            %validated vector
+            Uf(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
+            Vf(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));
+            
+        end
+
+    end
+end
+
 if Sin(2)==1
     %convert back to vector
-    [U,V,Eval]=vectorform(xin,yin,U,V,Eval);
+    [Uf,Vf,Eval]=vectorform(xin,yin,Uf,Vf,Eval);
 end
 
 function [Uf,Vf,Eval] = UOD(xin,yin,uin,vin,t,tol,evalin)
