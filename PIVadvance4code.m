@@ -33,8 +33,6 @@ Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
 M=Method(str2double(Data.method));
 
 %algorithm options
-Velsmoothswitch=str2double(Data.velsmooth);
-Velsmoothfilt=str2double(Data.velsmoothfilt);
 Velinterp=str2double(Data.velinterp);
 Iminterp=str2double(Data.iminterp);
 Nmax=str2double(Data.framestep);
@@ -52,6 +50,8 @@ Gres=zeros(P,2);
 Gbuf=zeros(P,2);
 Corr=zeros(P,1);
 D=zeros(P,1);
+Velsmoothswitch=zeros(P,1);
+Velsmoothfilt=zeros(P,1);
 Valswitch=zeros(P,1);
 UODswitch=zeros(P,1);
 Bootswitch=zeros(P,1);
@@ -87,9 +87,10 @@ for e=1:P
     Wsize(e,:)=[str2double(A.winsize(1:(strfind(A.winsize,',')-1))) str2double(A.winsize((strfind(A.winsize,',')+1):end))];
     Gres(e,:)=[str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
     Gbuf(e,:)=[str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
-    %correlation
     Corr(e)=str2double(A.corr)-1;
     D(e)=str2double(A.RPCd);
+    Velsmoothswitch(e)=str2double(A.velsmooth);
+    Velsmoothfilt(e)=str2double(A.velsmoothfilt);
     
     %validation and thresholding
     Valswitch(e)=str2double(A.val);
@@ -265,7 +266,7 @@ switch char(M)
                 
                 %write output
                 if Writeswitch(e)==1
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                    if str2double(Data.datout) || str2double(Data.multiplematout)
                         fprintf('saving...                        ')
                         t1=cputime;
                     end
@@ -285,9 +286,9 @@ switch char(M)
                     U(Eval<0)=0;
                     V(Eval<0)=0;
 
-                    if str2double(Data.pltout)
+                    if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
@@ -305,7 +306,7 @@ switch char(M)
                     U=U(:,:,1);V=V(:,:,1);
                     U=U(:);V=V(:);
 
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                    if str2double(Data.datout) || str2double(Data.multiplematout)
                         eltime=cputime-t1;
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                     end
@@ -324,8 +325,8 @@ switch char(M)
                         t1=cputime;
 
                         %velocity smoothing
-                        if Velsmoothswitch==1
-                            [U,V]=VELfilt(U,V,Velsmoothfilt);
+                        if Velsmoothswitch(e)==1
+                            [U,V]=VELfilt(U,V,Velsmoothfilt(e));
                         end
 
                         %velocity interpolation
@@ -537,8 +538,8 @@ switch char(M)
 % 
 %             %write output
 %             if Writeswitch(e)==1
-%                 %write_plt_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
-%                 write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(end))],X,Y,U,V,Eval,C,maskds,0,title);
+%                 %write_dat_val([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,Mag,dt,0,title);
+%                 write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_' ],I1(1)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(end))],X,Y,U,V,Eval,C,maskds,0,title);
 %             end
 %             
 %             if e~=P
@@ -553,8 +554,8 @@ switch char(M)
 %                 V=reshape(V,S(1),S(2));
 % 
 %                 %velocity smoothing
-%                 if Velsmoothswitch==1
-%                     [U,V]=VELfilt(U,V,Velsmoothfilt);
+%                 if Velsmoothswitch(e)==1
+%                     [U,V]=VELfilt(U,V,Velsmoothfilt(e));
 %                 end
 % 
 %                 %velocity interpolation
@@ -699,7 +700,7 @@ switch char(M)
                 
                 %write output
                 if Writeswitch(e)==1
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                    if str2double(Data.datout) || str2double(Data.multiplematout)
                         fprintf('saving...                        ')
                         t1=cputime;
                     end
@@ -719,9 +720,9 @@ switch char(M)
                     U(Eval<0)=0;
                     V(Eval<0)=0;
 
-                    if str2double(Data.pltout)
+                    if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_plt_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.plt' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
@@ -735,7 +736,7 @@ switch char(M)
                         end
                     end
 
-                    if str2double(Data.pltout) || str2double(Data.multiplematout)
+                    if str2double(Data.datout) || str2double(Data.multiplematout)
                         eltime=cputime-t1;
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                     end
@@ -2207,8 +2208,8 @@ for n=1:N
     eval(n) = Eval(I,J);
 end
 
-function []=write_plt_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
-% --- .plt Writer Subfunction ---
+function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
+% --- .dat Writer Subfunction ---
 
 %find I,J for plt
 S = size(U);
