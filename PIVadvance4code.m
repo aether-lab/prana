@@ -185,8 +185,7 @@ switch char(M)
                 
                 Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                maskds=downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))';
-                Eval=reshape(maskds,length(X),1);
+                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
 
@@ -260,11 +259,11 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
                     end
                     
                     if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
 
                     if str2double(Data.singlematout)
@@ -420,8 +419,7 @@ switch char(M)
             S=size(X);X=X(:);Y=Y(:);
             Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            maskds=downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))';
-            Eval=reshape(maskds,length(X),1);
+            Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Eval(Eval==0)=-1;
             Eval(Eval>0)=0;
             
@@ -545,19 +543,16 @@ switch char(M)
 
                 if str2double(Data.datout)
                     time=(q-1)/Freq;
-                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
+                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
                 end
                 if str2double(Data.multiplematout)
-                    save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
+                    save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                 end
 
                 if str2double(Data.singlematout)
                     X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
                     U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
                     Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                    if strcmp(Data.masktype,'dynamic')
-                        mask_write{e}(:,:,q)=maskds;
-                    end
                 end
 
                 if str2double(Data.datout) || str2double(Data.multiplematout)
@@ -640,8 +635,7 @@ switch char(M)
                 
                 Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                maskds=downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))';
-                Eval=reshape(maskds,length(X),1);
+                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
                 
@@ -716,19 +710,16 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
                     end
                     if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
 
                     if str2double(Data.singlematout)
                         X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
                         U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
                         Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                        if strcmp(Data.masktype,'dynamic')
-                            mask_write{e}(:,:,q)=maskds;
-                        end
                     end
                     
                     if str2double(Data.datout) || str2double(Data.multiplematout)
@@ -856,7 +847,7 @@ switch upper(tcorr)
             ymax2 = y2+Ny/2;
 
             for t=1:size(im1,3)
-                dt=2*t-1;
+                dt(t)=2*t-1;
                 
                 %find the image windows
                 zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]), t);
@@ -888,25 +879,25 @@ switch upper(tcorr)
 
                 %subpixel estimation
                 [Utemp(t,:),Vtemp(t,:),Ctemp(t,:)]=subpixel(G,Nx,Ny,cnorm,Peakreturn);
-                Utemp(t,:)=Utemp(t,:)/dt;Vtemp(t,:)=Vtemp(t,:)/dt;
+                Utemp(t,:)=Utemp(t,:);Vtemp(t,:)=Vtemp(t,:);
                 if Peakreturn
                     velmag=sqrt(Utemp(t,1)^2+Vtemp(t,1)^2);
                     Qp(t)=Ctemp(t,1)/Ctemp(t,2)*(1-ds/velmag);
                 else
                     Qp(t)=-1;
                 end
-            end
+             end
             [temp,t_opt]=max(Qp);
 %             if t_opt~=1
 %                 keyboard
 %             end
             if Peakswitch
-                U(n,:)=Utemp(t_opt,:);
-                V(n,:)=Vtemp(t_opt,:);
-                C(n,:)=Ctemp(t_opt,:);
+                U(n,:)=Utemp(t_opt,:)/dt(t_opt);
+                V(n,:)=Vtemp(t_opt,:)/dt(t_opt);
+                C(n,:)=Ctemp(t_opt,:)/dt(t_opt);
             else
-                U(n)=Utemp(t_opt,1);
-                V(n)=Vtemp(t_opt,1);
+                U(n)=Utemp(t_opt,1)/dt(t_opt);
+                V(n)=Vtemp(t_opt,1)/dt(t_opt);
             end
         end
 
@@ -932,7 +923,7 @@ switch upper(tcorr)
             ymax2 = y2+Ny/2;
             
              for t=1:size(im1,3)
-                dt=2*t-1;
+                dt(t)=2*t-1;
 
                 %find the image windows
                 zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
@@ -970,7 +961,7 @@ switch upper(tcorr)
                 
                 %subpixel estimation
                 [Utemp(t,:),Vtemp(t,:),Ctemp(t,:)]=subpixel(G,Nx,Ny,cnorm,Peakreturn);
-                Utemp(t,:)=Utemp(t,:)/dt;Vtemp(t,:)=Vtemp(t,:)/dt;
+                Utemp(t,:)=Utemp(t,:);Vtemp(t,:)=Vtemp(t,:);
                 if Peakreturn
                     velmag=sqrt(Utemp(t,1)^2+Vtemp(t,1)^2);
                     Qp(t)=Ctemp(t,1)/Ctemp(t,2)*(1-ds/velmag);
@@ -983,12 +974,12 @@ switch upper(tcorr)
 %                 keyboard
 %             end
             if Peakswitch
-                U(n,:)=Utemp(t_opt,:);
-                V(n,:)=Vtemp(t_opt,:);
-                C(n,:)=Ctemp(t_opt,:);
+                U(n,:)=Utemp(t_opt,:)/dt(t_opt);
+                V(n,:)=Vtemp(t_opt,:)/dt(t_opt);
+                C(n,:)=Ctemp(t_opt,:)/dt(t_opt);
             else
-                U(n)=Utemp(t_opt,1);
-                V(n)=Vtemp(t_opt,1);
+                U(n)=Utemp(t_opt,1)/dt(t_opt);
+                V(n)=Vtemp(t_opt,1)/dt(t_opt);
             end
         end
 end
@@ -1314,12 +1305,14 @@ if M==0
     end
 else
     if Peakswitch
+        %Find peaks using imregionalmax (built-in matlab function)
         A=imregionalmax(G);
         peakmat=G.*A;
         for i=2:3
             peakmat(peakmat==M(i-1))=0;
             [M(i),I(i)]=max(peakmat(:));
         end
+        
         j=length(M);
     else
         j=1;    
@@ -1411,7 +1404,7 @@ for i=1:j
     if Bootswitch
         [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
     end
-    disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
+%     disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
     if extrapeaks && i<3
         Uval(Evalval>0)=U(Evalval>0,i+1);
         Vval(Evalval>0)=V(Evalval>0,i+1);
@@ -2273,7 +2266,7 @@ for n=1:N
     eval(n) = Eval(I,J);
 end
 
-function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,mask,strand,T,title)
+function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
 % --- .dat Writer Subfunction ---
 
 %find I,J for plt
@@ -2290,9 +2283,10 @@ if ~isempty(C)
     varlist=[varlist,' "C"'];
     if size(U,3)>1
         for i=2:size(U,3)
-            varlist=[varlist,' "U',num2str(i-1),'" "V',num2str(i-1),'" "C',num2str(i-1),'"'];
+            varlist=[varlist,' "U',num2str(i-1),'" "V',num2str(i-1),'"'];
         end
-    elseif size(C,3)>1
+    end
+    if size(C,3)>1
         for i=2:size(C,3)
             varlist=[varlist,' "C',num2str(i-1),'"'];
         end
@@ -2325,13 +2319,14 @@ for i=1:S(1)
             end
             if size(U,3)>1
                 for k=2:size(U,3)
-                    if isnan(U(i,j,k)) || isnan(V(i,j,k)) || isnan(C(i,j,k))
-                        fprintf(fid,' %14.6e %14.6e %14.6e',0,0,0);
+                    if isnan(U(i,j,k)) || isnan(V(i,j,k))
+                        fprintf(fid,' %14.6e %14.6e',0,0);
                     else
-                        fprintf(fid,' %14.6e %14.6e %14.6e',U(i,j,k),V(i,j,k),C(i,j,k));
+                        fprintf(fid,' %14.6e %14.6e',U(i,j,k),V(i,j,k));
                     end
                 end
-            elseif size(C,3)>1
+            end
+            if size(C,3)>1
                 for k=2:size(C,3)
                     if isnan(C(i,j,k))
                         fprintf(fid,' %14.6e',0);

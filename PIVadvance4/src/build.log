@@ -16,7 +16,7 @@ The file W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\mccExcludedFi
 3 item(s) added. 
 Generating MATLAB path for the compiled application... 
 Created 48 path items. 
-Begin validation of MEX files: Fri May 21 14:59:38 2010  
+Begin validation of MEX files: Tue May 25 10:22:28 2010  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\images\bin\win32\libippmw.dll'.  
 No conflicting M-file found.  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\images\images\private\imfilter_mex.mexw32'.  
@@ -48,7 +48,7 @@ Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobol
 No conflicting M-file found.  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobolSequence.mexw32'.  
 No conflicting M-file found.  
-End validation of MEX files: Fri May 21 14:59:38 2010  
+End validation of MEX files: Tue May 25 10:22:28 2010  
 Parsing file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
 	(Referenced from: "Compiler Command Line").  
 Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\deployprint.m" 
@@ -56,29 +56,29 @@ Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\deployprint
 Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\printdlg.m" 
 	(Referenced from: "Compiler Command Line").  
 Deleting 14 temporary MEX authorization files.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_931_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_22498_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_3135_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_20742_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_15753_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_28360_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_15955_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_26153_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_1471_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_24512_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_11543_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_9342_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_2466_1940.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_29918_1940.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_21949_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_24712_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_1072_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_1870_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_17700_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_12816_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_29766_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_16837_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_18026_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_1738_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_4296_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_21651_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_9384_3548.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_27573_3548.auth'.  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\readme.txt".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c".  
-Contents of temporary response file 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_25311':  
+Contents of temporary response file 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_32749':  
  ......................  
 ' -O -v -output "PIVadvance4" -I"W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c" -link exe  -env MCR_DELAYLOAD=/delayload:mclmcrrt710.dll -env MCR_DELAYLIB=delayimp.lib -outdir "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src"'  
 ......................  
-Executing command: mbuild  "@C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_1940_25311"  
+Executing command: mbuild  "@C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_3548_32749"  
  This is mbuild Copyright 1984-2006 The MathWorks, Inc. 
  
 -> Default options filename found in C:\Users\bdrew\AppData\Roaming\MathWorks\MATLAB\R2009a 
