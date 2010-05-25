@@ -210,8 +210,7 @@ switch char(M)
                     t1=cputime;
                     
                     [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',...
-                        Bootper(e),Bootiter(e),Bootkmax(e),Writeswitch(e),Peakswitch(e),PeakNum(e),PeakVel(e),PeakMag(e));
+                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
                     eltime=cputime-t1;
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -229,17 +228,16 @@ switch char(M)
                     if str2double(Data.datout) || str2double(Data.multiplematout)
                         fprintf('saving...                        ')
                         t1=cputime;
-                    end
-                                        
+                    end         
                     if Peakswitch(e)
-                        Eval=[Evalval,Eval(:,1:PeakNum(e))];
                         if PeakVel(e)
                             U=[Uval,U(:,1:PeakNum(e))];
                             V=[Vval,V(:,1:PeakNum(e))];
+                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
                         else
-                            U=Uval; V=Vval;
+                            U=Uval; V=Vval;Eval=Evalval;
                         end
-                        if PeakMag
+                        if PeakMag(e)
                             C=[Cval,C(:,1:PeakNum(e))];
                         else
                             C=Cval;
@@ -264,6 +262,7 @@ switch char(M)
                         time=(q-1)/Freq;
                         write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,maskds,e,time,title);
                     end
+                    
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','maskds')
                     end
@@ -272,9 +271,6 @@ switch char(M)
                         X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
                         U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
                         Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                        if strcmp(Data.masktype,'dynamic')
-                            mask_write{e}(:,:,q)=maskds;
-                        end
                     end
                     
                     if str2double(Data.datout) || str2double(Data.multiplematout)
@@ -392,8 +388,8 @@ switch char(M)
                             end
 
                             %clip lower values of deformed images
-                            im1d(im1d<0)=0;
-                            im2d(im2d<0)=0;
+                            im1d(im1d<0)=0; im1d(isnan(im1d))=0;
+                            im2d(im2d<0)=0; im2d(isnan(im2d))=0;
                             
                             im1=im1d; im2=im2d;
 
@@ -498,8 +494,7 @@ switch char(M)
                 t1=cputime;
 
                 [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',...
-                    Bootper(e),Bootiter(e),Bootkmax(e),Writeswitch(e),Peakswitch(e),PeakNum(e),PeakVel(e),PeakMag(e));
+                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
 
                 eltime=cputime-t1;
                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -520,14 +515,14 @@ switch char(M)
                 end
 
                 if Peakswitch(e)
-                    Eval=[Evalval,Eval(:,1:PeakNum(e))];
                     if PeakVel(e)
                         U=[Uval,U(:,1:PeakNum(e))];
                         V=[Vval,V(:,1:PeakNum(e))];
+                        Eval=[Evalval,Eval(:,1:PeakNum(e))];
                     else
-                        U=Uval; V=Vval;
+                        U=Uval; V=Vval; Eval=Evalval;
                     end
-                    if PeakMag
+                    if PeakMag(e)
                         C=[Cval,C(:,1:PeakNum(e))];
                     else
                         C=Cval;
@@ -670,8 +665,7 @@ switch char(M)
                     t1=cputime;
                     
                     [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',...
-                        Bootper(e),Bootiter(e),Bootkmax(e),Writeswitch(e),Peakswitch(e),PeakNum(e),PeakVel(e),PeakMag(e));
+                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
                     eltime=cputime-t1;
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -692,14 +686,14 @@ switch char(M)
                     end
                                         
                     if Peakswitch(e)
-                        Eval=[Evalval,Eval(:,1:PeakNum(e))];
                         if PeakVel(e)
                             U=[Uval,U(:,1:PeakNum(e))];
                             V=[Vval,V(:,1:PeakNum(e))];
+                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
                         else
-                            U=Uval; V=Vval;
+                            U=Uval; V=Vval; Eval=Evalval;
                         end
-                        if PeakMag
+                        if PeakMag(e)
                             C=[Cval,C(:,1:PeakNum(e))];
                         else
                             C=Cval;
@@ -759,10 +753,7 @@ if str2double(Data.singlematout)
         X=X_write{e};Y=Y_write{e};
         U=U_write{e};V=V_write{e};
         Eval=Eval_write{e};C=C_write{e};
-        if strcmp(Data.masktype,'dynamic')
-            maskds=mask_write{e};
-        end
-        save([pltdirec char(wbase(e,:)) 'all.mat'],'X','Y','U','V','Eval','C','maskds')
+        save([pltdirec char(wbase(e,:)) 'all.mat'],'X','Y','U','V','Eval','C')
     end
     eltime=cputime-t1;
     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -906,9 +897,9 @@ switch upper(tcorr)
                 end
             end
             [temp,t_opt]=max(Qp);
-            if t_opt~=1
-                keyboard
-            end
+%             if t_opt~=1
+%                 keyboard
+%             end
             if Peakswitch
                 U(n,:)=Utemp(t_opt,:);
                 V(n,:)=Vtemp(t_opt,:);
@@ -988,9 +979,9 @@ switch upper(tcorr)
                 end
              end
             [temp,t_opt]=max(Qp);
-            if t_opt~=1
-                keyboard
-            end
+%             if t_opt~=1
+%                 keyboard
+%             end
             if Peakswitch
                 U(n,:)=Utemp(t_opt,:);
                 V(n,:)=Vtemp(t_opt,:);
@@ -1397,9 +1388,8 @@ else
     end
 end
 
-function [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax,Writeswitch,Peakswitch,PeakNum,PeakVel,PeakMag)
+function [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax)
 % --- Validation Subfunction ---
-
 if extrapeaks
     j=3;
 else
@@ -2254,7 +2244,6 @@ if ~isempty(c)
             I= b==y(n);
             J= a==x(n);
             C(I,J,i)=c(n,i);
-            Eval(I,J,i) = eval(n);
         end
     end
 else
@@ -2296,25 +2285,18 @@ if fid==-1
     error(['error creating file ',fname])
 end
 
-varlist='"X" "Y" "U" "V" "Eval"';varnum=5;
+varlist='"X" "Y" "U" "V" "Eval"';
 if ~isempty(C)
     varlist=[varlist,' "C"'];
-    varnum=varnum+1;
     if size(U,3)>1
         for i=2:size(U,3)
             varlist=[varlist,' "U',num2str(i-1),'" "V',num2str(i-1),'" "C',num2str(i-1),'"'];
-            varnum=varnum+3;
         end
     elseif size(C,3)>1
         for i=2:size(C,3)
             varlist=[varlist,' "C',num2str(i-1),'"'];
-            varnum=varnum+1;
         end
     end
-end
-if min(min(mask))<1
-    varlist=[varlist,' "mask"'];
-    varnum=varnum+1;
 end
     
 
@@ -2358,25 +2340,10 @@ for i=1:S(1)
                     end
                 end
             end
-        end
-        
-        if min(min(mask))<1
-            fprintf(fid,' %14.6e',~mask(i,j));
-        end
-        
+        end     
         fprintf(fid,'\n');
     end
 end
-
-% if min(min(mask))<1;
-%     %mask zone header lines
-%     fprintf(fid,['\nZONE T="mask_Time=%0.6f" I=%i J=%i C=BLACK STRANDID=2 SOLUTIONTIME = %0.6f VARSHARELIST=([1-',num2str(varnum-1),']=1)\n'],T,S(2),S(1),T);
-%     for i=1:S(1)
-%         for j=1:S(2)
-%             fprintf(fid,'%14.6e\n',~mask(i,j));
-%         end
-%     end
-% end
     
 fclose(fid);
 

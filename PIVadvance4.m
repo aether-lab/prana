@@ -50,14 +50,16 @@ handles.data.exp_wavelength='532';
 handles.data.exp_camera='';
 handles.data.exp_sensorsize='';
 handles.data.exp_pixelsize='';
+handles.data.exp_partD='';
+handles.data.exp_partdensity='';
 handles.data.exp_viscosity='1.308e-3';
-handles.data.exp_density='1000';
+handles.data.exp_density='1';
 handles.data.exp_surfacetension='0.07197';
 handles.data.exp_v0='';
 handles.data.exp_L='';
 handles.data.exp_notes='Notes:';
 handles.data.exp_Re='';
-handles.data.exp_We='';
+handles.data.exp_St='';
 
 handles.data.masktype='none';
 handles.data.staticmaskname='';
@@ -939,6 +941,7 @@ if str2double(handles.Njob)>0
     if get(hObject,'Value')==4 && strcmp(handles.data.masktype,'dynamic')
         errordlg('Dynamic Masking is not compatible with the Ensemble correlation.','Warning')
     end
+    handles=set_PIVcontrols(handles);
     load_data(handles);
     guidata(hObject,handles)
 end
@@ -949,7 +952,7 @@ end
 
 % --- ? Button Next to Algorithm Drop-Down Menu ---
 function algorithmhelp_Callback(hObject, eventdata, handles)
-PIVhelp(4)
+PIVhelp(5)
 
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
@@ -1199,17 +1202,18 @@ end
 function smoothingcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.velsmooth = num2str(get(hObject,''Value''));'])
+    eval(['size=handles.data.PIV' handles.data.cpass '.velsmoothfilt;'])
     if get(hObject,'Value')==1 && get(handles.passtype,'Value')>1
-        set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
+        set(handles.smoothingsize,'string',size,'backgroundcolor',[1 1 1]);
     else
-        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.smoothingsize,'string',size,'backgroundcolor',0.5*[1 1 1]);
     end
     guidata(hObject,handles)
 end
 
 % --- Smoothing Size Text Box ---
 function smoothingsize_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0 && get(handles.smoothingcheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.velsmoothfilt = num2str(get(hObject,''Value''));'])
     guidata(hObject,handles)
 end
@@ -1228,7 +1232,7 @@ end
 
 % --- ? Button Next to Validation Options ---
 function validationhelp_Callback(hObject, eventdata, handles)
-PIVhelp(6)
+PIVhelp(8)
 
 % --- Universal Outlier Detection Checkbox ---
 function uodcheckbox_Callback(hObject, eventdata, handles)
@@ -1240,7 +1244,7 @@ end
 
 % --- UOD Type Drop-Down Menu ---
 function uod_type_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0 && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.uod_type = num2str(get(hObject,''Value''));'])
     guidata(hObject,handles)
 end
@@ -1251,7 +1255,7 @@ end
 
 % --- UOD Window Size Text Box ---
 function uod_window_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0 && get(handles.validatecheckbox,'Value')==1
     A=get(hObject,'String');
     if strcmp(A(end),';')
         A=A(1:end-1);
@@ -1267,7 +1271,7 @@ end
 
 % --- UOD Threshold Text Box ---
 function uod_thresh_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0 && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.uod_thresh = get(hObject,''String'');'])
     guidata(hObject,handles)
 end
@@ -1286,7 +1290,7 @@ end
 
 % --- Bootstrapping Percent Removed Text Box ---
 function bootstrap_percentsampled_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0  && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.bootstrap_percentsampled = get(hObject,''String'');'])
     guidata(hObject,handles)
 end
@@ -1298,7 +1302,7 @@ end
 
 % --- Bootstrapping Interpolations per Frame Text Box ---
 function bootstrap_iterations_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0  && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.bootstrap_iterations = get(hObject,''String'');'])
     guidata(hObject,handles)
 end
@@ -1309,7 +1313,7 @@ end
 
 % --- Bootstrapping Number of Passes Text Box ---
 function bootstrap_passes_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0  && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.bootstrap_passes = get(hObject,''String'');'])
     guidata(hObject,handles)
 end
@@ -1320,7 +1324,7 @@ end
 
 % --- Thresholding Check Box ---
 function thresholdingcheckbox_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0 
     eval(['handles.data.PIV' handles.data.cpass '.thresh = num2str(get(hObject,''Value''));'])
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
@@ -1328,7 +1332,7 @@ end
 
 % --- U Threshold Text Box ---
 function thresh_U_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0  && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.valuthresh = get(hObject,''String'');'])
     a=get(hObject,'String');
     tx=str2double(a(1:(strfind(a,',')-1)));
@@ -1351,7 +1355,7 @@ end
 
 % --- V Threshold Text Box ---
 function thresh_V_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+if str2double(handles.Njob)>0  && get(handles.validatecheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.valvthresh = get(hObject,''String'');'])
     a=get(hObject,'String');
     tx=str2double(a(1:(strfind(a,',')-1)));
@@ -1575,13 +1579,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Experiment Weber Number Textbox ---
-function exp_We_Callback(hObject, eventdata, handles)
+% --- Experiment Particle Stokes Number Textbox ---
+function exp_St_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_We);
+    set(hObject,'String',handles.data.exp_St);
     guidata(hObject,handles)
 end
-function exp_We_CreateFcn(hObject, eventdata, handles)
+function exp_St_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -1626,6 +1630,28 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 function exp_pixelsize_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Particle Diameter Textbox ---
+function exp_partD_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_partD = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_partD_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Particle Density Textbox ---
+function exp_partdensity_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_partdensity = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_partdensity_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -1788,6 +1814,8 @@ if str2double(handles.Njob)==0
     set(handles.exp_camera,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_sensorsize,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_partD,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_partdensity,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_viscosity,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_density,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_surfacetension,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -1843,6 +1871,8 @@ else
     set(handles.exp_camera,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_sensorsize,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',[1 1 1]);
+    set(handles.exp_partD,'String','','backgroundcolor',[1 1 1]);
+    set(handles.exp_partdensity,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_viscosity,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_density,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_surfacetension,'String','','backgroundcolor',[1 1 1]);
@@ -2089,12 +2119,13 @@ else
     set(handles.windowsize,'backgroundcolor',[1 1 1]);
 end
 
-if strcmp(A.gridtype,'2')
+if strcmp(A.gridtype,'2') && str2double(handles.data.method)~=1
     set(handles.setgridresbutton,'Value',0)
     set(handles.setwinoverlapbutton,'Value',1)
     set(handles.gridres,'backgroundcolor',0.5*[1 1 1]);
     set(handles.winoverlap,'backgroundcolor',[1 1 1])
 else
+    eval(['handles.data.PIV' handles.data.cpass '.gridtype = ''1'';']);
     set(handles.setgridresbutton,'Value',1)
     set(handles.setwinoverlapbutton,'Value',0)
     set(handles.gridres,'backgroundcolor',[1 1 1]);
@@ -2170,6 +2201,8 @@ set(handles.exp_wavelength,'String',handles.data.exp_wavelength);
 set(handles.exp_camera,'String',handles.data.exp_camera);
 set(handles.exp_sensorsize,'String',handles.data.exp_sensorsize);
 set(handles.exp_pixelsize,'String',handles.data.exp_pixelsize);
+set(handles.exp_partD,'String',handles.data.exp_partD);
+set(handles.exp_partdensity,'String',handles.data.exp_partdensity);
 set(handles.exp_viscosity,'String',handles.data.exp_viscosity);
 set(handles.exp_density,'String',handles.data.exp_density);
 set(handles.exp_surfacetension,'String',handles.data.exp_surfacetension);
@@ -2177,7 +2210,7 @@ set(handles.exp_L,'String',handles.data.exp_L);
 set(handles.exp_v0,'String',handles.data.exp_v0);
 set(handles.exp_notesbox,'String',handles.data.exp_notes);
 set(handles.exp_Re,'String',handles.data.exp_Re);
-set(handles.exp_We,'String',handles.data.exp_We);
+set(handles.exp_St,'String',handles.data.exp_St);
 
 set(handles.passtype,'Value',str2double(handles.data.method));
 set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
@@ -2241,8 +2274,8 @@ end
 
 if ~(isempty(handles.data.exp_viscosity) || isempty(handles.data.exp_density) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
     try
-        Re=str2double(handles.data.exp_density)*str2double(handles.data.exp_v0)*str2double(handles.data.exp_L)/str2double(handles.data.exp_viscosity);
-        Re=num2str(uint64(Re));
+        Re=str2double(handles.data.exp_density)*1000*str2double(handles.data.exp_v0)*str2double(handles.data.exp_L)/str2double(handles.data.exp_viscosity);
+%         Re=num2str(uint64(Re));
         handles.data.exp_Re=Re;
         set(handles.exp_Re,'String',Re);
     catch
@@ -2254,19 +2287,19 @@ else
     set(handles.exp_Re,'String','')
 end
 
-if ~(isempty(handles.data.exp_surfacetension) || isempty(handles.data.exp_density) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
+if ~(isempty(handles.data.exp_partD) || isempty(handles.data.exp_partdensity) || isempty(handles.data.exp_viscosity) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
     try
-        We=str2double(handles.data.exp_density)*str2double(handles.data.exp_v0)^2*str2double(handles.data.exp_L)/str2double(handles.data.exp_surfacetension);
-        We=num2str(uint64(We));
-        handles.data.exp_We=We;
-        set(handles.exp_We,'String',We);
+        St=str2double(handles.data.exp_partdensity)*1000*(str2double(handles.data.exp_partD)*10^-6)^2*str2double(handles.data.exp_v0)/18/str2double(handles.data.exp_viscosity)/str2double(handles.data.exp_L);
+%         St=num2str(uint64(St));
+        handles.data.exp_St=St;
+        set(handles.exp_St,'String',St);
     catch
-        handles.data.exp_We='';
-        set(handles.exp_We,'String','')
+        handles.data.exp_St='';
+        set(handles.exp_St,'String','')
     end
 else
-    handles.data.exp_We='';
-    set(handles.exp_We,'String','')
+    handles.data.exp_St='';
+    set(handles.exp_St,'String','')
 end
 
 function write_expsummary(Data,handles)
@@ -2290,13 +2323,15 @@ fprintf(fid,['Sensor Size (mm):              ',Data.exp_sensorsize,'\n']);
 fprintf(fid,['Pixel Size (um):               ',Data.exp_pixelsize,'\n']);
 fprintf(fid,['Camera Frame Rate (Hz):        ',Data.wrsamp,'\n']);
 fprintf(fid,['Magnification (um/pix):        ',Data.wrmag,'\n']);
+fprintf(fid,['Particle Diameter (um):        ',Data.exp_partD,'\n']);
+fprintf(fid,['Particle Density (g/cm^3):     ',Data.exp_partdensity,'\n']);
+fprintf(fid,['Density (g/cm^3):              ',Data.exp_density,'\n']);
 fprintf(fid,['Dynamic Viscosity (Pa*s):      ',Data.exp_viscosity,'\n']);
-fprintf(fid,['Density (kg/m^3):              ',Data.exp_density,'\n']);
 fprintf(fid,['Surface Tension (N/m):         ',Data.exp_surfacetension,'\n']);
 fprintf(fid,['Characteristic Length (m):     ',Data.exp_L,'\n']);
 fprintf(fid,['Characteristic Velocity (m/s): ',Data.exp_v0,'\n']);
 fprintf(fid,['Reynolds Number:               ',Data.exp_Re,'\n']);
-fprintf(fid,['Weber Number:                  ',Data.exp_We,'\n\n']);
+fprintf(fid,['Particle Stokes Number:        ',Data.exp_St,'\n\n']);
 for i=1:size(Data.exp_notes,1)
     fprintf(fid,[Data.exp_notes(i,:),'\n']);
 end
@@ -2379,7 +2414,7 @@ for i=1:str2double(Data.passes)
 end
 
 fprintf(fid,'\n----------------------Images and Masking---------------------\n');
-fprintf(fid,'\nMasking Type: ');
+fprintf(fid,'Masking Type: ');
 if strcmp(Data.masktype,'static')
     fprintf(fid,['Static\nMask File: ',Data.staticmaskname,'\n']);
 elseif strcmp(Data.masktype,'dynamic')
