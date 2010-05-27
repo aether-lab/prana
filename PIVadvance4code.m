@@ -224,10 +224,9 @@ switch char(M)
                 
                 %write output
                 if Writeswitch(e) 
-                    if str2double(Data.datout) || str2double(Data.multiplematout)
-                        fprintf('saving...                        ')
-                        t1=cputime;
-                    end         
+                    fprintf('saving...                        ')
+                    t1=cputime;
+                        
                     if Peakswitch(e)
                         if PeakVel(e)
                             U=[Uval,U(:,1:PeakNum(e))];
@@ -265,17 +264,9 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
-
-                    if str2double(Data.singlematout)
-                        X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
-                        U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
-                        Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                    end
                     
-                    if str2double(Data.datout) || str2double(Data.multiplematout)
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end  
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
                 U=Uval; V=Vval;
         
@@ -507,10 +498,8 @@ switch char(M)
                 
             %write output
             if Writeswitch(e) 
-                if str2double(Data.datout) || str2double(Data.multiplematout)
-                    fprintf('saving...                        ')
-                    t1=cputime;
-                end
+                fprintf('saving...                        ')
+                t1=cputime;
 
                 if Peakswitch(e)
                     if PeakVel(e)
@@ -549,16 +538,8 @@ switch char(M)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                 end
 
-                if str2double(Data.singlematout)
-                    X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
-                    U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
-                    Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                end
-
-                if str2double(Data.datout) || str2double(Data.multiplematout)
-                    eltime=cputime-t1;
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                end  
+                eltime=cputime-t1;
+                fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             end
             U=Uval; V=Vval;
         
@@ -674,10 +655,8 @@ switch char(M)
                 
                 %write output
                 if Writeswitch(e) 
-                    if str2double(Data.datout) || str2double(Data.multiplematout)
-                        fprintf('saving...                        ')
-                        t1=cputime;
-                    end
+                    fprintf('saving...                        ')
+                    t1=cputime;
                                         
                     if Peakswitch(e)
                         if PeakVel(e)
@@ -715,17 +694,9 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
-
-                    if str2double(Data.singlematout)
-                        X_write{e}(:,:,q)=X;Y_write{e}(:,:,q)=Y;
-                        U_write{e}(:,:,:,q)=U;V_write{e}(:,:,:,q)=V;
-                        Eval_write{e}(:,:,:,q)=Eval;C_write{e}(:,:,:,q)=C;
-                    end
                     
-                    if str2double(Data.datout) || str2double(Data.multiplematout)
-                        eltime=cputime-t1;
-                        fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-                    end  
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
             end
             
@@ -733,21 +704,6 @@ switch char(M)
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             
         end
-end
-
-% Write Single .mat File
-if str2double(Data.singlematout)
-    fprintf('\n----------------------------------------------------\n')
-    fprintf('saving .mat file(s)...           ')
-    t1=cputime;
-    for e=1:P
-        X=X_write{e};Y=Y_write{e};
-        U=U_write{e};V=V_write{e};
-        Eval=Eval_write{e};C=C_write{e};
-        save([pltdirec char(wbase(e,:)) 'all.mat'],'X','Y','U','V','Eval','C')
-    end
-    eltime=cputime-t1;
-    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 end
 
 %signal job complete

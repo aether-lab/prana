@@ -21,6 +21,8 @@ end
 % --- Opening function for figure / variable initialization ---
 function PIVadvance4_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.syscolor=get(hObject,'color');
+set(handles.axes4,'Color',0.941*[1 1 1],'XColor',0.941*[1 1 1],'YColor',0.941*[1 1 1]);
+title('Particle Density (g/cm^3):','FontSize',4.0,'FontName','MS Sans Serif')
 if ispc
     handles.loaddirec=[pwd '\'];
 else
@@ -42,7 +44,6 @@ handles.data.wrsep='1';
 handles.data.batchname='Proc1';
 handles.data.datout='1';
 handles.data.multiplematout='0';
-handles.data.singlematout='0';
 handles.data.outdirec=pwd;
 
 handles.data.exp_date='';
@@ -50,6 +51,8 @@ handles.data.exp_wavelength='532';
 handles.data.exp_camera='';
 handles.data.exp_sensorsize='';
 handles.data.exp_pixelsize='';
+handles.data.exp_lenstype='';
+handles.data.exp_lensfnum='';
 handles.data.exp_partD='';
 handles.data.exp_partdensity='';
 handles.data.exp_viscosity='1.308e-3';
@@ -60,6 +63,10 @@ handles.data.exp_L='';
 handles.data.exp_notes='Notes:';
 handles.data.exp_Re='';
 handles.data.exp_St='';
+handles.data.exp_M='';
+handles.data.exp_resmm='';
+handles.data.exp_diffractiondiameter='';
+handles.data.exp_depthoffocus='';
 
 handles.data.masktype='none';
 handles.data.staticmaskname='';
@@ -1463,9 +1470,9 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 
-% --- Multiple .dat Files Checkbox ---
+% --- .dat Filetype Checkbox ---
 function datcheckbox_Callback(hObject, eventdata, handles)
-if get(hObject,'Value')==1 || (get(handles.multiplematcheckbox,'Value')==0 && get(handles.singlematcheckbox,'Value')==0)
+if get(hObject,'Value')==1 || get(handles.multiplematcheckbox,'Value')==0
     set(hObject,'Value',1);
     handles.data.datout='1';
     if str2double(handles.Njob)>0
@@ -1482,9 +1489,9 @@ else
     end
 end
 
-% --- Multiple .mat Files Checkbox ---
+% --- .mat Filetype Checkbox ---
 function multiplematcheckbox_Callback(hObject, eventdata, handles)
-if get(hObject,'Value')==1 || (get(handles.datcheckbox,'Value')==0 && get(handles.singlematcheckbox,'Value')==0)
+if get(hObject,'Value')==1 || get(handles.datcheckbox,'Value')==0
     set(hObject,'Value',1);
     handles.data.multiplematout='1';
     if str2double(handles.Njob)>0
@@ -1501,29 +1508,11 @@ else
     end
 end
 
-% --- Single .mat File Checkbox
-function singlematcheckbox_Callback(hObject, eventdata, handles)
-if get(hObject,'Value')==1 || (get(handles.datcheckbox,'Value')==0 && get(handles.multiplematcheckbox,'Value')==0)
-    set(hObject,'Value',1);
-    handles.data.singlematout='1';
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.joblist,'String'));
-        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-        guidata(hObject,handles)
-    end
-else    
-    handles.data.singlematout='0';
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.joblist,'String'));
-        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-        guidata(hObject,handles)
-    end
-end
-
-% --- Magnification Text Box ---
+% --- Calibration Text Box ---
 function magnification_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.wrmag = get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
     if str2double(get(hObject,'String'))<=0
         set(hObject,'backgroundcolor','r')
@@ -1590,6 +1579,50 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Experiment Image Resolution (pix) Textbox ---
+function exp_M_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_M);
+    guidata(hObject,handles)
+end
+function exp_M_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Image Resolution (mm) Textbox ---
+function exp_resmm_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_resmm);
+    guidata(hObject,handles)
+end
+function exp_resmm_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Diffraction Diameter Textbox ---
+function exp_diffractiondiameter_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_diffractiondiameter);
+    guidata(hObject,handles)
+end
+function exp_diffractiondiameter_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Depth of Focus Textbox ---
+function exp_depthoffocus_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_depthoffocus);
+    guidata(hObject,handles)
+end
+function exp_depthoffocus_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
 % --- Experiment Laser Wavelength Textbox ---
 function exp_wavelength_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -1615,7 +1648,8 @@ end
 % --- Experiment Sensor Size Textbox ---
 function exp_sensorsize_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.exp_sensorsize = get(hObject,'String');
+    handles.data.exp_sensorsize=get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
 end
 function exp_sensorsize_CreateFcn(hObject, eventdata, handles)
@@ -1630,6 +1664,28 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 function exp_pixelsize_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Lens Type Textbox ---
+function exp_lenstype_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_lenstype = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_lenstype_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function exp_lensfnum_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_lensfnum = get(hObject,'String');
+    [handles]=load_data(handles);
+    guidata(hObject,handles)
+end
+function exp_lensfnum_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -1756,6 +1812,12 @@ end
 
 % --- Update All Data ---
 function handles=update_data(handles)
+set(handles.exp_Re,'backgroundcolor',0.8*[1 1 1]);
+set(handles.exp_St,'backgroundcolor',0.8*[1 1 1]);
+set(handles.exp_M,'backgroundcolor',0.8*[1 1 1]);
+set(handles.exp_resmm,'backgroundcolor',0.8*[1 1 1]);
+set(handles.exp_diffractiondiameter,'backgroundcolor',0.8*[1 1 1]);
+set(handles.exp_depthoffocus,'backgroundcolor',0.8*[1 1 1]);
 if str2double(handles.Njob)==0
     set(handles.passlist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.joblist,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -1814,6 +1876,8 @@ if str2double(handles.Njob)==0
     set(handles.exp_camera,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_sensorsize,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_lenstype,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_lensfnum,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_partD,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_partdensity,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_viscosity,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -1871,6 +1935,8 @@ else
     set(handles.exp_camera,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_sensorsize,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',[1 1 1]);
+    set(handles.exp_lenstype,'String','','backgroundcolor',[1 1 1]);
+    set(handles.exp_lensfnum,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_partD,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_partdensity,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_viscosity,'String','','backgroundcolor',[1 1 1]);
@@ -1913,13 +1979,8 @@ else
     else
         set(handles.multiplematcheckbox,'Value',0)
     end
-    if str2double(handles.data.singlematout)==1
-        set(handles.singlematcheckbox,'Value',1)
-    else
-        set(handles.singlematcheckbox,'Value',0)
-    end
         
-    load_data(handles);
+%     load_data(handles);
     load_PIVlist(handles);
     handles=set_PIVcontrols(handles);
     load_imlist(handles);
@@ -1960,6 +2021,7 @@ for e=1:size(files,1)
     filesf(e)={[char(files(e,1)) ' and ' char(files(e,2))]};
 end
 set(handles.imagelist,'String',filesf,'Value',1);
+handles=load_data(handles);
 
 % --- Load Mask List ---
 function load_masklist(handles)
@@ -2201,6 +2263,8 @@ set(handles.exp_wavelength,'String',handles.data.exp_wavelength);
 set(handles.exp_camera,'String',handles.data.exp_camera);
 set(handles.exp_sensorsize,'String',handles.data.exp_sensorsize);
 set(handles.exp_pixelsize,'String',handles.data.exp_pixelsize);
+set(handles.exp_lenstype,'String',handles.data.exp_lenstype);
+set(handles.exp_lensfnum,'String',handles.data.exp_lensfnum);
 set(handles.exp_partD,'String',handles.data.exp_partD);
 set(handles.exp_partdensity,'String',handles.data.exp_partdensity);
 set(handles.exp_viscosity,'String',handles.data.exp_viscosity);
@@ -2211,6 +2275,10 @@ set(handles.exp_v0,'String',handles.data.exp_v0);
 set(handles.exp_notesbox,'String',handles.data.exp_notes);
 set(handles.exp_Re,'String',handles.data.exp_Re);
 set(handles.exp_St,'String',handles.data.exp_St);
+set(handles.exp_M,'String',handles.data.exp_M);
+set(handles.exp_resmm,'String',handles.data.exp_resmm);
+set(handles.exp_diffractiondiameter,'String',handles.data.exp_diffractiondiameter)
+set(handles.exp_depthoffocus,'String',handles.data.exp_depthoffocus)
 
 set(handles.passtype,'Value',str2double(handles.data.method));
 set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
@@ -2275,7 +2343,7 @@ end
 if ~(isempty(handles.data.exp_viscosity) || isempty(handles.data.exp_density) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
     try
         Re=str2double(handles.data.exp_density)*1000*str2double(handles.data.exp_v0)*str2double(handles.data.exp_L)/str2double(handles.data.exp_viscosity);
-%         Re=num2str(uint64(Re));
+        Re=num2str(Re);
         handles.data.exp_Re=Re;
         set(handles.exp_Re,'String',Re);
     catch
@@ -2290,7 +2358,7 @@ end
 if ~(isempty(handles.data.exp_partD) || isempty(handles.data.exp_partdensity) || isempty(handles.data.exp_viscosity) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
     try
         St=str2double(handles.data.exp_partdensity)*1000*(str2double(handles.data.exp_partD)*10^-6)^2*str2double(handles.data.exp_v0)/18/str2double(handles.data.exp_viscosity)/str2double(handles.data.exp_L);
-%         St=num2str(uint64(St));
+        St=num2str(St);
         handles.data.exp_St=St;
         set(handles.exp_St,'String',St);
     catch
@@ -2301,6 +2369,51 @@ else
     handles.data.exp_St='';
     set(handles.exp_St,'String','')
 end
+
+if ~isempty(handles.data.wrmag)
+    try
+        im1=double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+        L=size(im1)*str2double(handles.data.wrmag)*10^-6;
+        handles.data.exp_resmm=[num2str(L(2)*10^3),',',num2str(L(1)*10^3)];
+
+        if ~(isempty(handles.data.exp_sensorsize) || isempty(handles.data.exp_lensfnum) || isempty(handles.data.exp_wavelength))
+            try
+                Sx=str2double(handles.data.exp_sensorsize(1:(strfind(handles.data.exp_sensorsize,',')-1)));
+                Sy=str2double(handles.data.exp_sensorsize((strfind(handles.data.exp_sensorsize,',')+1):end));
+                S=sqrt(Sx^2+Sy^2);
+                M=sqrt(L(1)^2+L(2)^2)/(S*10^-3);
+                d=2.44*str2double(handles.data.exp_lensfnum)*(M+1)*str2double(handles.data.exp_wavelength)*10^-3;
+                dz=2*str2double(handles.data.exp_lensfnum)*d*(M+1)/M^2;
+                handles.data.exp_M=num2str(M);
+                handles.data.exp_diffractiondiameter=num2str(d);
+                handles.data.exp_depthoffocus=num2str(dz);
+      
+            catch
+                handles.data.exp_M='';
+                handles.data.exp_diffractiondaimeter='';
+                handles.data.exp_depthoffocus='';
+            end
+        else
+            handles.data.exp_M='';
+            handles.data.exp_diffractiondiameter='';
+            handles.data.exp_depthoffocus='';
+        end
+    catch
+        handles.data.exp_resmm='';
+        handles.data.exp_M='';
+        handles.data.exp_diffractiondiameter='';
+        handles.data.exp_depthoffocus='';
+    end
+else
+    handles.data.exp_resmm='';
+    handles.data.exp_M='';
+    handles.data.exp_diffractiondiameter='';
+    handles.data.exp_depthoffocus='';
+end
+set(handles.exp_M,'String',handles.data.exp_M)
+set(handles.exp_resmm,'String',handles.data.exp_resmm)
+set(handles.exp_diffractiondiameter,'String',handles.data.exp_diffractiondiameter)
+set(handles.exp_depthoffocus,'String',handles.data.exp_depthoffocus)
 
 function write_expsummary(Data,handles)
 if ispc
@@ -2319,7 +2432,7 @@ fprintf(fid,['Date of Experiment :           ',Data.exp_date,'\n']);
 fprintf(fid,['Laser Wavelength (nm):         ',Data.exp_wavelength,'\n']);
 fprintf(fid,['Laser Pulse Separation (us):   ',Data.wrsep,'\n']);
 fprintf(fid,['Camera Serial #:               ',Data.exp_camera,'\n']);
-fprintf(fid,['Sensor Size (mm):              ',Data.exp_sensorsize,'\n']);
+fprintf(fid,['Sensor Size- "Sx,Sy" (mm):     ',Data.exp_sensorsize,'\n']);
 fprintf(fid,['Pixel Size (um):               ',Data.exp_pixelsize,'\n']);
 fprintf(fid,['Camera Frame Rate (Hz):        ',Data.wrsamp,'\n']);
 fprintf(fid,['Magnification (um/pix):        ',Data.wrmag,'\n']);
@@ -2331,7 +2444,11 @@ fprintf(fid,['Surface Tension (N/m):         ',Data.exp_surfacetension,'\n']);
 fprintf(fid,['Characteristic Length (m):     ',Data.exp_L,'\n']);
 fprintf(fid,['Characteristic Velocity (m/s): ',Data.exp_v0,'\n']);
 fprintf(fid,['Reynolds Number:               ',Data.exp_Re,'\n']);
-fprintf(fid,['Particle Stokes Number:        ',Data.exp_St,'\n\n']);
+fprintf(fid,['Particle Stokes Number:        ',Data.exp_St,'\n']);
+fprintf(fid,['Magnification Factor:          ',Data.exp_M,'\n']);
+fprintf(fid,['Image Resolution (mm):         ',Data,exp_resmm,'\n']);
+fprintf(fid,['Diffraction Diameter (um):     ',Data.exp_diffractiondiameter,'\n']);
+fprintf(fid,['Depth of Focus (um):           ',Data.exp_depthoffocus,'\n']);
 for i=1:size(Data.exp_notes,1)
     fprintf(fid,[Data.exp_notes(i,:),'\n']);
 end
