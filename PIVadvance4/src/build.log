@@ -1,9 +1,8 @@
-mcc -o 'PIVadvance4' -W 'WinMain:PIVadvance4' -d 'W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src' -T 'link:exe' -v 'W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m'  
+mcc -o 'PIVadvance4' -W 'WinMain:PIVadvance4' -d 'W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src' -T 'link:exe' -v -N -p 'curvefit' -p 'images' -p 'signal' -p 'distcomp' 'W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m'  
 Compiler version: 4.10 (R2009a)  
 Processing W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.fig 
 Processing C:\Program Files\MATLAB\R2009a\toolbox\signal\mcc.enc 
 Processing C:\Program Files\MATLAB\R2009a\toolbox\images\mcc.enc 
-Processing C:\Program Files\MATLAB\R2009a\toolbox\stats\mcc.enc 
 Processing C:\Program Files\MATLAB\R2009a\toolbox\shared\imageslib\mcc.enc 
 Processing W:\matlab_projects\pivadvance\PIVadvance4\PIVhelp.fig 
 Processing C:\Program Files\MATLAB\R2009a\toolbox\matlab\guide\guideopts.fig 
@@ -15,8 +14,8 @@ Processing directories installed with MCR...
 The file W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\mccExcludedFiles.log contains a list of functions excluded from the CTF archive. 
 3 item(s) added. 
 Generating MATLAB path for the compiled application... 
-Created 48 path items. 
-Begin validation of MEX files: Tue May 25 10:35:39 2010  
+Created 45 path items. 
+Begin validation of MEX files: Fri May 28 10:51:57 2010  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\images\bin\win32\libippmw.dll'.  
 No conflicting M-file found.  
 Validating 'C:\Program Files\MATLAB\R2009a\toolbox\images\images\private\imfilter_mex.mexw32'.  
@@ -30,55 +29,28 @@ Found M-file 'C:\Program Files\MATLAB\R2009a\toolbox\images\iptutils\iptcheckinp
 MEX file  
     'C:\Program Files\MATLAB\R2009a\toolbox\images\iptutils\iptcheckinput.mexw32'  
  is valid. It contains 'mexFunction.'  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\DNToMatrix.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\MatrixToDN.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\computeDN.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\convertToDouble.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\matrixBitXor.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobolIndexed.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobolNet.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobolPoint.mexw32'.  
-No conflicting M-file found.  
-Validating 'C:\Program Files\MATLAB\R2009a\toolbox\stats\@sobolset\private\sobolSequence.mexw32'.  
-No conflicting M-file found.  
-End validation of MEX files: Tue May 25 10:35:39 2010  
+End validation of MEX files: Fri May 28 10:51:57 2010  
 Parsing file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
 	(Referenced from: "Compiler Command Line").  
 Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\deployprint.m" 
 	(Referenced from: "Compiler Command Line").  
 Parsing file "C:\Program Files\MATLAB\R2009a\toolbox\compiler\deploy\printdlg.m" 
 	(Referenced from: "Compiler Command Line").  
-Deleting 14 temporary MEX authorization files.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_16259_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_22841_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_7383_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_18158_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_13384_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_7224_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_15374_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_2570_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_19782_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_29410_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_29182_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_28931_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_20964_5096.auth'.  
-Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_5154_5096.auth'.  
+Deleting 5 temporary MEX authorization files.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_9104_2596.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_11048_2596.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_19287_2596.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_13015_2596.auth'.  
+Removing: 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_7520_2596.auth'.  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\readme.txt".  
 Generating file "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c".  
-Contents of temporary response file 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_6648':  
+Contents of temporary response file 'C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_23612':  
  ......................  
 ' -O -v -output "PIVadvance4" -I"W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_main.c" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_delay_load.c" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src\PIVadvance4_mcc_component_data.c" -link exe  -env MCR_DELAYLOAD=/delayload:mclmcrrt710.dll -env MCR_DELAYLIB=delayimp.lib -outdir "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src"'  
 ......................  
-Executing command: mbuild  "@C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_5096_6648"  
+Executing command: mbuild  "@C:\Users\bdrew\AppData\Local\Temp\mathworks_tmp_2596_23612"  
  This is mbuild Copyright 1984-2006 The MathWorks, Inc. 
  
 -> Default options filename found in C:\Users\bdrew\AppData\Roaming\MathWorks\MATLAB\R2009a 

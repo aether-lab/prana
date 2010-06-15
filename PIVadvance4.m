@@ -21,8 +21,6 @@ end
 % --- Opening function for figure / variable initialization ---
 function PIVadvance4_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.syscolor=get(hObject,'color');
-set(handles.axes4,'Color',0.941*[1 1 1],'XColor',0.941*[1 1 1],'YColor',0.941*[1 1 1]);
-title('Particle Density (g/cm^3):','FontSize',4.0,'FontName','MS Sans Serif')
 if ispc
     handles.loaddirec=[pwd '\'];
 else
@@ -33,8 +31,8 @@ handles.data.imdirec=pwd;
 handles.data.imbase='Img_';
 handles.data.imzeros='6';
 handles.data.imext='tif';
-handles.data.imcstep='2';
-handles.data.imfstep='1';
+handles.data.imcstep='1';
+handles.data.imfstep='2';
 handles.data.imfstart='1';
 handles.data.imfend='1';
 
@@ -47,24 +45,25 @@ handles.data.multiplematout='0';
 handles.data.outdirec=pwd;
 
 handles.data.exp_date='';
-handles.data.exp_wavelength='532';
-handles.data.exp_camera='';
-handles.data.exp_sensorsize='';
-handles.data.exp_pixelsize='';
-handles.data.exp_lenstype='';
-handles.data.exp_lensfnum='';
+handles.data.exp_L='';
+handles.data.exp_v0='';
+handles.data.exp_notes={'Camera Description:' '' 'Lens Description:' '' 'Notes:' ''};
+handles.data.exp_density='1000';
+handles.data.exp_viscosity='1.308e-3';
+handles.data.exp_surfacetension='0.07197';
 handles.data.exp_partD='';
 handles.data.exp_partdensity='';
-handles.data.exp_viscosity='1.308e-3';
-handles.data.exp_density='1';
-handles.data.exp_surfacetension='0.07197';
-handles.data.exp_v0='';
-handles.data.exp_L='';
-handles.data.exp_notes='Notes:';
+handles.data.exp_wavelength='.532';
+handles.data.exp_pixelsize='';
+handles.data.exp_lensfocal='';
+handles.data.exp_lensfnum='';
+handles.data.exp_micro='0';
+handles.data.exp_NA='';
+handles.data.exp_n='';
 handles.data.exp_Re='';
 handles.data.exp_St='';
 handles.data.exp_M='';
-handles.data.exp_resmm='';
+handles.data.exp_ROI='';
 handles.data.exp_diffractiondiameter='';
 handles.data.exp_depthoffocus='';
 
@@ -117,7 +116,8 @@ handles.data.cpass=num2str(get(handles.passlist,'Value'));
 handles.data.method='1';
 handles.data.velinterp='3';
 handles.data.iminterp='1';
-handles.data.framestep='1';
+handles.data.framestep='3';
+handles.data.PIVerror='0.1';
 
 handles.data0=handles.data;
 handles.Njob=num2str(size(get(handles.joblist,'String'),1));
@@ -192,7 +192,15 @@ msgbox({'PIVAdvance4 v1.0','','Modified by B.Drew on 5/14/10','','[License / Cop
 function helpmenu_helptopics_Callback(hObject, eventdata, handles)
 PIVhelp
 
-% --- Image and Data Masks Tab ---
+% --- Experiment Parameters Tab ---
+function outputtoggle_Callback(hObject, eventdata, handles)
+set(handles.imagetoggle,'Value',0)
+set(handles.processingtoggle,'Value',0)
+set(handles.imagepanel,'Visible','off')
+set(handles.processingpanel,'Visible','off')
+set(handles.outputpanel,'Visible','on')
+
+% --- Image and Data I / O Tab ---
 function imagetoggle_Callback(hObject, eventdata, handles)
 set(handles.outputtoggle,'Value',0)
 set(handles.processingtoggle,'Value',0)
@@ -207,14 +215,6 @@ set(handles.outputtoggle,'Value',0)
 set(handles.imagepanel,'Visible','off')
 set(handles.outputpanel,'Visible','off')
 set(handles.processingpanel,'Visible','on')
-
-% --- Output Tab ---
-function outputtoggle_Callback(hObject, eventdata, handles)
-set(handles.imagetoggle,'Value',0)
-set(handles.processingtoggle,'Value',0)
-set(handles.imagepanel,'Visible','off')
-set(handles.processingpanel,'Visible','off')
-set(handles.outputpanel,'Visible','on')
 
 % --- Job List ---
 function joblist_Callback(hObject, eventdata, handles)
@@ -243,11 +243,14 @@ function runall_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    
+%     matlabpool open local 8
     for e=1:size(Jlist,1)
         Data=eval(['handles.' Jlist(e,:)]);
         write_expsummary(Data,handles);
         PIVadvance4code(Data);
     end
+%     matlabpool close
 end
 
 % --- New Job Button ---
@@ -423,6 +426,50 @@ end
 function currentjobname_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
+end
+
+% --- Load First Image Button ---
+function loadfirstimage_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.imdirec;
+    B = handles.data.imbase;
+    Z = handles.data.imzeros;
+    E = handles.data.imext;
+    S = handles.data.imfstart;
+    F = handles.data.imfend;
+    [imname,handles.data.imdirec] = uigetfile('*.*','Select an image file',handles.data.imdirec);
+    if handles.data.imdirec==0
+        handles.data.imdirec = D;
+        handles.data.imbase = B;
+        handles.data.imzeros = Z;
+        handles.data.imext = E;
+        handles.data.imfstart = S;
+        handles.data.imfend = F;
+    else
+        i=strfind(imname,'.');
+        handles.data.imext=imname((i+1):end);
+        fstart=0;zeros=0;
+        while ~isnan(fstart)
+            zeros=zeros+1;
+            fstart=str2double(imname((i-zeros):(i-1)));
+        end
+        handles.data.imzeros=num2str(zeros-1);
+        fstart=str2double(imname((i-(zeros-1)):(i-1)));
+        handles.data.imfstart=num2str(fstart);
+        handles.data.imfend=num2str(fstart);
+        handles.data.imbase=imname(1:(i-zeros));
+    end
+    set(handles.imagedirectory,'string',handles.data.imdirec);
+    set(handles.imagebasename,'string',handles.data.imbase);
+    set(handles.imagezeros,'string',handles.data.imzeros);
+    set(handles.imageextension,'string',handles.data.imext);
+    set(handles.imageframestart,'string',handles.data.imfstart);
+    set(handles.imageframeend,'string',handles.data.imfend);
+    if strcmp(handles.data.masktype,'dynamic')
+        load_masklist(handles)
+    end
+    load_imlist(handles);
+    guidata(hObject,handles)
 end
 
 % --- Image Directory Text Box ---
@@ -758,7 +805,6 @@ if str2double(handles.Njob)>0
             end
             try
                 im1(mask==0)=0.5*im1(mask==0);
-        %         im1=im1.*mask;
                 e=0;
             catch
                 msgbox('Mask / Image Not Compatible');
@@ -785,9 +831,11 @@ if str2double(handles.Njob)>0
             dx=0.8*Ps(3);
             dy=dx*(L(1)/L(2));
         end
-        set(gcf,'position',[(Ps(3)-dx)/2 (Ps(4)-dy)/2 dx dy])
-        set(gcf,'color',0.5*[1 1 1])
-        imagesc(im1,[0 1]),axis image,colormap gray,axis off,set(gca,'position',[0 0 1 1])
+        if gcf~=gcbf
+            set(gcf,'position',[(Ps(3)-dx)/2 (Ps(4)-dy)/2 dx dy])
+            set(gcf,'color',0.5*[1 1 1])
+            imagesc(im1,[0 1]),axis image,colormap gray,axis off,set(gca,'position',[0 0 1 1])
+        end
 
         A=get(handles.gridbuffer,'String');
         G=[str2double(A(1:(strfind(A,',')-1))) str2double(A((strfind(A,',')+1):end))];
@@ -829,9 +877,70 @@ if str2double(handles.Njob)>0
         end
         X=X(Eval==1);
         Y=Y(Eval==1);
+        if gcf~=gcbf
+            plot(X,Y,'r.')
+        end
+    end
+end
 
-        plot(X,Y,'r.')
-        
+% --- Output Directory Text Box ---
+function outputdirectory_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.outdirec = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function outputdirectory_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Load Ouput Directory Button ---
+function loadoutputdirectorybutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.outdirec;
+    handles.data.outdirec = uigetdir(handles.data.outdirec);
+    if handles.data.outdirec==0
+        handles.data.outdirec = D;
+    end
+    set(handles.outputdirectory,'string',handles.data.outdirec);
+    guidata(hObject,handles)
+end
+
+% --- .dat Filetype Checkbox ---
+function datcheckbox_Callback(hObject, eventdata, handles)
+if get(hObject,'Value')==1 || get(handles.multiplematcheckbox,'Value')==0
+    set(hObject,'Value',1);
+    handles.data.datout='1';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+else    
+    handles.data.datout='0';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+end
+
+% --- .mat Filetype Checkbox ---
+function multiplematcheckbox_Callback(hObject, eventdata, handles)
+if get(hObject,'Value')==1 || get(handles.datcheckbox,'Value')==0
+    set(hObject,'Value',1);
+    handles.data.multiplematout='1';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
+    end
+else    
+    handles.data.multiplematout='0';
+    if str2double(handles.Njob)>0
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        guidata(hObject,handles)
     end
 end
 
@@ -902,13 +1011,23 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Maximum Framestep Drop-Down Menu ---
+% --- Maximum Framestep Textbox ---
 function framestep_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.framestep=num2str(get(hObject,'Value'));
+    handles.data.framestep=get(hObject,'String');
     guidata(hObject,handles)
 end
 function framestep_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function PIVerror_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.PIVerror=get(hObject,'String');
+    guidata(hObject,handles)
+end
+function PIVerror_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -917,14 +1036,26 @@ end
 function passtype_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.method=num2str(get(hObject,'Value'));
-    if get(hObject,'Value')==5
+    if get(hObject,'Value')==1
+        set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
+        for e=1:str2double(handles.data.passes)
+            eval(['handles.data.PIV' num2str(e) '.gridres = get(handles.gridres,''String'');'])
+            eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.gridbuffer,''String'');'])
+        end
+    elseif get(hObject,'Value')>=5
         set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
         set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
         set(handles.framestep,'backgroundcolor',[1 1 1]);
-    elseif get(hObject,'Value')>1
+        set(handles.PIVerror,'backgroundcolor',[1 1 1]);
+    else
         set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
         if get(hObject,'Value')==3
             set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
         else
@@ -935,16 +1066,8 @@ if str2double(handles.Njob)>0
         else
             set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
         end 
-    else
-        set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
     end
-    for e=1:str2double(handles.data.passes)
-        eval(['handles.data.PIV' num2str(e) '.gridres = get(handles.gridres,''String'');'])
-        eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.gridbuffer,''String'');'])
-    end
+
     if get(hObject,'Value')==4 && strcmp(handles.data.masktype,'dynamic')
         errordlg('Dynamic Masking is not compatible with the Ensemble correlation.','Warning')
     end
@@ -1447,68 +1570,39 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Output Directory Text Box ---
-function outputdirectory_Callback(hObject, eventdata, handles)
+% --- Laser Pulse Separation Text Box ---
+function pulseseparation_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.outdirec = get(hObject,'String');
+    handles.data.wrsep = get(hObject,'String');
     guidata(hObject,handles)
+    if str2double(get(hObject,'String'))<=0
+        set(hObject,'backgroundcolor','r')
+    else
+        set(hObject,'backgroundcolor',[1 1 1])
+    end
 end
-function outputdirectory_CreateFcn(hObject, eventdata, handles)
+function pulseseparation_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Load Ouput Directory Button ---
-function loadoutputdirectorybutton_Callback(hObject, eventdata, handles)
+% --- Camera Frame Rate Textbox ---
+function samplingrate_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    D = handles.data.outdirec;
-    handles.data.outdirec = uigetdir(handles.data.outdirec);
-    if handles.data.outdirec==0
-        handles.data.outdirec = D;
-    end
-    set(handles.outputdirectory,'string',handles.data.outdirec);
+    handles.data.wrsamp = get(hObject,'String');
     guidata(hObject,handles)
-end
-
-% --- .dat Filetype Checkbox ---
-function datcheckbox_Callback(hObject, eventdata, handles)
-if get(hObject,'Value')==1 || get(handles.multiplematcheckbox,'Value')==0
-    set(hObject,'Value',1);
-    handles.data.datout='1';
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.joblist,'String'));
-        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-        guidata(hObject,handles)
-    end
-else    
-    handles.data.datout='0';
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.joblist,'String'));
-        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-        guidata(hObject,handles)
+    if str2double(get(hObject,'String'))<=0
+        set(hObject,'backgroundcolor','r')
+    else
+        set(hObject,'backgroundcolor',[1 1 1])
     end
 end
-
-% --- .mat Filetype Checkbox ---
-function multiplematcheckbox_Callback(hObject, eventdata, handles)
-if get(hObject,'Value')==1 || get(handles.datcheckbox,'Value')==0
-    set(hObject,'Value',1);
-    handles.data.multiplematout='1';
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.joblist,'String'));
-        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-        guidata(hObject,handles)
-    end
-else    
-    handles.data.multiplematout='0';
-    if str2double(handles.Njob)>0
-        Jlist=char(get(handles.joblist,'String'));
-        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-        guidata(hObject,handles)
-    end
+function samplingrate_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
 
-% --- Calibration Text Box ---
+% --- Image Resolution Textbox ---
 function magnification_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.wrmag = get(hObject,'String');
@@ -1525,225 +1619,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Pulse Separation Text Box ---
-function pulseseparation_Callback(hObject, eventdata, handles)
+% --- Experiment Date Textbox ---
+function exp_date_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.wrsep = get(hObject,'String');
-    guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
-        set(hObject,'backgroundcolor','r')
-    else
-        set(hObject,'backgroundcolor',[1 1 1])
-    end
-end
-function pulseseparation_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Sampling Rate Text Box ---
-function samplingrate_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.wrsamp = get(hObject,'String');
-    guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
-        set(hObject,'backgroundcolor','r')
-    else
-        set(hObject,'backgroundcolor',[1 1 1])
-    end
-end
-function samplingrate_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Reynolds Number Textbox ---
-function exp_Re_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_Re);
+    handles.data.exp_date = get(hObject,'String');
     guidata(hObject,handles)
 end
-function exp_Re_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Particle Stokes Number Textbox ---
-function exp_St_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_St);
-    guidata(hObject,handles)
-end
-function exp_St_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Image Resolution (pix) Textbox ---
-function exp_M_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_M);
-    guidata(hObject,handles)
-end
-function exp_M_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Image Resolution (mm) Textbox ---
-function exp_resmm_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_resmm);
-    guidata(hObject,handles)
-end
-function exp_resmm_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Diffraction Diameter Textbox ---
-function exp_diffractiondiameter_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_diffractiondiameter);
-    guidata(hObject,handles)
-end
-function exp_diffractiondiameter_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Depth of Focus Textbox ---
-function exp_depthoffocus_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    set(hObject,'String',handles.data.exp_depthoffocus);
-    guidata(hObject,handles)
-end
-function exp_depthoffocus_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Laser Wavelength Textbox ---
-function exp_wavelength_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_wavelength = get(hObject,'String');
-    guidata(hObject,handles)
-end
-function exp_wavelength_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Camera Serial Number Textbox ---
-function exp_camera_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_camera = get(hObject,'String');
-    guidata(hObject,handles)
-end
-function exp_camera_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Sensor Size Textbox ---
-function exp_sensorsize_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_sensorsize=get(hObject,'String');
-    [handles]=load_data(handles);
-    guidata(hObject,handles)
-end
-function exp_sensorsize_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Pixel Size Textbox ---
-function exp_pixelsize_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_pixelsize = get(hObject,'String');
-    guidata(hObject,handles)
-end
-function exp_pixelsize_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Lens Type Textbox ---
-function exp_lenstype_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_lenstype = get(hObject,'String');
-    guidata(hObject,handles)
-end
-function exp_lenstype_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-function exp_lensfnum_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_lensfnum = get(hObject,'String');
-    [handles]=load_data(handles);
-    guidata(hObject,handles)
-end
-function exp_lensfnum_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Particle Diameter Textbox ---
-function exp_partD_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_partD = get(hObject,'String');
-    guidata(hObject,handles)
-end
-function exp_partD_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Particle Density Textbox ---
-function exp_partdensity_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_partdensity = get(hObject,'String');
-    guidata(hObject,handles)
-end
-function exp_partdensity_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Viscosity Textbox ---
-function exp_viscosity_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_viscosity = get(hObject,'String');
-    [handles]=load_data(handles);
-    guidata(hObject,handles)
-end
-function exp_viscosity_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Density Textbox ---
-function exp_density_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_density = get(hObject,'String');
-    [handles]=load_data(handles);
-    guidata(hObject,handles)
-end
-function exp_density_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Experiment Surface Tension Textbox ---
-function exp_surfacetension_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.exp_surfacetension = get(hObject,'String');
-    [handles]=load_data(handles);
-    guidata(hObject,handles)
-end
-function exp_surfacetension_CreateFcn(hObject, eventdata, handles)
+function exp_date_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -1783,13 +1665,216 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Experiment Date Textbox ---
-function exp_date_Callback(hObject, eventdata, handles)
+% --- Experiment Density Textbox ---
+function exp_density_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.exp_date = get(hObject,'String');
+    handles.data.exp_density = get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
 end
-function exp_date_CreateFcn(hObject, eventdata, handles)
+function exp_density_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Viscosity Textbox ---
+function exp_viscosity_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_viscosity = get(hObject,'String');
+    [handles]=load_data(handles);
+    guidata(hObject,handles)
+end
+function exp_viscosity_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Surface Tension Textbox ---
+function exp_surfacetension_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_surfacetension = get(hObject,'String');
+    [handles]=load_data(handles);
+    guidata(hObject,handles)
+end
+function exp_surfacetension_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Particle Diameter Textbox ---
+function exp_partD_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_partD = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_partD_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Particle Density Textbox ---
+function exp_partdensity_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_partdensity = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_partdensity_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Laser Wavelength Textbox ---
+function exp_wavelength_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_wavelength = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_wavelength_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Physical Pixel Size Textbox ---
+function exp_pixelsize_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_pixelsize = get(hObject,'String');
+    guidata(hObject,handles)
+end
+function exp_pixelsize_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Lens Focal Length Textbox ---
+function exp_lensfocal_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_lensfocal = get(hObject,'String');
+    [handles]=load_data(handles);
+    guidata(hObject,handles)
+end
+function exp_lensfocal_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Lens f# Textbox ---
+function exp_lensfnum_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if ~str2double(handles.data.exp_micro)
+        handles.data.exp_lensfnum = get(hObject,'String');
+        [handles]=load_data(handles);
+        guidata(hObject,handles)
+    else
+        set(hObject,'String',handles.data.exp_lensfnum)
+    end
+end
+function exp_lensfnum_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Micro-PIV Checkbox ---
+function exp_microcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.exp_micro=num2str(get(hObject,'Value'));
+    [handles]=load_data(handles);
+    guidata(hObject,handles)
+end
+
+% --- Experiment Numerical Aperture Textbox ---
+function exp_NA_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if str2double(handles.data.exp_micro)
+        handles.data.exp_NA=get(hObject,'String');
+        [handles]=load_data(handles);
+        guidata(hObject,handles)
+    else
+        set(hObject,'String',handles.data.exp_NA)
+    end
+end
+function exp_NA_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Index of Refraction Textbox ---
+function exp_n_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    if str2double(handles.data.exp_micro)
+        handles.data.exp_n=get(hObject,'String');
+        [handles]=load_data(handles);
+        guidata(hObject,handles)
+    else
+        set(hObject,'String',handles.data.exp_n)
+    end
+end
+function exp_n_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Reynolds Number Textbox ---
+function exp_Re_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_Re);
+    guidata(hObject,handles)
+end
+function exp_Re_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Particle Stokes Number Textbox ---
+function exp_St_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_St);
+    guidata(hObject,handles)
+end
+function exp_St_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Magnification Textbox ---
+function exp_M_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_M);
+    guidata(hObject,handles)
+end
+function exp_M_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Region of Interest (m) Textbox ---
+function exp_ROI_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_ROI);
+    guidata(hObject,handles)
+end
+function exp_ROI_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Diffraction Diameter Textbox ---
+function exp_diffractiondiameter_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_diffractiondiameter);
+    guidata(hObject,handles)
+end
+function exp_diffractiondiameter_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Experiment Depth of Focus Textbox ---
+function exp_depthoffocus_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    set(hObject,'String',handles.data.exp_depthoffocus);
+    guidata(hObject,handles)
+end
+function exp_depthoffocus_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -1815,7 +1900,7 @@ function handles=update_data(handles)
 set(handles.exp_Re,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_St,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_M,'backgroundcolor',0.8*[1 1 1]);
-set(handles.exp_resmm,'backgroundcolor',0.8*[1 1 1]);
+set(handles.exp_ROI,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_diffractiondiameter,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_depthoffocus,'backgroundcolor',0.8*[1 1 1]);
 if str2double(handles.Njob)==0
@@ -1858,7 +1943,8 @@ if str2double(handles.Njob)==0
     set(handles.thresholdingcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
     set(handles.smoothingcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
     set(handles.imageinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.framestep,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.framestep,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.PIVerror,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.passtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.uod_type,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
@@ -1873,10 +1959,8 @@ if str2double(handles.Njob)==0
     set(handles.masklist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_date,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_wavelength,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.exp_camera,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.exp_sensorsize,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.exp_lenstype,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_lensfocal,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_lensfnum,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_partD,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_partdensity,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -1886,6 +1970,8 @@ if str2double(handles.Njob)==0
     set(handles.exp_v0,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_L,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_notesbox,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_NA,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_n,'String','','backgroundcolor',0.5*[1 1 1]);
 else
     a=get(handles.joblist,'String');
     eval(['handles.data=handles.' char(a(str2double(handles.Cjob),:)) ';']);
@@ -1929,14 +2015,12 @@ else
     set(handles.uod_type,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.velocityinterptype,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.framestep,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.framestep,'String','','backgroundcolor',[1 1 1]);
+    set(handles.PIVerror,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_date,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_wavelength,'String','','backgroundcolor',[1 1 1]);
-    set(handles.exp_camera,'String','','backgroundcolor',[1 1 1]);
-    set(handles.exp_sensorsize,'String','','backgroundcolor',[1 1 1]);
+    set(handles.exp_lensfocal,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',[1 1 1]);
-    set(handles.exp_lenstype,'String','','backgroundcolor',[1 1 1]);
-    set(handles.exp_lensfnum,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_partD,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_partdensity,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_viscosity,'String','','backgroundcolor',[1 1 1]);
@@ -1980,7 +2064,7 @@ else
         set(handles.multiplematcheckbox,'Value',0)
     end
         
-%     load_data(handles);
+    load_data(handles);
     load_PIVlist(handles);
     handles=set_PIVcontrols(handles);
     load_imlist(handles);
@@ -2260,10 +2344,8 @@ set(handles.outputdirectory,'String',handles.data.outdirec);
 
 set(handles.exp_date,'String',handles.data.exp_date);
 set(handles.exp_wavelength,'String',handles.data.exp_wavelength);
-set(handles.exp_camera,'String',handles.data.exp_camera);
-set(handles.exp_sensorsize,'String',handles.data.exp_sensorsize);
 set(handles.exp_pixelsize,'String',handles.data.exp_pixelsize);
-set(handles.exp_lenstype,'String',handles.data.exp_lenstype);
+set(handles.exp_lensfocal,'String',handles.data.exp_lensfocal);
 set(handles.exp_lensfnum,'String',handles.data.exp_lensfnum);
 set(handles.exp_partD,'String',handles.data.exp_partD);
 set(handles.exp_partdensity,'String',handles.data.exp_partdensity);
@@ -2276,22 +2358,38 @@ set(handles.exp_notesbox,'String',handles.data.exp_notes);
 set(handles.exp_Re,'String',handles.data.exp_Re);
 set(handles.exp_St,'String',handles.data.exp_St);
 set(handles.exp_M,'String',handles.data.exp_M);
-set(handles.exp_resmm,'String',handles.data.exp_resmm);
-set(handles.exp_diffractiondiameter,'String',handles.data.exp_diffractiondiameter)
-set(handles.exp_depthoffocus,'String',handles.data.exp_depthoffocus)
+set(handles.exp_ROI,'String',handles.data.exp_ROI);
+set(handles.exp_diffractiondiameter,'String',handles.data.exp_diffractiondiameter);
+set(handles.exp_depthoffocus,'String',handles.data.exp_depthoffocus);
+set(handles.exp_microcheckbox,'Value',str2double(handles.data.exp_micro));
+set(handles.exp_NA,'String',handles.data.exp_NA);
+set(handles.exp_n,'String',handles.data.exp_n);
+
+if str2double(handles.data.exp_micro)
+    set(handles.exp_NA,'backgroundcolor',[1 1 1]);
+    set(handles.exp_n,'backgroundcolor',[1 1 1]);
+    set(handles.exp_lensfnum,'backgroundcolor',0.5*[1 1 1]);
+else
+    set(handles.exp_NA,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_n,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.exp_lensfnum,'backgroundcolor',[1 1 1]);
+end
 
 set(handles.passtype,'Value',str2double(handles.data.method));
 set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
 set(handles.imageinterptype,'Value',str2double(handles.data.iminterp));
-set(handles.framestep,'Value',str2double(handles.data.framestep));
+set(handles.framestep,'String',handles.data.framestep);
+set(handles.PIVerror,'String',handles.data.PIVerror);
 
-if get(handles.passtype,'Value')==5
+if get(handles.passtype,'Value')>=5
     set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.framestep,'backgroundcolor',[1 1 1]);
+    set(handles.PIVerror,'backgroundcolor',[1 1 1]);
 elseif get(handles.passtype,'Value')>1
     set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
     if get(handles.passtype,'Value')==3
         set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
@@ -2308,6 +2406,7 @@ else
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
 end
 
 if strcmp(handles.data.imext(1),'.')
@@ -2342,7 +2441,7 @@ end
 
 if ~(isempty(handles.data.exp_viscosity) || isempty(handles.data.exp_density) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
     try
-        Re=str2double(handles.data.exp_density)*1000*str2double(handles.data.exp_v0)*str2double(handles.data.exp_L)/str2double(handles.data.exp_viscosity);
+        Re=str2double(handles.data.exp_density)*str2double(handles.data.exp_v0)*str2double(handles.data.exp_L)/str2double(handles.data.exp_viscosity);
         Re=num2str(Re);
         handles.data.exp_Re=Re;
         set(handles.exp_Re,'String',Re);
@@ -2357,7 +2456,7 @@ end
 
 if ~(isempty(handles.data.exp_partD) || isempty(handles.data.exp_partdensity) || isempty(handles.data.exp_viscosity) || isempty(handles.data.exp_L) || isempty(handles.data.exp_v0))
     try
-        St=str2double(handles.data.exp_partdensity)*1000*(str2double(handles.data.exp_partD)*10^-6)^2*str2double(handles.data.exp_v0)/18/str2double(handles.data.exp_viscosity)/str2double(handles.data.exp_L);
+        St=str2double(handles.data.exp_partdensity)*(str2double(handles.data.exp_partD)*10^-6)^2*str2double(handles.data.exp_v0)/18/str2double(handles.data.exp_viscosity)/str2double(handles.data.exp_L);
         St=num2str(St);
         handles.data.exp_St=St;
         set(handles.exp_St,'String',St);
@@ -2374,44 +2473,79 @@ if ~isempty(handles.data.wrmag)
     try
         im1=double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
         L=size(im1)*str2double(handles.data.wrmag)*10^-6;
-        handles.data.exp_resmm=[num2str(L(2)*10^3),',',num2str(L(1)*10^3)];
+        handles.data.exp_ROI=[num2str(L(2)),',',num2str(L(1))];
 
-        if ~(isempty(handles.data.exp_sensorsize) || isempty(handles.data.exp_lensfnum) || isempty(handles.data.exp_wavelength))
+        if ~isempty(handles.data.exp_pixelsize)
             try
-                Sx=str2double(handles.data.exp_sensorsize(1:(strfind(handles.data.exp_sensorsize,',')-1)));
-                Sy=str2double(handles.data.exp_sensorsize((strfind(handles.data.exp_sensorsize,',')+1):end));
+                Sx=str2double(handles.data.exp_pixelsize)*size(im1,2)*10^-6;
+                Sy=str2double(handles.data.exp_pixelsize)*size(im1,1)*10^-6;
                 S=sqrt(Sx^2+Sy^2);
-                M=sqrt(L(1)^2+L(2)^2)/(S*10^-3);
-                d=2.44*str2double(handles.data.exp_lensfnum)*(M+1)*str2double(handles.data.exp_wavelength)*10^-3;
-                dz=2*str2double(handles.data.exp_lensfnum)*d*(M+1)/M^2;
-                handles.data.exp_M=num2str(M);
-                handles.data.exp_diffractiondiameter=num2str(d);
-                handles.data.exp_depthoffocus=num2str(dz);
-      
+                M=S/sqrt(L(1)^2+L(2)^2);
+                
+                if isnan(M)
+                    handles.data.exp_M='';
+                    handles.data.exp_diffractiondiameter='';
+                    handles.data.exp_depthoffocus='';
+                else
+                    handles.data.exp_M=num2str(M);
+                    if ~(isempty(handles.data.exp_lensfnum) || isempty(handles.data.exp_wavelength)) && ~str2double(handles.data.exp_micro)
+                        try
+                            d=2.44*str2double(handles.data.exp_lensfnum)*(M+1)*str2double(handles.data.exp_wavelength);
+                            dz=2*str2double(handles.data.exp_lensfnum)*d*(M+1)/M^2;
+
+                            if isnan(d) || isnan(dz)
+                                handles.data.exp_diffractiondaimeter='';
+                                handles.data.exp_depthoffocus='';
+                            else
+                                handles.data.exp_diffractiondiameter=num2str(d);
+                                handles.data.exp_depthoffocus=num2str(dz);
+                            end
+                        catch
+                            handles.data.exp_diffractiondaimeter='';
+                            handles.data.exp_depthoffocus='';
+                        end
+                    elseif ~(isempty(handles.data.exp_NA) || isempty(handles.data.exp_n) || isempty(handles.data.exp_wavelength)) && str2double(handles.data.exp_micro)
+                        try
+                            fnum=0.5*sqrt((str2double(handles.data.exp_n)/str2double(handles.data.exp_NA))^2-1);
+                            d=2.44*fnum*(M+1)*str2double(handles.data.exp_wavelength);
+                            dz=2*fnum*d*(M+1)/M^2;
+
+                            if isnan(d) || isnan(dz)
+                                handles.data.exp_diffractiondaimeter='';
+                                handles.data.exp_depthoffocus='';
+                            else
+                                handles.data.exp_diffractiondiameter=num2str(d);
+                                handles.data.exp_depthoffocus=num2str(dz);
+                            end
+                        catch
+                            handles.data.exp_diffractiondaimeter='';
+                            handles.data.exp_depthoffocus='';
+                        end
+                    else
+                        handles.data.exp_diffractiondiameter='';
+                        handles.data.exp_depthoffocus='';
+                    end
+                end
             catch
                 handles.data.exp_M='';
-                handles.data.exp_diffractiondaimeter='';
+                handles.data.exp_diffractiondiameter='';
                 handles.data.exp_depthoffocus='';
             end
-        else
-            handles.data.exp_M='';
-            handles.data.exp_diffractiondiameter='';
-            handles.data.exp_depthoffocus='';
         end
     catch
-        handles.data.exp_resmm='';
+        handles.data.exp_ROI='';
         handles.data.exp_M='';
         handles.data.exp_diffractiondiameter='';
         handles.data.exp_depthoffocus='';
     end
 else
-    handles.data.exp_resmm='';
+    handles.data.exp_ROI='';
     handles.data.exp_M='';
     handles.data.exp_diffractiondiameter='';
     handles.data.exp_depthoffocus='';
 end
 set(handles.exp_M,'String',handles.data.exp_M)
-set(handles.exp_resmm,'String',handles.data.exp_resmm)
+set(handles.exp_ROI,'String',handles.data.exp_ROI)
 set(handles.exp_diffractiondiameter,'String',handles.data.exp_diffractiondiameter)
 set(handles.exp_depthoffocus,'String',handles.data.exp_depthoffocus)
 
@@ -2428,17 +2562,22 @@ end
 
 fprintf(fid,['Summary for PIV Job: ',Data.batchname,'\n']);
 fprintf(fid,'\n--------------------Experiment Parameters--------------------\n');
-fprintf(fid,['Date of Experiment :           ',Data.exp_date,'\n']);
-fprintf(fid,['Laser Wavelength (nm):         ',Data.exp_wavelength,'\n']);
+fprintf(fid,['Date of Experiment:            ',Data.exp_date,'\n']);
+fprintf(fid,['Laser Wavelength (um):         ',Data.exp_wavelength,'\n']);
 fprintf(fid,['Laser Pulse Separation (us):   ',Data.wrsep,'\n']);
-fprintf(fid,['Camera Serial #:               ',Data.exp_camera,'\n']);
-fprintf(fid,['Sensor Size- "Sx,Sy" (mm):     ',Data.exp_sensorsize,'\n']);
-fprintf(fid,['Pixel Size (um):               ',Data.exp_pixelsize,'\n']);
 fprintf(fid,['Camera Frame Rate (Hz):        ',Data.wrsamp,'\n']);
-fprintf(fid,['Magnification (um/pix):        ',Data.wrmag,'\n']);
+fprintf(fid,['Pixel Size (um):               ',Data.exp_pixelsize,'\n']);
+fprintf(fid,['Image Resolution (um/pix):     ',Data.wrmag,'\n']);
+fprintf(fid,['Lens Focal Length (mm):        ',Data.exp_lensfocal,'\n']);
+if ~str2double(Data.exp_micro)
+    fprintf(fid,['Lens f#:                       ',Data.exp_lensfnum,'\n']);
+else
+    fprintf(fid,['Numerical Aperture:            ',Data.exp_NA,'\n']);
+    fprintf(fid,['Index of Refraction:           ',Data.exp_n,'\n']);
+end
 fprintf(fid,['Particle Diameter (um):        ',Data.exp_partD,'\n']);
-fprintf(fid,['Particle Density (g/cm^3):     ',Data.exp_partdensity,'\n']);
-fprintf(fid,['Density (g/cm^3):              ',Data.exp_density,'\n']);
+fprintf(fid,['Particle Density (kg/m^3):     ',Data.exp_partdensity,'\n']);
+fprintf(fid,['Fluid Density (kg/m^3):        ',Data.exp_density,'\n']);
 fprintf(fid,['Dynamic Viscosity (Pa*s):      ',Data.exp_viscosity,'\n']);
 fprintf(fid,['Surface Tension (N/m):         ',Data.exp_surfacetension,'\n']);
 fprintf(fid,['Characteristic Length (m):     ',Data.exp_L,'\n']);
@@ -2446,17 +2585,16 @@ fprintf(fid,['Characteristic Velocity (m/s): ',Data.exp_v0,'\n']);
 fprintf(fid,['Reynolds Number:               ',Data.exp_Re,'\n']);
 fprintf(fid,['Particle Stokes Number:        ',Data.exp_St,'\n']);
 fprintf(fid,['Magnification Factor:          ',Data.exp_M,'\n']);
-fprintf(fid,['Image Resolution (mm):         ',Data,exp_resmm,'\n']);
+fprintf(fid,['Region of Interest (m):        ',Data.exp_ROI,'\n']);
 fprintf(fid,['Diffraction Diameter (um):     ',Data.exp_diffractiondiameter,'\n']);
 fprintf(fid,['Depth of Focus (um):           ',Data.exp_depthoffocus,'\n']);
 for i=1:size(Data.exp_notes,1)
-    fprintf(fid,[Data.exp_notes(i,:),'\n']);
+    fprintf(fid,[Data.exp_notes{i},'\n']);
 end
 
-methods={'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
+methods={'Multipass','Multigrid','Deform','Ensemble','Multiframe - Persoons Method','Multiframe - Exp. Method','Direct-Phase'};
 velinterp={'Nearest Neighbor','Bilinear','Cubic'};
 iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
-framestep={'+/- One Frame','+/- Two Frames','+/- Three Frames','+/- Four Frames'};
 fprintf(fid,'\n-----------------------PIV Processing------------------------\n');
     fprintf(fid,['Algorithm:                     ',methods{str2double(Data.method)},'\n']);
 if str2double(Data.method)~=1 && str2double(Data.method)~=5
@@ -2465,8 +2603,9 @@ end
 if str2double(Data.method)==4
     fprintf(fid,['Image Interpolation Function:  ',iminterp{str2double(Data.iminterp)},'\n']);
 end
-if str2double(Data.method)==5
-    fprintf(fid,['Maximum Framestep:             ',framestep{str2double(Data.framestep)},'\n']);
+if str2double(Data.method)>=5
+    fprintf(fid,['PIV Error:                     ',Data.PIVerror,'\n']);
+    fprintf(fid,['Maximum Framestep:             ',Data.framestep,'\n']);
 end
 
 for i=1:str2double(Data.passes)
@@ -2531,11 +2670,13 @@ for i=1:str2double(Data.passes)
 end
 
 fprintf(fid,'\n----------------------Images and Masking---------------------\n');
+% fprintf(fid,['Image Directory: ',Data.imdirec,'\n']);
 fprintf(fid,'Masking Type: ');
 if strcmp(Data.masktype,'static')
     fprintf(fid,['Static\nMask File: ',Data.staticmaskname,'\n']);
 elseif strcmp(Data.masktype,'dynamic')
     fprintf(fid,'Dynamic\n');
+%     fprintf(fid,['Mask Directory: ',Data.maskdirec,'\n']);
 else
     fprintf(fid,'None\n');
 end
@@ -2544,7 +2685,9 @@ imagelist=get(handles.imagelist,'String');
 if strcmp(Data.masktype,'dynamic')
     masklist=get(handles.masklist,'String');
     for i=1:size(imagelist,1)
-        fprintf(fid,[imagelist{i},' --- ',masklist{i},'\n']);
+        if ~isempty(imagelist{i})
+            fprintf(fid,[imagelist{i},' --- ',masklist{i},'\n']);
+        end
     end
 else
     for i=1:size(imagelist,1)

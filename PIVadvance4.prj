@@ -16,7 +16,12 @@
       <create_CTF>false</create_CTF>
       <options_file/>
       <debug>false</debug>
-      <toolboxes_on_path shortcut="all"/>
+      <toolboxes_on_path shortcut="custom">
+         <toolbox>curvefit</toolbox>
+         <toolbox>images</toolbox>
+         <toolbox>signal</toolbox>
+         <toolbox>distcomp</toolbox>
+      </toolboxes_on_path>
       <warning shortcut="default">
          <warn name="specified_file_mismatch">enable</warn>
          <warn name="repeated_file">enable</warn>
@@ -42,6 +47,7 @@
    <MATLABPath>
       <Directory>$(MATLABROOT)/toolbox/compiler/deploy</Directory>
       <Directory>$(PROJECTDIR)/</Directory>
+      <Directory>W:\bdrew\PIVadvance4\testdata</Directory>
       <Directory>C:\Users\bdrew\Documents\MATLAB</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/general</Directory>
       <Directory>$(MATLABROOT)/toolbox/matlab/ops</Directory>

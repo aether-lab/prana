@@ -1,10 +1,11 @@
 /*
  * MATLAB Compiler: 4.10 (R2009a)
- * Date: Tue May 25 10:35:48 2010
+ * Date: Fri May 28 10:52:07 2010
  * Arguments: "-B" "macro_default" "-o" "PIVadvance4" "-W"
  * "WinMain:PIVadvance4" "-d"
  * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "-T" "link:exe"
- * "-v" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
+ * "-v" "-N" "-p" "curvefit" "-p" "images" "-p" "signal" "-p" "distcomp"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
  */
 
 #include <stdio.h>
@@ -75,7 +76,7 @@ bool MW_CALL_CONV PIVadvance4InitializeWithHandlers(
                                                      &__MCC_PIVadvance4_component_data,
                                                      true, NoObjectType,
                                                      ExeTarget, error_handler,
-                                                     print_handler, 1085086, NULL))
+                                                     print_handler, 1001299, NULL))
     return false;
   return true;
 }

@@ -1,10 +1,11 @@
 /*
  * MATLAB Compiler: 4.10 (R2009a)
- * Date: Tue May 25 10:35:48 2010
+ * Date: Fri May 28 10:52:07 2010
  * Arguments: "-B" "macro_default" "-o" "PIVadvance4" "-W"
  * "WinMain:PIVadvance4" "-d"
  * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "-T" "link:exe"
- * "-v" "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
+ * "-v" "-N" "-p" "curvefit" "-p" "images" "-p" "signal" "-p" "distcomp"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
  */
 
 #include "mclmcrrt.h"
@@ -13,24 +14,24 @@
 extern "C" {
 #endif
 const unsigned char __MCC_PIVadvance4_session_key[] = {
-    '5', 'B', '2', 'D', '1', '6', '2', '3', 'E', 'E', 'C', '9', 'E', '4', '7',
-    '4', 'E', '0', '6', 'F', 'A', 'B', '2', '2', '2', 'A', '0', '3', '8', 'A',
-    '0', 'C', '6', 'F', '2', '9', 'D', 'E', '8', '3', '7', 'D', 'F', '7', 'F',
-    'E', '5', '6', '5', '0', 'D', '8', '0', 'E', 'D', 'D', 'A', '2', '0', 'A',
-    '1', 'D', 'B', '0', '9', '4', '1', '2', '1', '9', '5', 'F', '5', 'E', '4',
-    'A', '7', '8', 'F', 'B', '2', '3', 'F', 'B', '7', '9', 'B', '0', '6', 'B',
-    '9', '8', 'D', '5', '3', '7', 'A', '1', 'D', 'B', '3', '6', '4', '4', '3',
-    '0', 'E', '8', '3', '6', '8', '0', '2', '9', '3', '4', '5', 'C', '5', '5',
-    'D', 'F', '8', '0', 'A', 'F', '6', '9', 'A', '5', 'D', 'F', '3', '3', '6',
-    'C', '3', '4', '6', '8', '4', 'F', '8', 'F', '2', '6', '1', '3', '1', '2',
-    'C', '3', 'E', '2', '3', '6', '5', '5', 'B', '3', '7', '8', '2', '3', 'B',
-    'A', '5', 'F', '8', '7', 'B', '1', '8', '3', '7', '3', '0', '5', 'D', 'D',
-    'E', '3', 'B', 'B', '1', '0', '3', '6', '1', 'B', 'F', '1', '0', '4', '7',
-    'A', '0', '8', '9', '8', '8', '1', '6', '0', '0', '8', '0', '2', '2', '8',
-    '3', '7', '1', '0', 'C', 'D', 'D', 'D', '5', '4', '7', 'C', '8', '2', '0',
-    '5', '1', '2', '4', 'B', '9', 'E', 'F', '4', 'D', '3', '1', 'B', '9', '5',
-    'E', 'C', 'A', '4', 'A', '7', 'B', '9', 'F', 'E', '1', 'C', '3', '9', '8',
-    '4', '\0'};
+    '0', '7', 'D', '5', '0', '0', '2', '7', '7', 'C', '0', '9', '1', '8', '3',
+    '4', '7', '5', '6', '0', '8', '4', '0', '7', 'B', '7', '1', '0', 'B', '9',
+    '2', '7', 'A', '0', 'B', '7', '7', '6', '8', '3', 'E', '6', '4', 'C', '7',
+    '9', '9', 'C', '5', '4', 'D', 'C', '7', '8', '1', 'F', 'A', 'C', '5', '7',
+    '2', '2', 'A', '9', '2', 'E', '5', 'D', 'E', 'E', 'F', 'C', '2', '0', 'F',
+    '6', '0', '8', 'C', '4', 'E', 'F', '1', '2', '8', 'F', 'E', '8', 'E', '3',
+    'C', '8', 'D', '2', '6', '1', 'A', '5', '4', 'D', '1', '6', 'C', '2', 'A',
+    '7', '9', 'C', 'C', '6', '9', '4', 'A', '2', 'F', '7', 'E', '5', '0', '6',
+    '3', '0', '9', '1', 'A', '1', 'E', '7', '0', 'D', '3', '9', '6', 'C', '7',
+    '9', 'A', 'D', 'C', '7', 'B', 'A', '9', '0', 'D', '4', 'B', '8', 'A', '4',
+    '3', 'E', 'D', 'B', '9', 'B', '7', '9', '1', '5', '5', '5', '5', 'F', '6',
+    '8', 'D', '9', '0', '4', 'F', 'B', 'A', 'B', '1', 'C', '9', 'A', 'A', '9',
+    'D', '9', '8', '1', '2', 'C', '3', '4', '5', '0', '7', '8', '6', '8', '3',
+    'D', 'B', 'B', 'A', '3', '6', 'E', 'D', '4', '4', '2', '3', '3', '7', 'D',
+    '0', '5', 'F', '6', '1', '7', '5', '7', 'D', '7', '1', '9', '0', '2', 'B',
+    'A', '2', '1', '4', '3', '3', 'C', 'F', '0', '7', '7', '3', '3', '0', '0',
+    'B', '0', '1', '4', 'E', '8', '9', 'A', '7', '0', '3', 'E', '1', 'B', '0',
+    '7', '\0'};
 
 const unsigned char __MCC_PIVadvance4_public_key[] = {
     '3', '0', '8', '1', '9', 'D', '3', '0', '0', 'D', '0', '6', '0', '9', '2',
@@ -75,11 +76,10 @@ static const char * MCC_PIVadvance4_matlabpath_data[] =
     "$TOOLBOXMATLABDIR/demos/", "$TOOLBOXMATLABDIR/timeseries/",
     "$TOOLBOXMATLABDIR/hds/", "$TOOLBOXMATLABDIR/guide/",
     "$TOOLBOXMATLABDIR/plottools/", "toolbox/local/",
-    "toolbox/shared/dastudio/", "$TOOLBOXMATLABDIR/datamanager/",
-    "toolbox/compiler/", "toolbox/images/colorspaces/",
-    "toolbox/images/images/", "toolbox/images/iptformats/",
-    "toolbox/images/iptutils/", "toolbox/shared/imageslib/",
-    "toolbox/shared/spcuilib/", "toolbox/signal/signal/", "toolbox/stats/" };
+    "$TOOLBOXMATLABDIR/datamanager/", "toolbox/compiler/",
+    "toolbox/images/colorspaces/", "toolbox/images/images/",
+    "toolbox/images/iptformats/", "toolbox/images/iptutils/",
+    "toolbox/shared/imageslib/", "toolbox/signal/signal/" };
 
 static const char * MCC_PIVadvance4_classpath_data[] = 
   { "java/jar/toolbox/images.jar" };
@@ -115,7 +115,7 @@ mclComponentData __MCC_PIVadvance4_component_data = {
   MCC_PIVadvance4_matlabpath_data,
 
   /* Number of directories in the MATLAB Path */
-  48,
+  45,
 
   /* Component's Java class path */
   MCC_PIVadvance4_classpath_data,
@@ -138,7 +138,7 @@ mclComponentData __MCC_PIVadvance4_component_data = {
   0,
   
   /* Component preferences directory */
-  "PIVadvance4_342A98C48B0E2B308596140FF53D264B",
+  "PIVadvance4_A04E69EF73E225736BDB9E1DDBFF9CD5",
 
   /* MCR warning status data */
   MCC_PIVadvance4_warning_state_data,

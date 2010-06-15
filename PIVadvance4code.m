@@ -1,6 +1,5 @@
 function PIVadvance4code(Data)
 %% --- Read Formatted Parameters ---
-
 %input/output directory
 if ispc
     imbase=[Data.imdirec '\' Data.imbase];
@@ -29,14 +28,14 @@ end
 
 %method and passes
 P=str2double(Data.passes);
-Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
+Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe - Persoons','Multiframe - Exp','Phase'};
 M=Method(str2double(Data.method));
 
 %algorithm options
 Velinterp=str2double(Data.velinterp);
 Iminterp=str2double(Data.iminterp);
 Nmax=str2double(Data.framestep);
-ds=0.1;% PIV error (pix)
+ds=str2double(Data.PIVerror);
 
 %physical parameters
 Mag = str2double(Data.wrmag);
@@ -149,7 +148,7 @@ switch char(M)
 
     case {'Multipass','Multigrid','Deform'}
 
-        for q=1:length(I1)
+        for q=5:length(I1)
             
             tf=cputime;
             
@@ -183,14 +182,18 @@ switch char(M)
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
                 
-                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                if strcmp(M,'Multipass')
+                    Ub=UI;Vb=VI;
+                else
+                    Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                    Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                end
                 Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),ds);
+                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                     U=zeros(size(X,1),3);
                     V=zeros(size(X,1),3);
@@ -245,6 +248,7 @@ switch char(M)
                     end
 
                     %convert to physical units
+                    Xval=X;Yval=Y;
                     X=X*Mag;Y=Y*Mag;
                     U=U*Mag/dt;V=V*Mag/dt;
 
@@ -264,6 +268,7 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
+                    X=Xval;Y=Yval;
                     
                     eltime=cputime-t1;
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -386,6 +391,8 @@ switch char(M)
                             eltime=cputime-t1;
                             fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                         end
+                    else
+                        UI=U;VI=V;
                     end
                 end
             end
@@ -519,6 +526,7 @@ switch char(M)
                 end
 
                 %convert to physical units
+                Xval=X;Yval=Y;
                 X=X*Mag;Y=Y*Mag;
                 U=U*Mag/dt;V=V*Mag/dt;
 
@@ -537,6 +545,7 @@ switch char(M)
                 if str2double(Data.multiplematout)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                 end
+                X=Xval;Y=Yval;
 
                 eltime=cputime-t1;
                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
@@ -568,7 +577,7 @@ switch char(M)
         end
         
         
-    case 'Multiframe'
+    case {'Multiframe - Persoons','Multiframe - Exp'}
         
         for q=1:length(I1)
             
@@ -580,7 +589,7 @@ switch char(M)
             fprintf(['Job: ',Data.batchname,'\n'])
             fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
             fprintf('----------------------------------------------------\n')
-
+            
             %load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
                 mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
@@ -589,16 +598,16 @@ switch char(M)
             
             %load image pairs and flip coordinates
             if q-Nmax<1 && q+Nmax>length(I1)
-                j=min([q,length(I1)-q+1]);
+                N=min([q,length(I1)-q+1]);
             elseif q-Nmax<1
-                j=q;
+                N=q;
             elseif q+Nmax>length(I1)
-                j=length(I1)-q+1;
+                N=length(I1)-q+1;
             else
-                j=Nmax+1;
+                N=Nmax+1;
             end
-            im1=zeros(size(mask,1),size(mask,2),j); im2=im1;
-            for i=1:j
+            im1=zeros(size(mask,1),size(mask,2),N); im2=im1;
+            for i=1:N
                 im1(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q-i+1))]))-IMmin);
                 im2(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q+i-1))]))-IMmin);
             end
@@ -612,22 +621,203 @@ switch char(M)
 
             for e=1:P
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
-                X=X(:);Y=Y(:);
+                S=size(X);X=X(:);Y=Y(:);
+                U=zeros(size(X,1),3,N);
+                V=zeros(size(X,1),3,N);
+                C=zeros(size(X,1),3,N);
+                multidata=zeros(size(X,1),2,N);
                 
-                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Eval=repmat(reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1),[1 3]);
+                Eval(Eval==0)=-1;
+                Eval(Eval>0)=0;
+                
+                Dt=2.*(1:N)-1;
+                for t=1:N
+                    Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+                    Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+                    %correlate image pair
+                    [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),multidatac(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e,:),0,D(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                end
+                U(repmat(Eval>=0,[1 1 N]))=Uc;
+                V(repmat(Eval>=0,[1 1 N]))=Vc;
+                C(repmat(Eval>=0,[1 1 N]))=Cc;
+                multidata(repmat(Eval(:,1)>=0,[1 2 N]))=multidatac;
+
+                velmag=sqrt(U(:,1,:).^2+V(:,1,:).^2);
+                if strcmp(M,'Multiframe - Persoons')
+                    Qp=C(:,1,:)./C(:,2,:).*(1-ds/velmag);
+                elseif strcmp(M,'Multiframe - Exp')
+%                     Qp=((C(:,1,:)-C(:,2,:))./C(:,1,:)).*(1-ds/velmag);                  
+                    Qp=multidata(:,1,:)./multidata(:,2,:).*(1-ds./velmag);
+                end
+                [Qmax,t_opt]=max(Qp,[],3);
+                for i=1:size(U,1)
+                    Uval(i,:)=U(i,:,t_opt(i));
+                    Vval(i,:)=V(i,:,t_opt(i));
+                    Cval(i,:)=C(i,:,t_opt(i));
+                end
+
+                try
+                    U=Uval./repmat(Dt(t_opt)',[1 3]);
+                    V=Vval./repmat(Dt(t_opt)',[1 3]);
+                catch
+                    U=Uval./repmat(Dt(t_opt),[1 3]);
+                    V=Vval./repmat(Dt(t_opt),[1 3]);
+                end
+
+                %validation
+                if Valswitch(e)
+                    %output text
+                    fprintf('validating...                    ')
+                    t1=cputime;
+                    
+                    [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
+                    
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                else
+                    Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
+                    if ~isempty(C)
+                        Cval=C(:,1);
+                    else
+                        Cval=[];
+                    end
+                end
+
+                %write output
+                if Writeswitch(e) 
+                    fprintf('saving...                        ')
+                    t1=cputime;
+                                        
+                    if PeakVel(e)
+                        U=[Uval(:,1),U(:,1:PeakNum(e))];
+                        V=[Vval(:,1),V(:,1:PeakNum(e))];
+                        Eval=[Evalval(:,1),Eval(:,1:PeakNum(e))];
+                    else
+                        U=Uval(:,1); V=Vval(:,1);Eval=Evalval(:,1);
+                    end
+                    if PeakMag(e)
+                        C=[Cval(:,1),C(:,1:PeakNum(e))];
+                    else
+                        C=[];
+                    end
+                    %convert to physical units
+                    Xval=X;Yval=Y;
+                    X=X*Mag;Y=Y*Mag;
+                    U=U*Mag./dt;V=V*Mag./dt;
+
+                    %convert to matrix if necessary
+                    if size(X,2)==1
+                        [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+                    end
+
+                    %remove nans from data, replace with zeros
+                    U(Eval<0)=0;V(Eval<0)=0;
+                    
+                    if str2double(Data.datout)
+                        time=(q-1)/Freq;
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                    end
+                    if str2double(Data.multiplematout)
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
+                    end
+                    U=U(:,:,1);V=V(:,:,1);
+                    U=U(:);V=V(:);
+                    X=Xval;Y=Yval;
+                    
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                end
+                U=Uval; V=Vval;
+                
+                if e~=P
+                    %reshape from list of grid points to matrix
+                    X=reshape(X,[S(1),S(2)]);
+                    Y=reshape(Y,[S(1),S(2)]);
+                    U=reshape(U(:,1),[S(1),S(2)]);
+                    V=reshape(V(:,1),[S(1),S(2)]);
+
+                    fprintf('interpolating velocity...        ')
+                    t1=cputime;
+
+                    %velocity smoothing
+                    if Velsmoothswitch(e)==1
+                        [U,V]=VELfilt(U,V,Velsmoothfilt(e));
+                    end
+                    
+                    %velocity interpolation
+                    UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+                    VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                end
+                clear Uc Vc Cc multidatac Uval Vval Cval
+            end
+            
+            
+            eltime=cputime-tf;
+            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+        end
+        
+    case 'Phase'
+        
+        for q=1:length(I1)
+            
+            tf=cputime;
+            
+            %output text
+            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
+            fprintf('\n----------------------------------------------------\n')
+            fprintf(['Job: ',Data.batchname,'\n'])
+            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
+            fprintf('----------------------------------------------------\n')
+            
+            %load dynamic mask and flip coordinates
+            if strcmp(Data.masktype,'dynamic')
+                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = flipud(mask);
+            end
+            
+            %load image pairs and flip coordinates
+            if q-Nmax<1 && q+Nmax>length(I1)
+                N=min([q,length(I1)-q+1]);
+            elseif q-Nmax<1
+                N=q;
+            elseif q+Nmax>length(I1)
+                N=length(I1)-q+1;
+            else
+                N=Nmax+1;
+            end
+            im1=zeros(size(mask,1),size(mask,2),N); im2=im1;
+            for i=1:N
+                im1(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q-i+1))]))-IMmin);
+                im2(:,:,i)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q+i-1))]))-IMmin);
+            end
+            L=size(im1);
+
+            %initialize grid and evaluation matrix
+            [XI,YI]=IMgrid(L,[0 0]);
+
+            UI = zeros(size(XI));
+            VI = zeros(size(YI));
+
+            for e=1:P
+                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+                S=size(X);X=X(:);Y=Y(:);
+
                 Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
                 
+                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),ds);
+                [X,Y,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                    U=zeros(size(X,1),3);
-                    V=zeros(size(X,1),3);
-                    C=zeros(size(X,1),3);
-                    Eval=repmat(Eval,[1 3]);
-                    C(Eval>=0)=Cc;
+                    C=zeros(size(X,1),2);
+                    C(repmat(Eval,[1 2])>=0)=Cc;
                 else
                     U=zeros(size(X));V=zeros(size(X));C=[];
                 end
@@ -652,32 +842,28 @@ switch char(M)
                         Cval=[];
                     end
                 end
-                
+
                 %write output
                 if Writeswitch(e) 
                     fprintf('saving...                        ')
                     t1=cputime;
                                         
-                    if Peakswitch(e)
-                        if PeakVel(e)
-                            U=[Uval,U(:,1:PeakNum(e))];
-                            V=[Vval,V(:,1:PeakNum(e))];
-                            Eval=[Evalval,Eval(:,1:PeakNum(e))];
-                        else
-                            U=Uval; V=Vval; Eval=Evalval;
-                        end
-                        if PeakMag(e)
-                            C=[Cval,C(:,1:PeakNum(e))];
-                        else
-                            C=Cval;
-                        end
+                    if PeakVel(e)
+                        U=[Uval(:,1),U(:,1:PeakNum(e))];
+                        V=[Vval(:,1),V(:,1:PeakNum(e))];
+                        Eval=[Evalval(:,1),Eval(:,1:PeakNum(e))];
                     else
-                        U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                        U=Uval(:,1); V=Vval(:,1);Eval=Evalval(:,1);
                     end
-
+                    if PeakMag(e)
+                        C=[Cval(:,1),C(:,1:PeakNum(e))];
+                    else
+                        C=[];
+                    end
                     %convert to physical units
+                    Xval=X;Yval=Y;
                     X=X*Mag;Y=Y*Mag;
-                    U=U*Mag/dt;V=V*Mag/dt;
+                    U=U*Mag./dt;V=V*Mag./dt;
 
                     %convert to matrix if necessary
                     if size(X,2)==1
@@ -694,15 +880,41 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
+                    X=Xval;Y=Yval;
                     
                     eltime=cputime-t1;
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
+                U=Uval; V=Vval;
+                
+                if e~=P
+                    %reshape from list of grid points to matrix
+                    X=reshape(X,[S(1),S(2)]);
+                    Y=reshape(Y,[S(1),S(2)]);
+                    U=reshape(U(:,1),[S(1),S(2)]);
+                    V=reshape(V(:,1),[S(1),S(2)]);
+
+                    fprintf('interpolating velocity...        ')
+                    t1=cputime;
+
+                    %velocity smoothing
+                    if Velsmoothswitch(e)==1
+                        [U,V]=VELfilt(U,V,Velsmoothfilt(e));
+                    end
+                    
+                    %velocity interpolation
+                    UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+                    VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+
+                    eltime=cputime-t1;
+                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                end
+                clear Uc Vc Cc Uval Vval Cval
             end
+            
             
             eltime=cputime-tf;
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-            
         end
 end
 
@@ -713,19 +925,14 @@ beep,pause(0.2),beep
 %                           END MAIN FUNCTION                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin,Peakswitch,ds)
+function [X,Y,U,V,C,multidata]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
 t1=cputime;
 
 %convert input parameters
 im1=double(im1);
 im2=double(im2);
-L = size(im1);
-if size(im1,3)>1
-    Peakreturn=1;
-else
-    Peakreturn=Peakswitch;
-end
+L=size(im1);
 
 %convert to gridpoint list
 X=X(:);
@@ -738,7 +945,7 @@ tcorr = char(ctype(corr+1));
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin <=10
+if nargin <=11
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -801,66 +1008,48 @@ switch upper(tcorr)
             ymax1 = y1+Ny/2;
             ymin2 = y2-Ny/2+1;
             ymax2 = y2+Ny/2;
-
-            for t=1:size(im1,3)
-                dt(t)=2*t-1;
                 
-                %find the image windows
-                zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]), t);
-                zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]), t);
-                if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                    w1 = zeros(Ny,Nx);
-                    w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
-                    zone1 = w1;
-                end
-                if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                    w2 = zeros(Ny,Nx);
-                    w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
-                    zone2 = w2;
-                end
+            %find the image windows
+            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]));
+            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]));
+            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                w1 = zeros(Ny,Nx);
+                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                zone1 = w1;
+            end
+            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                w2 = zeros(Ny,Nx);
+                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                zone2 = w2;
+            end
 
-                %apply the image spatial filter
-                region1 = (zone1).*sfilt;
-                region2 = (zone2).*sfilt;
+            %apply the image spatial filter
+            region1 = (zone1).*sfilt;
+            region2 = (zone2).*sfilt;
 
-                %FFTs and Cross-Correlation
-                f1   = fftn(region1,[Sy Sx]);
-                f2   = fftn(region2,[Sy Sx]);
-                P21  = f2.*conj(f1);
+            %FFTs and Cross-Correlation
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
+            P21  = f2.*conj(f1);
 
-                %Standard Fourier Based Cross-Correlation
-                G = ifftn(P21,'symmetric');
-                G = G(fftindy,fftindx);
-                G = abs(G);
+            %Standard Fourier Based Cross-Correlation
+            G = ifftn(P21,'symmetric');
+            G = G(fftindy,fftindx);
+            G = abs(G);
 
-                %subpixel estimation
-                [Utemp(t,:),Vtemp(t,:),Ctemp(t,:)]=subpixel(G,Nx,Ny,cnorm,Peakreturn);
-                Utemp(t,:)=Utemp(t,:);Vtemp(t,:)=Vtemp(t,:);
-                if Peakreturn
-                    velmag=sqrt(Utemp(t,1)^2+Vtemp(t,1)^2);
-                    Qp(t)=Ctemp(t,1)/Ctemp(t,2)*(1-ds/velmag);
-                else
-                    Qp(t)=-1;
-                end
-             end
-            [temp,t_opt]=max(Qp);
-%             if t_opt~=1
-%                 keyboard
-%             end
+            %subpixel estimation
+            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
+            multidata(n,:)=[max(G(:)),sum(G(:))];
+
             if Peakswitch
-                U(n,:)=Utemp(t_opt,:)/dt(t_opt);
-                V(n,:)=Vtemp(t_opt,:)/dt(t_opt);
-                C(n,:)=Ctemp(t_opt,:)/dt(t_opt);
-            else
-                U(n)=Utemp(t_opt,1)/dt(t_opt);
-                V(n)=Vtemp(t_opt,1)/dt(t_opt);
+                C(n,:)=Ctemp;
             end
         end
 
     %Robust Phase Correlation
     case 'RPC'
         
-        for n=1:length(X)
+        parfor n=1:length(X)
 
             %apply the second order discrete window offset
             x1 = X(n) - floor(round(Uin(n))/2);
@@ -877,66 +1066,53 @@ switch upper(tcorr)
             ymax1 = y1+Ny/2;
             ymin2 = y2-Ny/2+1;
             ymax2 = y2+Ny/2;
-            
-             for t=1:size(im1,3)
-                dt(t)=2*t-1;
 
-                %find the image windows
-                zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
-                zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
-                if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                    w1 = zeros(Ny,Nx);
-                    w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
-                    zone1 = w1;
-                end
-                if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                    w2 = zeros(Ny,Nx);
-                    w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
-                    zone2 = w2;
-                end
-
-                %apply the image spatial filter
-                region1 = (zone1).*sfilt;
-                region2 = (zone2).*sfilt;
-
-                %FFTs and Cross-Correlation
-                f1   = fftn(region1,[Sy Sx]);
-                f2   = fftn(region2,[Sy Sx]);
-                P21  = f2.*conj(f1);
-
-                %Phase Correlation
-                W = ones(Sy,Sx);
-                Wden = sqrt(P21.*conj(P21));
-                W(P21~=0) = Wden(P21~=0);
-                R = P21./W;
-
-                %Robust Phase Correlation with spectral energy filter
-                G = ifftn(R.*spectral,'symmetric');
-                G = G(fftindy,fftindx);
-                G = abs(G);
-                
-                %subpixel estimation
-                [Utemp(t,:),Vtemp(t,:),Ctemp(t,:)]=subpixel(G,Nx,Ny,cnorm,Peakreturn);
-                Utemp(t,:)=Utemp(t,:);Vtemp(t,:)=Vtemp(t,:);
-                if Peakreturn
-                    velmag=sqrt(Utemp(t,1)^2+Vtemp(t,1)^2);
-                    Qp(t)=Ctemp(t,1)/Ctemp(t,2)*(1-ds/velmag);
-                else
-                    Qp(t)=-1;
-                end
-             end
-            [temp,t_opt]=max(Qp);
-%             if t_opt~=1
-%                 keyboard
-%             end
-            if Peakswitch
-                U(n,:)=Utemp(t_opt,:)/dt(t_opt);
-                V(n,:)=Vtemp(t_opt,:)/dt(t_opt);
-                C(n,:)=Ctemp(t_opt,:)/dt(t_opt);
-            else
-                U(n)=Utemp(t_opt,1)/dt(t_opt);
-                V(n)=Vtemp(t_opt,1)/dt(t_opt);
+            %find the image windows
+            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]));
+            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]));
+            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                w1 = zeros(Ny,Nx);
+                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                zone1 = w1;
             end
+            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                w2 = zeros(Ny,Nx);
+                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                zone2 = w2;
+            end
+
+            %apply the image spatial filter
+            region1 = (zone1).*sfilt;
+            region2 = (zone2).*sfilt;
+
+            %FFTs and Cross-Correlation
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
+            P21  = f2.*conj(f1);
+
+            %Phase Correlation
+            W = ones(Sy,Sx);
+            Wden = sqrt(P21.*conj(P21));
+            W(P21~=0) = Wden(P21~=0);
+            R = P21./W;
+
+            %Robust Phase Correlation with spectral energy filter
+            G = ifftn(R.*spectral,'symmetric');
+            G = G(fftindy,fftindx);
+            G = abs(G);
+
+            %subpixel estimation
+            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
+            
+            if Peakswitch
+                C(n,:)=Ctemp;
+            end
+            multidata(n,:)=[max(G(:)),sum(G(:))];
+            
+%             if X(n)==168 && Y(n)==568
+%                 [round(Uin(n,1)),U(n,1)]
+%                 figure,surf(G),zlim([0 .2])
+%             end
         end
 end
 
@@ -1120,6 +1296,156 @@ end
 eltime=cputime-t1;
 fprintf('%0.2i:%0.2i.%0.0f ',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
+function [X,Y,U,V,C]=PIVphasecorr(im1,im2,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
+% --- DPIV Correlation ---
+t1=cputime;
+
+%convert input parameters
+im1=double(im1);
+im2=double(im2);
+L=size(im1);
+
+%convert to gridpoint list
+X=X(:);
+Y=Y(:);
+
+%preallocate velocity fields and grid format
+Nx = window(1);
+Ny = window(2);
+if nargin <=10
+    Uin = zeros(length(X),1);
+    Vin = zeros(length(X),1);
+end
+
+if Peakswitch
+    Uin=repmat(Uin(:,1),[1 3]);
+    Vin=repmat(Vin(:,1),[1 3]);
+    U = zeros(length(X),3);
+    V = zeros(length(X),3);
+    C = zeros(length(X),2);
+else
+    U = zeros(length(X),1);
+    V = zeros(length(X),1);
+    C = [];
+end
+
+%RPC Cutoff filter
+wt = energyfilt(Nx,Ny,D,0);
+wt=wt(Nx/2+1,:);
+cutoff=2/pi/D;
+wt(wt<cutoff)=0;
+
+%sets up extended domain size
+if zpad~=0
+    Sy=2*Ny;
+    Sx=2*Nx;
+else
+    Sy=Ny;
+    Sx=Nx;
+end
+
+dt=2*(1:size(im1,3))-1;
+for i=1:size(im1,3)
+    if sum(Uin(:,1))==0 || sum(Vin(:,1))==0
+        DT=dt(i);
+    else
+        DT=1;
+    end
+    lsqX{i}=(0:Sx-1).*DT-Sx/2*DT;
+    lsqY{i}=(0:Sy-1).*DT-Sy/2*DT;
+end
+
+%window masking filter
+sfilt = windowmask([Nx Ny],[res(1) res(2)]);
+
+%fftshift indicies
+fftindy = [Sy/2+1:Sy 1:Sy/2];
+fftindx = [Sx/2+1:Sx 1:Sx/2];
+
+fprintf('correlating...                   ')
+
+for n=1:length(X)
+    
+    um_cum=[];vm_cum=[];
+    for t=1:size(im1,3)     
+        %apply the second order discrete window offset
+        x1 = X(n) - floor(round(Uin(n)*dt(t))/2);
+        x2 = X(n) +  ceil(round(Uin(n)*dt(t))/2);
+
+        y1 = Y(n) - floor(round(Vin(n)*dt(t))/2);
+        y2 = Y(n) +  ceil(round(Vin(n)*dt(t))/2);
+
+        xmin1 = x1-Nx/2+1;
+        xmax1 = x1+Nx/2;
+        xmin2 = x2-Nx/2+1;
+        xmax2 = x2+Nx/2;
+        ymin1 = y1-Ny/2+1;
+        ymax1 = y1+Ny/2;
+        ymin2 = y2-Ny/2+1;
+        ymax2 = y2+Ny/2;
+    
+        %find the image windows
+        zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]),t);
+        zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]),t);
+        if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+            w1 = zeros(Ny,Nx);
+            w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+            zone1 = w1;
+        end
+        if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+            w2 = zeros(Ny,Nx);
+            w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+            zone2 = w2;
+        end
+
+        %apply the image spatial filter
+        region1 = (zone1).*sfilt;
+        region2 = (zone2).*sfilt;
+
+        %FFTs
+        f1   = fftn(region1,[Sy Sx]);
+        f2   = fftn(region2,[Sy Sx]);
+        P21  = f2.*conj(f1);
+        W = ones(Ny,Nx);
+        Wden = sqrt(P21.*conj(P21));
+        W(P21~=0) = Wden(P21~=0);
+        R = P21./W;
+        R = R(fftindy,fftindx);
+        
+        %SVD-based Phase Correlation
+        [u,s,v]=svd(R);
+        v=unwrap(angle(v(:,1)));
+        um=(v-v(Sx/2+1))';
+        um_cum=[um_cum,um];
+        u=unwrap(angle(u(:,1)));
+        vm=(u-u(Sy/2+1))';
+        vm_cum=[vm_cum,vm];
+        
+        if s(1,1)/s(2,2)<2
+            break
+        end
+        
+        U(n)= wlsq(um_cum,[lsqX{1:t}],repmat(wt,[1,t]))*Sx/2/pi;
+        V(n)=-wlsq(vm_cum,[lsqY{1:t}],repmat(wt,[1,t]))*Sy/2/pi;
+        
+        if t<size(im1,3)
+            %Displacement cutoff
+            if U(n)*dt(t+1)>res(1)/4 || V(n)*dt(t+1)>res(2)/4
+                break
+            end
+        end
+    end
+    if Peakswitch
+        C(n,:)=diag(s(1:2,1:2));
+    end
+end
+%add DWO to estimation
+U = round(Uin)+U;
+V = round(Vin)+V;
+
+eltime=cputime-t1;
+fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+
 function [X,Y]=IMgrid(L,S,G)
 % --- Grid Generation Subfunction ---
 
@@ -1261,14 +1587,13 @@ if M==0
     end
 else
     if Peakswitch
-        %Find peaks using imregionalmax (built-in matlab function)
+        %Find peaks using imregionalmax
         A=imregionalmax(G);
         peakmat=G.*A;
         for i=2:3
             peakmat(peakmat==M(i-1))=0;
             [M(i),I(i)]=max(peakmat(:));
         end
-        
         j=length(M);
     else
         j=1;    
@@ -1282,58 +1607,64 @@ else
         %find subpixel displacement in x
         if shift_locx == 1
             %boundary condition 1
-            shift_err =  G( shift_locy , shift_locx+1 )/M(i);
+            shift_err =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
         elseif shift_locx == ccsizex
             %boundary condition 2
-            shift_err = -G( shift_locy , shift_locx-1 )/M(i);
+            shift_err = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
         elseif G( shift_locy , shift_locx+1 ) == 0
             %endpoint discontinuity 1
-            shift_err = -G( shift_locy , shift_locx-1 )/M(i);
+            shift_err = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
         elseif G( shift_locy , shift_locx-1 ) == 0
             %endpoint discontinuity 2
-            shift_err =  G( shift_locy , shift_locx+1 )/M(i);
+            shift_err =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
         else
             %gaussian fit
             lCm1 = log(G( shift_locy , shift_locx-1 )*W( shift_locy , shift_locx-1 ));
             lC00 = log(G( shift_locy , shift_locx   )*W( shift_locy , shift_locx   ));
             lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
             if (2*(lCm1+lCp1-2*lC00)) == 0
-                shift_err = 0;
+                shift_err = 0;  Mx=M(i);
             else
                 shift_err = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+                sigma=(lCp1-lC00)/(shift_err^2-(cc_x(shift_locx+1)-(cc_x(shift_locx)+shift_err))^2);
+                Mx=G(shift_locy,shift_locx)*W(shift_locy,shift_locx)*exp(shift_err^2/2/sigma);
             end
         end
-
         %add subpixel to discete pixel value
         u(i) = cc_x(shift_locx) + shift_err;
 
         %find subpixel displacement in y
         if shift_locy == 1
             %boundary condition 1
-            shift_err = -G( shift_locy+1 , shift_locx )/M(i);
+            shift_err = -G( shift_locy+1 , shift_locx )/M(i); My=M(i);
         elseif shift_locy == ccsizey
             %boundary condition 2
-            shift_err =  G( shift_locy-1 , shift_locx )/M(i);
+            shift_err =  G( shift_locy-1 , shift_locx )/M(i); My=M(i);
         elseif G( shift_locy+1 , shift_locx ) == 0
             %endpoint discontinuity 1
-            shift_err =  G( shift_locy-1 , shift_locx )/M(i);
+            shift_err =  G( shift_locy-1 , shift_locx )/M(i); My=M(i);
         elseif G( shift_locy-1 , shift_locx ) == 0
             %endpoint discontinuity 2
-            shift_err = -G( shift_locy+1 , shift_locx )/M(i);
+            shift_err = -G( shift_locy+1 , shift_locx )/M(i); My=M(i);
         else
             %gaussian fit
             lCm1 = log(G( shift_locy-1 , shift_locx )*W( shift_locy-1 , shift_locx ));
             lC00 = log(G( shift_locy   , shift_locx )*W( shift_locy   , shift_locx ));
             lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
             if (2*(lCm1+lCp1-2*lC00)) == 0
-                shift_err = 0;
+                shift_err = 0; My=M(i);
             else
                 shift_err = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+                sigma=(lCp1-lC00)/(shift_err^2-(cc_y(shift_locy+1)-(cc_y(shift_locy)+shift_err))^2);
+                My=G(shift_locy,shift_locx)*W(shift_locy,shift_locx)*exp(shift_err^2/2/sigma);
             end
         end
 
         %add subpixel to discete pixel value
         v(i) = (cc_y(shift_locy) + shift_err);
+        
+        %subpixel peak magnitude
+%         M(i)=max([Mx,My]);
     end
 end
 
@@ -2368,3 +2699,13 @@ P = [500.0000 245.4709 239.8833 234.4229 229.0868 223.8721 218.7762 213.7962 208
        0.1995   0.1950   0.1905   0.1862   0.1820   0.1778   0.1738   0.0000]';
  
 p=interp1q(R,P,r);
+
+function [xh]=wlsq(y,H,W)
+% --- Weighted Least Squares Fit for Phase Correlation ---
+tempmat=sortrows([y',H',W'],2);
+y=tempmat(:,1);
+H=tempmat(:,2);
+W=diag(tempmat(:,3));
+
+% xh=inv(H'*W*H)*H'*W*y;
+xh=(H'*W*H)\(H'*W*y);
