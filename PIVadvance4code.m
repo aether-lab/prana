@@ -148,7 +148,7 @@ switch char(M)
 
     case {'Multipass','Multigrid','Deform'}
 
-        for q=5:length(I1)
+        for q=1:length(I1)
             
             tf=cputime;
             
@@ -1688,9 +1688,6 @@ for i=1:j
         t=t(:,t(1,:)~=0);
         [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh,Evalval);
     end
-    if Bootswitch
-        [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
-    end
 %     disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
     if extrapeaks && i<3
         Uval(Evalval>0)=U(Evalval>0,i+1);
@@ -1698,6 +1695,9 @@ for i=1:j
         Evalval(Evalval>0)=Eval(Evalval>0,i+1);
         Cval(Evalval>0)=C(Evalval>0,i+1);
     end
+end
+if Bootswitch
+    [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
 end
 
 function [Uf,Vf,Eval] = Thresh(xin,yin,uin,vin,uthreshold,vthreshold,evalin)

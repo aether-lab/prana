@@ -791,14 +791,14 @@ end
 function impreview_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     try
-        im1=double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+        im1=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
         im1=flipud(im1)/255;
         try
             if strcmp(handles.data.masktype,'static')
                 mask = double(imread(handles.data.staticmaskname));
                 mask = flipud(mask);
             elseif strcmp(handles.data.masktype,'dynamic')
-                mask = double(imread([handles.data.maskdirec '\' handles.data.maskbase sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],str2double(handles.data.maskfstart))]));
+                mask = double(imread(fullfile(handles.data.maskdirec, [handles.data.maskbase, sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],str2double(handles.data.maskfstart))])));
                 mask = flipud(mask);
             else
                 mask = ones(size(im1));
@@ -1738,6 +1738,7 @@ end
 function exp_pixelsize_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.exp_pixelsize = get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
 end
 function exp_pixelsize_CreateFcn(hObject, eventdata, handles)
@@ -2471,7 +2472,7 @@ end
 
 if ~isempty(handles.data.wrmag)
     try
-        im1=double(imread([handles.data.imdirec '\' handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]));
+        im1=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
         L=size(im1)*str2double(handles.data.wrmag)*10^-6;
         handles.data.exp_ROI=[num2str(L(2)),',',num2str(L(1))];
 
@@ -2531,6 +2532,10 @@ if ~isempty(handles.data.wrmag)
                 handles.data.exp_diffractiondiameter='';
                 handles.data.exp_depthoffocus='';
             end
+        else
+            handles.data.exp_M='';
+            handles.data.exp_diffractiondiameter='';
+            handles.data.exp_depthoffocus='';
         end
     catch
         handles.data.exp_ROI='';
