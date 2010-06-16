@@ -1049,7 +1049,7 @@ switch upper(tcorr)
     %Robust Phase Correlation
     case 'RPC'
         
-        parfor n=1:length(X)
+        for n=1:length(X)
 
             %apply the second order discrete window offset
             x1 = X(n) - floor(round(Uin(n))/2);
@@ -1108,11 +1108,6 @@ switch upper(tcorr)
                 C(n,:)=Ctemp;
             end
             multidata(n,:)=[max(G(:)),sum(G(:))];
-            
-%             if X(n)==168 && Y(n)==568
-%                 [round(Uin(n,1)),U(n,1)]
-%                 figure,surf(G),zlim([0 .2])
-%             end
         end
 end
 
@@ -1675,38 +1670,86 @@ if extrapeaks
 else
     j=1;
 end
-Uval=U(:,1); Vval=V(:,1); Evalval=Eval(:,1);
+
+[X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
 if ~isempty(C)
-    Cval=C(:,1);
+    Cval=C(:,:,1);
 end
-for i=1:j
-    if Threshswitch
-        [Uval,Vval,Evalval] = Thresh(X,Y,Uval,Vval,Uthresh,Vthresh,Evalval);
-    end
-    if UODswitch
-        t=permute(UODwinsize,[2 3 1]);
-        t=t(:,t(1,:)~=0);
-        [Uval,Vval,Evalval] = UOD(X,Y,Uval,Vval,t',UODthresh,Evalval);
-    end
-%     disp(['';'Replaced ',num2str(sum(Evalval>0)),' Vectors'])
-    if extrapeaks && i<3
-        Uval(Evalval>0)=U(Evalval>0,i+1);
-        Vval(Evalval>0)=V(Evalval>0,i+1);
-        Evalval(Evalval>0)=Eval(Evalval>0,i+1);
-        Cval(Evalval>0)=C(Evalval>0,i+1);
+S=size(X);
+
+if Threshswitch || UODswitch
+    for i=1:j
+        %Thresholding
+        if Threshswitch
+            [Uval,Vval,Evalval] = Thresh(Uval,Vval,Uthresh,Vthresh,Evalval);
+        end
+
+        %Univeral Outlier Detection
+        if UODswitch
+            t=permute(UODwinsize,[2 3 1]);
+            t=t(:,t(1,:)~=0);
+            [Uval,Vval,Evalval] = UOD(Uval,Vval,t',UODthresh,Evalval);
+        end
+        disp([num2str(sum(sum(Evalval>0))),' bad vectors'])
+        %Try additional peaks where validation failed
+        if i<j
+            Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);
+            Uval(Evalval>0)=Utemp(Evalval>0);
+            Vval(Evalval>0)=Vtemp(Evalval>0);
+            Evalval(Evalval>0)=Evaltemp(Evalval>0);
+            Cval(Evalval>0)=Ctemp(Evalval>0);
+        end
     end
 end
+
+%Bootstrapping
 if Bootswitch
     [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
 end
 
-function [Uf,Vf,Eval] = Thresh(xin,yin,uin,vin,uthreshold,vthreshold,evalin)
-% --- Thresholding Validation Subfunction ---
+%replacement
+for i=1:S(1)
+    for j=1:S(2)
+        if Evalval(i,j)>0 && Evalval(i,j)<200
+            %initialize replacement search size
+            q=0;
+            s=0;
 
-%preallocate evaluation matrix
-if nargin<=6
-    evalin = zeros(size(xin));
+            %get replacement block with at least 8 valid points
+            while s==0
+                q=q+1;
+                Imin = max([i-q 1   ]);
+                Imax = min([i+q S(1)]);
+                Jmin = max([j-q 1   ]);
+                Jmax = min([j+q S(2)]);
+                Iind = Imin:Imax;
+                Jind = Jmin:Jmax;
+                Ublock = Uval(Iind,Jind);
+                if length(Ublock(~isnan(Ublock)))>=8
+                    Xblock = X(Iind,Jind)-X(i,j);
+                    Yblock = Y(Iind,Jind)-Y(i,j);
+                    Vblock = Vval(Iind,Jind);
+                    s=1;
+                end
+            end
+            
+            %distance from erroneous vector
+            Dblock = (Xblock.^2+Yblock.^2).^0.5;
+            Dblock(isnan(Ublock))=nan;
+
+            %validated vector
+            Uval(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
+            Vval(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));          
+        end
+    end
 end
+
+%convert back to vector
+[Uval,Vval,Evalval,Cval]=vectorform(X,Y,Uval,Vval,Evalval,Cval);
+
+function [U,V,Eval] = Thresh(U,V,uthreshold,vthreshold,Eval)
+% --- Thresholding Validation Subfunction ---
 
 %neglect u and v threshold
 if nargin<=4
@@ -1714,19 +1757,7 @@ if nargin<=4
     vthreshold = [-inf inf];
 end
 
-%vector size
-Sin=size(xin);
-
-%convert to matrix
-if Sin(2)==1
-    [X,Y,U,V,Eval]=matrixform(xin,yin,uin,vin,evalin,[]);
-    S=size(X);
-else
-    U=uin;
-    V=vin;
-    Eval=evalin;
-    S=Sin;
-end
+S=size(U);
 
 %thresholding
 for i=1:S(1)
@@ -1746,82 +1777,13 @@ for i=1:S(1)
     end
 end
 
-%initialize output velocity
-Uf=U;
-Vf=V;
-
-%replacement
-for i=1:S(1)
-    for j=1:S(2)
-        
-        if Eval(i,j) ~= 0
-
-            %initialize replacement search size
-            q=0;
-            s=0;
-
-            %get replacement block with at least 8 valid points
-            while s==0
-                q=q+1;
-                Imin = max([i-q 1   ]);
-                Imax = min([i+q S(1)]);
-                Jmin = max([j-q 1   ]);
-                Jmax = min([j+q S(2)]);
-                Iind = Imin:Imax;
-                Jind = Jmin:Jmax;
-                Ublock = U(Iind,Jind);
-                if length(Ublock(~isnan(Ublock)))>=8
-                    Xblock = X(Iind,Jind)-X(i,j);
-                    Yblock = Y(Iind,Jind)-Y(i,j);
-                    Vblock = V(Iind,Jind);
-                    s=1;
-                end
-            end
-            
-            %distance from erroneous vector
-            Dblock = (Xblock.^2+Yblock.^2).^0.5;
-            Dblock(isnan(Ublock))=nan;
-
-            %validated vector
-            Uf(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
-            Vf(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));
-            
-        end
-
-    end
-end
-
-if Sin(2)==1
-    %convert back to vector
-    [Uf,Vf,Eval]=vectorform(xin,yin,Uf,Vf,Eval);
-end
-
-function [Uf,Vf,Eval] = UOD(xin,yin,uin,vin,t,tol,evalin)
+function [U,V,Eval] = UOD(U,V,t,tol,Eval)
 % --- Universal Outlier Detection Validation Subfunction ---
-
-%preallocate evaluation matrix
-if nargin<=6
-    evalin = zeros(size(xin));
-end
 
 %number of validation passes
 pass = length(tol);
 
-%vector size
-Sin=size(xin);
-
-%convert to matrix
-if Sin(2)==1
-    [X,Y,U,V,Eval]=matrixform(xin,yin,uin,vin,evalin,[]);
-    S=size(X);
-else
-    X=xin;
-    Y=yin;
-    U=uin;
-    V=vin;
-    Eval=evalin;
-    S=Sin;
-end
+S=size(U);
 
 %outlier searching
 for k=1:pass
@@ -1862,56 +1824,6 @@ for k=1:pass
     end
 end
 
-%initialize output velocity
-Uf=U;
-Vf=V;
-
-%replacement
-for i=1:S(1)
-    for j=1:S(2)
-        
-        if Eval(i,j) ~= 0
-
-            %initialize replacement search size
-            q=0;
-            s=0;
-
-            %get replacement block with at least 8 valid points
-            while s==0
-                q=q+1;
-                Imin = max([i-q 1   ]);
-                Imax = min([i+q S(1)]);
-                Jmin = max([j-q 1   ]);
-                Jmax = min([j+q S(2)]);
-                Iind = Imin:Imax;
-                Jind = Jmin:Jmax;
-                Ublock = U(Iind,Jind);
-                if length(Ublock(~isnan(Ublock)))>=8
-                    Xblock = X(Iind,Jind)-X(i,j);
-                    Yblock = Y(Iind,Jind)-Y(i,j);
-                    Vblock = V(Iind,Jind);
-                    s=1;
-                end
-            end
-            
-            %distance from erroneous vector
-            Dblock = (Xblock.^2+Yblock.^2).^0.5;
-            Dblock(isnan(Ublock))=nan;
-
-            %validated vector
-            Uf(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
-            Vf(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));
-            
-        end
-
-    end
-end
-
-if Sin(2)==1
-    %convert back to vector
-    [Uf,Vf,Eval]=vectorform(xin,yin,Uf,Vf,Eval);
-end
-
 function [R]=UOD_sub(W,p,q)
 % --- Universal Outlier Detection Algorithm ---
 
@@ -1946,7 +1858,7 @@ else
     end
 end
 
-function [U,V,Eval] = bootstrapping(xin,yin,uin,vin,per,iter,kmax,evalin)
+function [U,V,Eval] = bootstrapping(X,Y,U,V,per,iter,kmax,Eval)
 % Bootstrapping Validation Subfunction 
 %
 % [U,V,Eval] = bootstraping(x,y,u,v,per,iter,kmax,Eval)
@@ -1955,23 +1867,7 @@ function [U,V,Eval] = bootstrapping(xin,yin,uin,vin,per,iter,kmax,evalin)
 % iter = number of interpolations per frame (for histogram)
 % kmax = number of passes 
 
-if nargin<8
-    evalin = zeros(size(xin));
-end
-
-%vector size
-n_in=size(xin);
-
-%convert to matrix
-if n_in(2)==1
-    [X,Y,U,V,Eval]=matrixform(xin,yin,uin,vin,evalin,[]);
-    n=size(X);
-else
-    U=uin;
-    V=vin;
-    Eval=evalin;
-    n=n_in;
-end
+n = size(X);
 
 M = zeros(n(1),n(2),iter);
 
@@ -2020,11 +1916,7 @@ while tol > 0 && ktol <= kmax+1
                     if tU > tol || tV > tol && Eval(j,k) ~= -1
                         U(j,k) = modeU(1);
                         V(j,k) = modeV(1);
-                        if Eval(j,k)<200
-                            Eval(j,k) = 200;
-                        else
-                            Eval(j,k) = Eval(j,k)+1;
-                        end
+                        Eval(j,k) = 200;
                         PBad = PBad+1;
                     end
                 catch%#ok
@@ -2037,11 +1929,6 @@ while tol > 0 && ktol <= kmax+1
     end
     ktol = ktol + 1;
     tol = tol-(tol/(kmax-1))*(ktol-1);
-end
-
-if n_in(2)==1
-    %convert back to vector
-    [U,V,Eval]=vectorform(xin,yin,U,V,Eval);
 end
 
 function [M1] = bootstrapping_dataremove(DSIZE,ENUM,MASK)
@@ -2530,19 +2417,24 @@ else
     C=[];
 end
 
-function [u,v,eval]=vectorform(x,y,U,V,Eval)
+function [u,v,eval,c]=vectorform(x,y,U,V,Eval,C)
 % --- Matrix to Vector Subfunction ---
-
+x=x(:);y=y(:);
 %find unique x and y grid points
 a=sort(unique(x));
 b=sort(unique(y));
-N=length(x);
+N=length(x(:));
 
 %initialize vectors
-S=size(x);
+S=size(x(:));
 u    = zeros(S);
 v    = zeros(S);
 eval = zeros(S);
+if ~isempty(C)
+    c = zeros(S);
+else
+    c = [];
+end
 
 %generate data vectors where data is available
 for n=1:N
@@ -2551,6 +2443,9 @@ for n=1:N
     u(n)    = U(I,J);
     v(n)    = V(I,J);
     eval(n) = Eval(I,J);
+    if ~isempty(C)
+        c(n)    = C(I,J);
+    end
 end
 
 function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
