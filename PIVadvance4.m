@@ -93,7 +93,7 @@ handles.data.PIV0.uod='1';
 handles.data.PIV0.bootstrap='0';
 handles.data.PIV0.thresh='0';
 handles.data.PIV0.uod_type='2';
-handles.data.PIV0.uod_window='7,7;7,7';
+handles.data.PIV0.uod_window='3,3;3,3';
 handles.data.PIV0.uod_thresh='3,2';
 handles.data.PIV0.bootstrap_percentsampled='15';
 handles.data.PIV0.bootstrap_iterations='700';
@@ -1047,7 +1047,7 @@ if str2double(handles.Njob)>0
             eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.gridbuffer,''String'');'])
         end
     elseif get(hObject,'Value')>=5
-        set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
         set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
         set(handles.framestep,'backgroundcolor',[1 1 1]);
@@ -1332,11 +1332,11 @@ end
 function smoothingcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.velsmooth = num2str(get(hObject,''Value''));'])
-    eval(['size=handles.data.PIV' handles.data.cpass '.velsmoothfilt;'])
+    eval(['smoothingsize=handles.data.PIV' handles.data.cpass '.velsmoothfilt;'])
     if get(hObject,'Value')==1 && get(handles.passtype,'Value')>1
-        set(handles.smoothingsize,'string',size,'backgroundcolor',[1 1 1]);
+        set(handles.smoothingsize,'string',smoothingsize,'backgroundcolor',[1 1 1]);
     else
-        set(handles.smoothingsize,'string',size,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.smoothingsize,'string',smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     end
     guidata(hObject,handles)
 end
@@ -2383,7 +2383,7 @@ set(handles.framestep,'String',handles.data.framestep);
 set(handles.PIVerror,'String',handles.data.PIVerror);
 
 if get(handles.passtype,'Value')>=5
-    set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.framestep,'backgroundcolor',[1 1 1]);

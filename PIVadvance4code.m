@@ -18,9 +18,11 @@ I2 = I1+str2double(Data.imcstep);
 %processing mask
 if strcmp(Data.masktype,'none')
     mask = 1+0*double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+    maskname=[];
 elseif strcmp(Data.masktype,'static')
     mask = double(imread(Data.staticmaskname));
     mask = flipud(mask);
+    maskname=[];
 elseif strcmp(Data.masktype,'dynamic')
     maskfend=str2double(Data.maskfstart)+str2double(Data.maskfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
     maskname=str2double(Data.maskfstart):str2double(Data.maskfstep):maskfend;
@@ -28,7 +30,7 @@ end
 
 %method and passes
 P=str2double(Data.passes);
-Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe - Persoons','Multiframe - Exp','Phase'};
+Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe - Persoons'};
 M=Method(str2double(Data.method));
 
 %algorithm options
@@ -130,6 +132,8 @@ for e=1:P
     
 end
 
+frametime=nan(length(I1));
+
 %% --- Image Prefilter ---
 %added to multipass, multigrid, deform, and ensemble for image loading
 try
@@ -147,10 +151,8 @@ end
 switch char(M)
 
     case {'Multipass','Multigrid','Deform'}
-
-        for q=1:length(I1)
-            
-            tf=cputime;
+        for q=1:length(I1)                   
+            tf=tic;
             
             %output text
             title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
@@ -183,7 +185,8 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
                 
                 if strcmp(M,'Multipass')
-                    Ub=UI;Vb=VI;
+                    Ub=UI(:);
+                    Vb=VI(:);
                 else
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
@@ -209,12 +212,12 @@ switch char(M)
                 if Valswitch(e)
                     %output text
                     fprintf('validating...                    ')
-                    t1=cputime;
+                    t1=tic;
                     
                     [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 else
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
@@ -228,7 +231,7 @@ switch char(M)
                 %write output
                 if Writeswitch(e) 
                     fprintf('saving...                        ')
-                    t1=cputime;
+                    t1=tic;
                         
                     if Peakswitch(e)
                         if PeakVel(e)
@@ -270,7 +273,7 @@ switch char(M)
                     end
                     X=Xval;Y=Yval;
                     
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
                 U=Uval; V=Vval;
@@ -285,7 +288,7 @@ switch char(M)
                     if strcmp(M,'Multigrid') || strcmp(M,'Deform')
 
                         fprintf('interpolating velocity...        ')
-                        t1=cputime;
+                        t1=tic;
 
                         %velocity smoothing
                         if Velsmoothswitch(e)==1
@@ -296,12 +299,12 @@ switch char(M)
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
-                        eltime=cputime-t1;
+                        eltime=toc(t1);
                         fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                         
                         if strcmp(M,'Deform')
                             fprintf('deforming images...              ')
-                            t1=cputime;
+                            t1=tic;
                             
                             %translate pixel locations
                             XD1 = XI+UI/2;
@@ -388,7 +391,7 @@ switch char(M)
                             
                             im1=im1d; im2=im2d;
 
-                            eltime=cputime-t1;
+                            eltime=toc(t1);
                             fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                         end
                     else
@@ -396,12 +399,10 @@ switch char(M)
                     end
                 end
             end
-            
-            eltime=cputime-tf;
-            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-            
-        end
 
+            eltime=toc(tf);
+            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))   
+        end
 
     case 'Ensemble'
         
@@ -487,12 +488,12 @@ switch char(M)
             if Valswitch(e)
                 %output text
                 fprintf('validating...                    ')
-                t1=cputime;
+                t1=tic;
 
                 [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                     Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
 
-                eltime=cputime-t1;
+                eltime=toc(t1);
                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             else
                 Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
@@ -506,7 +507,7 @@ switch char(M)
             %write output
             if Writeswitch(e) 
                 fprintf('saving...                        ')
-                t1=cputime;
+                t1=tic;
 
                 if Peakswitch(e)
                     if PeakVel(e)
@@ -547,7 +548,7 @@ switch char(M)
                 end
                 X=Xval;Y=Yval;
 
-                eltime=cputime-t1;
+                eltime=toc(t1);
                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             end
             U=Uval; V=Vval;
@@ -560,7 +561,7 @@ switch char(M)
                 V=reshape(V(:,1),[S(1),S(2)]);
 
                 fprintf('interpolating velocity...        ')
-                t1=cputime;
+                t1=tic;
 
                 %velocity smoothing
                 if Velsmoothswitch(e)==1
@@ -571,17 +572,16 @@ switch char(M)
                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
-                eltime=cputime-t1;
+                eltime=toc(t1);
                 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             end
         end
         
         
-    case {'Multiframe - Persoons','Multiframe - Exp'}
+    case {'Multiframe - Persoons'}
         
-        for q=1:length(I1)
-            
-            tf=cputime;
+        for q=5:length(I1)
+            tf=tic;
             
             %output text
             title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
@@ -625,31 +625,25 @@ switch char(M)
                 U=zeros(size(X,1),3,N);
                 V=zeros(size(X,1),3,N);
                 C=zeros(size(X,1),3,N);
-                multidata=zeros(size(X,1),2,N);
                 
                 Eval=repmat(reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1),[1 3]);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
                 
                 Dt=2.*(1:N)-1;
+                Uc=[];Vc=[];Cc=[];
                 for t=1:N
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                     %correlate image pair
-                    [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),multidatac(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e,:),0,D(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                    [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e,:),0,D(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                 end
                 U(repmat(Eval>=0,[1 1 N]))=Uc;
                 V(repmat(Eval>=0,[1 1 N]))=Vc;
                 C(repmat(Eval>=0,[1 1 N]))=Cc;
-                multidata(repmat(Eval(:,1)>=0,[1 2 N]))=multidatac;
 
                 velmag=sqrt(U(:,1,:).^2+V(:,1,:).^2);
-                if strcmp(M,'Multiframe - Persoons')
-                    Qp=C(:,1,:)./C(:,2,:).*(1-ds/velmag);
-                elseif strcmp(M,'Multiframe - Exp')
-%                     Qp=((C(:,1,:)-C(:,2,:))./C(:,1,:)).*(1-ds/velmag);                  
-                    Qp=multidata(:,1,:)./multidata(:,2,:).*(1-ds./velmag);
-                end
+                Qp=C(:,1,:)./C(:,2,:).*(1-ds./velmag);
                 [Qmax,t_opt]=max(Qp,[],3);
                 for i=1:size(U,1)
                     Uval(i,:)=U(i,:,t_opt(i));
@@ -669,12 +663,12 @@ switch char(M)
                 if Valswitch(e)
                     %output text
                     fprintf('validating...                    ')
-                    t1=cputime;
+                    t1=tic;
                     
                     [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 else
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
@@ -688,7 +682,7 @@ switch char(M)
                 %write output
                 if Writeswitch(e) 
                     fprintf('saving...                        ')
-                    t1=cputime;
+                    t1=tic;
                                         
                     if PeakVel(e)
                         U=[Uval(:,1),U(:,1:PeakNum(e))];
@@ -722,11 +716,9 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
-                    U=U(:,:,1);V=V(:,:,1);
-                    U=U(:);V=V(:);
                     X=Xval;Y=Yval;
                     
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
                 U=Uval; V=Vval;
@@ -739,7 +731,7 @@ switch char(M)
                     V=reshape(V(:,1),[S(1),S(2)]);
 
                     fprintf('interpolating velocity...        ')
-                    t1=cputime;
+                    t1=tic;
 
                     %velocity smoothing
                     if Velsmoothswitch(e)==1
@@ -750,14 +742,13 @@ switch char(M)
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
-                clear Uc Vc Cc multidatac Uval Vval Cval
+                Uval=[];Vval=[];Cval=[];
             end
-            
-            
-            eltime=cputime-tf;
+
+            eltime=toc(tf);
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
         end
         
@@ -765,7 +756,7 @@ switch char(M)
         
         for q=1:length(I1)
             
-            tf=cputime;
+            tf=tic;
             
             %output text
             title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
@@ -827,12 +818,12 @@ switch char(M)
                 if Valswitch(e)
                     %output text
                     fprintf('validating...                    ')
-                    t1=cputime;
+                    t1=tic;
                     
                     [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 else
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
@@ -846,7 +837,7 @@ switch char(M)
                 %write output
                 if Writeswitch(e) 
                     fprintf('saving...                        ')
-                    t1=cputime;
+                    t1=tic;
                                         
                     if PeakVel(e)
                         U=[Uval(:,1),U(:,1:PeakNum(e))];
@@ -882,7 +873,7 @@ switch char(M)
                     end
                     X=Xval;Y=Yval;
                     
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
                 U=Uval; V=Vval;
@@ -895,7 +886,7 @@ switch char(M)
                     V=reshape(V(:,1),[S(1),S(2)]);
 
                     fprintf('interpolating velocity...        ')
-                    t1=cputime;
+                    t1=tic;
 
                     %velocity smoothing
                     if Velsmoothswitch(e)==1
@@ -906,14 +897,13 @@ switch char(M)
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
-                    eltime=cputime-t1;
+                    eltime=toc(t1);
                     fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 end
                 clear Uc Vc Cc Uval Vval Cval
             end
             
-            
-            eltime=cputime-tf;
+            eltime=toc(tf);
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
         end
 end
@@ -925,9 +915,9 @@ beep,pause(0.2),beep
 %                           END MAIN FUNCTION                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [X,Y,U,V,C,multidata]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
+function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
-t1=cputime;
+t1=tic;
 
 %convert input parameters
 im1=double(im1);
@@ -1039,8 +1029,6 @@ switch upper(tcorr)
 
             %subpixel estimation
             [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
-            multidata(n,:)=[max(G(:)),sum(G(:))];
-
             if Peakswitch
                 C(n,:)=Ctemp;
             end
@@ -1049,7 +1037,7 @@ switch upper(tcorr)
     %Robust Phase Correlation
     case 'RPC'
         
-        for n=1:length(X)
+        parfor n=1:length(X)
 
             %apply the second order discrete window offset
             x1 = X(n) - floor(round(Uin(n))/2);
@@ -1102,12 +1090,10 @@ switch upper(tcorr)
             G = abs(G);
 
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
-            
+            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);    
             if Peakswitch
                 C(n,:)=Ctemp;
             end
-            multidata(n,:)=[max(G(:)),sum(G(:))];
         end
 end
 
@@ -1115,13 +1101,13 @@ end
 U = round(Uin)+U;
 V = round(Vin)+V;
 
-eltime=cputime-t1;
+eltime=toc(t1);
 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
 function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
 
-t1=cputime;
+t1=tic;
 
 %convert input parameters
 im1=double(im1);
@@ -1288,12 +1274,12 @@ switch upper(tcorr)
         end
 end
 
-eltime=cputime-t1;
+eltime=toc(t1);
 fprintf('%0.2i:%0.2i.%0.0f ',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
 function [X,Y,U,V,C]=PIVphasecorr(im1,im2,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
-t1=cputime;
+t1=tic;
 
 %convert input parameters
 im1=double(im1);
@@ -1438,7 +1424,7 @@ end
 U = round(Uin)+U;
 V = round(Vin)+V;
 
-eltime=cputime-t1;
+eltime=toc(t1);
 fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
 function [X,Y]=IMgrid(L,S,G)
@@ -1675,6 +1661,8 @@ end
 Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
 if ~isempty(C)
     Cval=C(:,:,1);
+else
+    Cval=[];
 end
 S=size(X);
 
@@ -1691,7 +1679,7 @@ if Threshswitch || UODswitch
             t=t(:,t(1,:)~=0);
             [Uval,Vval,Evalval] = UOD(Uval,Vval,t',UODthresh,Evalval);
         end
-        disp([num2str(sum(sum(Evalval>0))),' bad vectors'])
+%         disp([num2str(sum(sum(Evalval>0))),' bad vectors'])
         %Try additional peaks where validation failed
         if i<j
             Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);
