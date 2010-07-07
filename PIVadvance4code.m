@@ -196,7 +196,13 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                    Uc = Uc + Ub;   %reincorporate deformation as velocity for next pass
+                    Vc = Vc + Vb;
+                else                                    %either first pass, or not deform
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                end
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                     U=zeros(size(X,1),3);
                     V=zeros(size(X,1),3);
