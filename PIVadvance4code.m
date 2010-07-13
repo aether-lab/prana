@@ -197,7 +197,18 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                    if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                        Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
+                        Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
+                    else
+                        Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
+                        Vc = Vc + Vb(Eval>=0);
+                    end
+                else                                    %either first pass, or not deform
+                    [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                end
                 if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                     U=zeros(size(X,1),3);
                     V=zeros(size(X,1),3);
@@ -389,11 +400,21 @@ switch char(M)
                             %clip lower values of deformed images
                             im1d(im1d<0)=0; im1d(isnan(im1d))=0;
                             im2d(im2d<0)=0; im2d(isnan(im2d))=0;
-                            
-                            im1=im1d; im2=im2d;
+
+                            %JJC: don't want to do this, should deform windows from start each time
+                            % im1=im1d; im2=im2d;
 
                             eltime=toc(t1);
                             fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                            
+%                             keyboard
+%                             figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
+%                             figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
+%                             figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
+%                             figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
+%                             pause
+%                             imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
+%                             imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
                         end
                     else
                         UI=U;VI=V;
