@@ -1,4 +1,4 @@
-function PIVadvance4code(Data)
+function PIVadvance4code(Data,I1,I2,maskname)
 %% --- Read Formatted Parameters ---
 %input/output directory
 if ispc
@@ -11,9 +11,10 @@ else
     pltdirec=[Data.outdirec '/'];
 end
 
-%image indices
-I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
-I2 = I1+str2double(Data.imcstep);
+if nargin<3
+    I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
+    I2 = I1+str2double(Data.imcstep);
+end
 
 %processing mask
 if strcmp(Data.masktype,'none')
@@ -24,8 +25,10 @@ elseif strcmp(Data.masktype,'static')
     mask = flipud(mask);
     maskname=[];
 elseif strcmp(Data.masktype,'dynamic')
-    maskfend=str2double(Data.maskfstart)+str2double(Data.maskfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
-    maskname=str2double(Data.maskfstart):str2double(Data.maskfstep):maskfend;
+    if nargin<4
+        maskfend=str2double(Data.maskfstart)+str2double(Data.maskfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
+        maskname=str2double(Data.maskfstart):str2double(Data.maskfstep):maskfend;
+    end
 end
 
 %method and passes
@@ -132,8 +135,6 @@ for e=1:P
     
 end
 
-frametime=nan(length(I1));
-
 %% --- Image Prefilter ---
 %added to multipass, multigrid, deform, and ensemble for image loading
 try
@@ -155,10 +156,10 @@ switch char(M)
             tf=tic;
             
             %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
+            frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
             fprintf('\n----------------------------------------------------\n')
             fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
+            fprintf(['Processing ' frametitle ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
             fprintf('----------------------------------------------------\n')
 
             %load image pair and flip coordinates
@@ -265,7 +266,7 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle);
                     end
                     
                     if str2double(Data.multiplematout)
@@ -431,10 +432,10 @@ switch char(M)
             end
             
             %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
+            frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
             fprintf('\n----------------------------------------------------\n')
             fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Ensemble Correlation ' title '\n'])
+            fprintf(['Ensemble Correlation ' frametitle '\n'])
             fprintf('----------------------------------------------------\n')
 
             for q=1:length(I1)
@@ -541,7 +542,7 @@ switch char(M)
 
                 if str2double(Data.datout)
                     time=(q-1)/Freq;
-                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle);
                 end
                 if str2double(Data.multiplematout)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
@@ -577,18 +578,24 @@ switch char(M)
             end
         end
         
-        
     case {'Multiframe - Persoons'}
         
-        for q=5:length(I1)
+        I1_full=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
+        if I1(1)==I1_full(1)
+            qstart=1;
+        else
+            qstart=Nmax+1;
+        end
+        if I1(end)==I1_full(end)
+            qend=length(I1);
+        else
+            qend=length(I1)-Nmax;
+        end
+        frametime=nan(length(qstart:qend),1);
+        
+        for q=qstart:qend
             tf=tic;
-            
-            %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
-            fprintf('\n----------------------------------------------------\n')
-            fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
-            fprintf('----------------------------------------------------\n')
+            frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
             
             %load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
@@ -620,6 +627,7 @@ switch char(M)
             VI = zeros(size(YI));
 
             for e=1:P
+                t1=tic;
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
                 U=zeros(size(X,1),3,N);
@@ -632,6 +640,7 @@ switch char(M)
                 
                 Dt=2.*(1:N)-1;
                 Uc=[];Vc=[];Cc=[];
+                
                 for t=1:N
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
@@ -658,18 +667,16 @@ switch char(M)
                     U=Uval./repmat(Dt(t_opt),[1 3]);
                     V=Vval./repmat(Dt(t_opt),[1 3]);
                 end
-
+                corrtime(e)=toc(t1);
+                
                 %validation
                 if Valswitch(e)
-                    %output text
-                    fprintf('validating...                    ')
                     t1=tic;
                     
                     [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
-                    eltime=toc(t1);
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    valtime(e)=toc(t1);
                 else
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                     if ~isempty(C)
@@ -681,7 +688,6 @@ switch char(M)
 
                 %write output
                 if Writeswitch(e) 
-                    fprintf('saving...                        ')
                     t1=tic;
                                         
                     if PeakVel(e)
@@ -710,16 +716,16 @@ switch char(M)
                     U(Eval<0)=0;V(Eval<0)=0;
                     
                     if str2double(Data.datout)
-                        time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        q_full=find(I1_full==I1(q),1,'first');
+                        time=(q_full-1)/Freq;
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
                     end
                     X=Xval;Y=Yval;
                     
-                    eltime=toc(t1);
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    savetime(e)=toc(t1);
                 end
                 U=Uval; V=Vval;
                 
@@ -730,7 +736,6 @@ switch char(M)
                     U=reshape(U(:,1),[S(1),S(2)]);
                     V=reshape(V(:,1),[S(1),S(2)]);
 
-                    fprintf('interpolating velocity...        ')
                     t1=tic;
 
                     %velocity smoothing
@@ -742,14 +747,33 @@ switch char(M)
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
-                    eltime=toc(t1);
-                    fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                    interptime(e)=toc(t1);
                 end
                 Uval=[];Vval=[];Cval=[];
             end
 
             eltime=toc(tf);
+            %output text
+            fprintf('\n----------------------------------------------------\n')
+            fprintf(['Job: ',Data.batchname,'\n'])
+            fprintf([frametitle ' Completed (' num2str(q+1-qstart) '/' num2str(length(qstart:qend)) ')\n'])
+            fprintf('----------------------------------------------------\n')
+            for e=1:P
+                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime(e)/60),floor(rem(corrtime(e),60)),rem(corrtime(e),60)-floor(rem(corrtime(e),60)))
+                if Valswitch(e)
+                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime(e)/60),floor(rem(valtime(e),60)),rem(valtime(e),60)-floor(rem(valtime(e),60)))
+                end
+                if Writeswitch(e)
+                    fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),rem(savetime(e),60)-floor(rem(savetime(e),60)))
+                end
+                if e~=P
+                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime(e)/60),floor(rem(interptime(e),60)),rem(interptime(e),60)-floor(rem(interptime(e),60)))
+                end
+            end
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            frametime(q+1-qstart)=eltime;
+            comptime=nanmean(frametime)*(length(qstart:qend)-(q+1-qstart));
+            fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
         end
         
     case 'Phase'
@@ -759,10 +783,10 @@ switch char(M)
             tf=tic;
             
             %output text
-            title=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
+            frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
             fprintf('\n----------------------------------------------------\n')
             fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf(['Processing ' title ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
+            fprintf(['Processing ' frametitle ' (' num2str(q) '/' num2str(length(I1)) ')\n'])
             fprintf('----------------------------------------------------\n')
             
             %load dynamic mask and flip coordinates
@@ -866,7 +890,7 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=(q-1)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,title);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
@@ -917,7 +941,7 @@ beep,pause(0.2),beep
 
 function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
-t1=tic;
+% t1=tic;
 
 %convert input parameters
 im1=double(im1);
@@ -974,7 +998,7 @@ spectral = fftshift(energyfilt(Sx,Sy,D,0));
 fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
 
-fprintf('correlating...                   ')
+% fprintf('correlating...                   ')
 
 switch upper(tcorr)
 
@@ -1037,7 +1061,7 @@ switch upper(tcorr)
     %Robust Phase Correlation
     case 'RPC'
         
-        parfor n=1:length(X)
+        for n=1:length(X)
 
             %apply the second order discrete window offset
             x1 = X(n) - floor(round(Uin(n))/2);
@@ -1101,8 +1125,8 @@ end
 U = round(Uin)+U;
 V = round(Vin)+V;
 
-eltime=toc(t1);
-fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+% eltime=toc(t1);
+% fprintf('%0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
 function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
@@ -2436,7 +2460,7 @@ for n=1:N
     end
 end
 
-function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,title)
+function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,frametitle)
 % --- .dat Writer Subfunction ---
 
 %find I,J for plt
@@ -2465,7 +2489,7 @@ end
     
 
 %header lines
-fprintf(fid,['TITLE        = "' title '"\n']);
+fprintf(fid,['TITLE        = "' frametitle '"\n']);
 fprintf(fid,['VARIABLES    = ',varlist,'\n']);
 fprintf(fid,'ZONE T="Time=%0.6f" I=%i J=%i C=BLACK STRANDID=%i SOLUTIONTIME = %0.6f\n',T,S(2),S(1),strand,T);
     

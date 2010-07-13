@@ -25,7 +25,10 @@ if ispc
     handles.loaddirec=[pwd '\'];
 else
     handles.loaddirec=[pwd '/'];
-end    
+end
+handles.data.par='0';
+compinfo=findResource;
+handles.data.parprocessors=num2str(compinfo.clustersize);
 
 handles.data.imdirec=pwd;
 handles.data.imbase='Img_';
@@ -100,7 +103,7 @@ handles.data.PIV0.bootstrap_iterations='700';
 handles.data.PIV0.bootstrap_passes='12';
 handles.data.PIV0.valuthresh='-16,16';
 handles.data.PIV0.valvthresh='-16,16';
-handles.data.PIV0.valextrapeaks='1';
+handles.data.PIV0.valextrapeaks='0';
 handles.data.PIV0.savepeakinfo='0';
 handles.data.PIV0.corrpeaknum='1';
 handles.data.PIV0.savepeakmag='0';
@@ -230,12 +233,41 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Correlate Image Pairs in Parallel Checkbox ---
+function parcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.par=num2str(get(hObject,'Value'));
+    handles=load_data(handles);
+    guidata(hObject,handles)
+end
+    
+
+% --- Number of Processors to Use for Parallel Processing ---
+function parprocessors_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.parprocessors=get(hObject,'String');
+    handles=load_data(handles);
+    guidata(hObject,handles)
+end
+
+function parprocessors_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
 % --- Run Current Job Button ---
 function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data=handles.data;
     write_expsummary(Data,handles);
-    PIVadvance4code(Data);
+    
+    if str2double(Data.par)==0
+        fprintf('\n---------------- Processing Dataset --------------------\n')
+        PIVadvance4code(Data);
+        fprintf('\n------------------ Job Completed -----------------------\n')
+    else
+        runPIVadvanceParallel(Data);
+    end
 end
 
 % --- Run All Jobs Button ---
@@ -244,13 +276,17 @@ if str2double(handles.Njob)>0
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
     
-%     matlabpool open local 8
     for e=1:size(Jlist,1)
         Data=eval(['handles.' Jlist(e,:)]);
         write_expsummary(Data,handles);
-        PIVadvance4code(Data);
+        if str2double(Data.par)==0
+            fprintf('\n---------------- Processing Dataset --------------------\n')
+            PIVadvance4code(Data);
+            fprintf('\n------------------ Job Completed -----------------------\n')
+        else
+            runPIVadvanceParallel(Data);
+        end
     end
-%     matlabpool close
 end
 
 % --- New Job Button ---
@@ -1907,6 +1943,7 @@ set(handles.exp_depthoffocus,'backgroundcolor',0.8*[1 1 1]);
 if str2double(handles.Njob)==0
     set(handles.passlist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.joblist,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.parprocessors,'backgroundcolor',0.5*[1 1 1]);
     set(handles.imagelist,'String','','backgroundcolor','r');
     set(handles.uod_window,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.bootstrap_percentsampled,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2030,6 +2067,12 @@ else
     set(handles.exp_v0,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_L,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_notesbox,'String','','backgroundcolor',[1 1 1]);
+
+    if str2double(handles.data.par)==1
+        set(handles.parprocessors,'string','','backgroundcolor',[1 1 1])
+    else
+        set(handles.parprocessors,'string','','backgroundcolor',0.5*[1 1 1])
+    end
     
     if strcmp(handles.data.masktype,'static')
         set(handles.staticmaskfile,'String','','backgroundcolor',[1 1 1]);
@@ -2307,6 +2350,14 @@ end
 
 % --- Load Extra Data ---
 function [handles]=load_data(handles)
+set(handles.parprocessors,'String',handles.data.parprocessors);
+set(handles.parcheckbox,'Value',str2double(handles.data.par));
+if str2double(handles.data.par)==1
+    set(handles.parprocessors,'backgroundcolor',[1 1 1])
+else
+    set(handles.parprocessors,'backgroundcolor',0.5*[1 1 1])
+end
+
 set(handles.imagedirectory,'String',handles.data.imdirec);
 set(handles.imagebasename,'String',handles.data.imbase);
 set(handles.imagezeros,'String',handles.data.imzeros);
@@ -2701,3 +2752,73 @@ else
 end
 
 fclose(fid);
+
+function runPIVadvanceParallel(Data)
+fprintf('\n---- Initializing Processor Cores for Parallel Job -----\n')
+poolopen=1;
+try
+    matlabpool('open','local',Data.parprocessors);
+catch
+    try
+        matlabpool close
+        matlabpool('open','local',Data.parprocessors);
+    catch
+        beep
+        disp('Error Running Job in Parallel - Defaulting to Single Processor')
+        poolopen=0;
+        fprintf('\n---------------- Processing Dataset --------------------\n')
+        PIVadvance4code(Data)
+        fprintf('\n------------------ Job Completed -----------------------\n')
+    end
+end
+if poolopen
+    I1=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
+    I2=I1+str2double(Data.imcstep); 
+    if strcmp(Data.masktype,'dynamic')
+        maskfend=str2double(Data.maskfstart)+str2double(Data.maskfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
+        maskname=str2double(Data.maskfstart):str2double(Data.maskfstep):maskfend;
+    else
+        maskname=nan(1,length(I1));
+    end
+    fprintf('\n---------------- Processing Dataset --------------------\n')
+    spmd
+        I1dist=localPart(codistributed(I1,codistributor('1d',2),'convert'));
+        I2dist=localPart(codistributed(I2,codistributor('1d',2),'convert'));
+        masknamedist=localPart(codistributed(maskname,codistributor('1d',2),'convert'));
+
+        if str2double(Data.method)==5
+            if labindex~=1
+                previous = labindex-1;
+            else
+                previous = numlabs;
+            end
+            if labindex~=numlabs
+                next = labindex+1;
+            else
+                next = 1;
+            end
+
+            I1extra=labSendReceive(previous,next,I1dist(1:str2double(Data.framestep)));
+            I2extra=labSendReceive(previous,next,I2dist(1:str2double(Data.framestep)));
+            masknameextra=labSendReceive(previous,next,masknamedist(1:str2double(Data.framestep)));
+            if labindex<numlabs
+                I1dist = [I1dist,I1extra];
+                I2dist = [I2dist,I2extra];
+                masknamedist = [masknamedist,masknameextra];
+            end
+            I1extra=labSendReceive(next,previous,I1dist((end-str2double(Data.framestep)):end));
+            I2extra=labSendReceive(next,previous,I2dist((end-str2double(Data.framestep)):end));
+            masknameextra=labSendReceive(next,previous,masknamedist((end-str2double(Data.framestep)):end));
+            if 1<labindex
+                I1dist = [I1extra,I1dist];
+                I2dist = [I2extra,I2dist];
+                masknamedist = [masknameextra,masknamedist];
+            end
+            
+        end
+
+        PIVadvance4code(Data,I1dist,I2dist,masknamedist);
+    end
+    fprintf('\n------------------ Job Completed -----------------------\n')
+    matlabpool close
+end
