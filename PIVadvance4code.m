@@ -1736,11 +1736,6 @@ if Threshswitch || UODswitch
     end
 end
 
-%Bootstrapping
-if Bootswitch
-    [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
-end
-
 %replacement
 for i=1:S(1)
     for j=1:S(2)
@@ -1776,6 +1771,11 @@ for i=1:S(1)
             Vval(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));          
         end
     end
+end
+
+%Bootstrapping
+if Bootswitch
+    [Uval,Vval,Evalval] = bootstrapping(X,Y,Uval,Vval,Bootper,Bootiter,Bootkmax,Evalval);
 end
 
 %convert back to vector
@@ -1977,7 +1977,7 @@ EN   = 0;
 
 while sum(M1(:))/(Nx*Ny) < ENUM && EN < 1
     M1 = RMAT<EN;
-    M1(MASK>0) = 0; 
+    M1(MASK<0) = 0; 
     EN = EN + 0.005;    
 end
 
