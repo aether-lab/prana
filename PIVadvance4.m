@@ -2716,10 +2716,10 @@ for i=1:str2double(Data.passes)
     else
         fprintf(fid,'None\n');
     end
-    fprintf(fid,['Write Output?:                 ',y_n{str2double(A.write)+1},'\n']);
+    fprintf(fid,['Write Output:                  ',y_n{str2double(A.write)+1},'\n']);
     if str2double(A.write)
         fprintf(fid,['Output Basename:               ',A.outbase,'\n']);
-        fprintf(fid,['Save Add. Peak Info?:          ',y_n{str2double(A.savepeakinfo)+1},'\n']);
+        fprintf(fid,['Save Add. Peak Info:           ',y_n{str2double(A.savepeakinfo)+1},'\n']);
         if str2double(A.savepeakinfo)
             peaks={'1','1,2','1,2,3'};
             fprintf(fid,['Save Data for Peaks:           ',peaks{str2double(A.corrpeaknum)},'\n']);
