@@ -21,15 +21,20 @@ end
 % --- Opening function for figure / variable initialization ---
 function PIVadvance4_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.syscolor=get(hObject,'color');
+
+handles.data.version='4.2';
 if ispc
     handles.loaddirec=[pwd '\'];
 else
     handles.loaddirec=[pwd '/'];
 end
 handles.data.par='0';
-compinfo=findResource;
-handles.data.parprocessors=num2str(compinfo.clustersize);
-
+try
+    compinfo=findResource('scheduler','configuration','local');
+    handles.data.parprocessors=num2str(compinfo.clustersize);
+catch
+    handles.data.parprocessors='1';
+end
 handles.data.imdirec=pwd;
 handles.data.imbase='Img_';
 handles.data.imzeros='6';
@@ -260,14 +265,7 @@ function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data=handles.data;
     write_expsummary(Data,handles);
-    
-    if str2double(Data.par)==0
-        fprintf('\n---------------- Processing Dataset --------------------\n')
-        PIVadvance4code(Data);
-        fprintf('\n------------------ Job Completed -----------------------\n')
-    else
-        runPIVadvanceParallel(Data);
-    end
+    PIVadvance4code(Data);
 end
 
 % --- Run All Jobs Button ---
@@ -279,13 +277,7 @@ if str2double(handles.Njob)>0
     for e=1:size(Jlist,1)
         Data=eval(['handles.' Jlist(e,:)]);
         write_expsummary(Data,handles);
-        if str2double(Data.par)==0
-            fprintf('\n---------------- Processing Dataset --------------------\n')
-            PIVadvance4code(Data);
-            fprintf('\n------------------ Job Completed -----------------------\n')
-        else
-            runPIVadvanceParallel(Data);
-        end
+        PIVadvance4code(Data);
     end
 end
 
@@ -366,6 +358,18 @@ if isnumeric(f)==0
                     handles.Njob=num2str(str2double(handles.Njob)+1);
                     handles.Cjob=handles.Njob;
                     set(handles.joblist,'String',Jlist,'Value',str2double(handles.Cjob));
+                    
+                    %Attempt to make backwards-compatible with older
+                    %versions of PIVadvance4
+                    if ~isfield(handles.data,'version')
+                        if ~isfield(handles.data,'par')
+                            handles.data.par='0';
+                            handles.data.parprocessors='1';
+                            handles.data.version='4.0';
+                        else
+                            handles.data.version='4.1';
+                        end
+                    end
 
                     handles=update_data(handles);
                     guidata(hObject,handles)
@@ -2726,99 +2730,32 @@ for i=1:str2double(Data.passes)
 end
 
 fprintf(fid,'\n----------------------Images and Masking---------------------\n');
-% fprintf(fid,['Image Directory: ',Data.imdirec,'\n']);
+% fprintf(fid,['Image Directory:               ',Data.imdirec,'\n']);
+fprintf(fid,['Image Basename:                ',Data.imbase,'\n']);
+fprintf(fid,['Image Zeros:                   ',Data.imbase,'\n']);
+fprintf(fid,['Image Extension:               ',Data.imbase,'\n']);
+fprintf(fid,['Image Frame Start:             ',Data.imbase,'\n']);
+fprintf(fid,['Image Frame Step:              ',Data.imbase,'\n']);
+fprintf(fid,['Image Frame End:               ',Data.imbase,'\n']);
+fprintf(fid,['Image Correlation Step:        ',Data.imbase,'\n']);
 fprintf(fid,'Masking Type: ');
 if strcmp(Data.masktype,'static')
-    fprintf(fid,['Static\nMask File: ',Data.staticmaskname,'\n']);
+    if ispc
+        slshind=strfind(Data.staticmaskname,'\');
+    else
+        slshind=strfind(Data.staticmaskname,'/');
+    end
+    fprintf(fid,['Static\nMask File: ',Data.staticmaskname(slshind(end)+1:end),'\n']);
 elseif strcmp(Data.masktype,'dynamic')
     fprintf(fid,'Dynamic\n');
-%     fprintf(fid,['Mask Directory: ',Data.maskdirec,'\n']);
+%     fprintf(fid,['Mask Directory:                ',Data.maskdirec,'\n']);
+    fprintf(fid,['Mask Basename:                 ',Data.maskbase,'\n']);
+    fprintf(fid,['Mask Zeros:                    ',Data.maskzeros,'\n']);
+    fprintf(fid,['Mask Extension:                ',Data.maskext,'\n']);
+    fprintf(fid,['Mask Frame Start:              ',Data.maskfstart,'\n']);
+    fprintf(fid,['Mask Frame Step:               ',Data.maskfstep,'\n']);
 else
     fprintf(fid,'None\n');
 end
-fprintf(fid,'Correlation Order:\n');
-imagelist=get(handles.imagelist,'String');
-if strcmp(Data.masktype,'dynamic')
-    masklist=get(handles.masklist,'String');
-    for i=1:size(imagelist,1)
-        if ~isempty(imagelist{i})
-            fprintf(fid,[imagelist{i},' --- ',masklist{i},'\n']);
-        end
-    end
-else
-    for i=1:size(imagelist,1)
-        fprintf(fid,[imagelist{i},'\n']);
-    end
-end
 
 fclose(fid);
-
-function runPIVadvanceParallel(Data)
-fprintf('\n---- Initializing Processor Cores for Parallel Job -----\n')
-poolopen=1;
-try
-    matlabpool('open','local',Data.parprocessors);
-catch
-    try
-        matlabpool close
-        matlabpool('open','local',Data.parprocessors);
-    catch
-        beep
-        disp('Error Running Job in Parallel - Defaulting to Single Processor')
-        poolopen=0;
-        fprintf('\n---------------- Processing Dataset --------------------\n')
-        PIVadvance4code(Data)
-        fprintf('\n------------------ Job Completed -----------------------\n')
-    end
-end
-if poolopen
-    I1=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
-    I2=I1+str2double(Data.imcstep); 
-    if strcmp(Data.masktype,'dynamic')
-        maskfend=str2double(Data.maskfstart)+str2double(Data.maskfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
-        maskname=str2double(Data.maskfstart):str2double(Data.maskfstep):maskfend;
-    else
-        maskname=nan(1,length(I1));
-    end
-    fprintf('\n---------------- Processing Dataset --------------------\n')
-    spmd
-        I1dist=localPart(codistributed(I1,codistributor('1d',2),'convert'));
-        I2dist=localPart(codistributed(I2,codistributor('1d',2),'convert'));
-        masknamedist=localPart(codistributed(maskname,codistributor('1d',2),'convert'));
-
-        if str2double(Data.method)==5
-            if labindex~=1
-                previous = labindex-1;
-            else
-                previous = numlabs;
-            end
-            if labindex~=numlabs
-                next = labindex+1;
-            else
-                next = 1;
-            end
-
-            I1extra=labSendReceive(previous,next,I1dist(1:str2double(Data.framestep)));
-            I2extra=labSendReceive(previous,next,I2dist(1:str2double(Data.framestep)));
-            masknameextra=labSendReceive(previous,next,masknamedist(1:str2double(Data.framestep)));
-            if labindex<numlabs
-                I1dist = [I1dist,I1extra];
-                I2dist = [I2dist,I2extra];
-                masknamedist = [masknamedist,masknameextra];
-            end
-            I1extra=labSendReceive(next,previous,I1dist((end-str2double(Data.framestep)):end));
-            I2extra=labSendReceive(next,previous,I2dist((end-str2double(Data.framestep)):end));
-            masknameextra=labSendReceive(next,previous,masknamedist((end-str2double(Data.framestep)):end));
-            if 1<labindex
-                I1dist = [I1extra,I1dist];
-                I2dist = [I2extra,I2dist];
-                masknamedist = [masknameextra,masknamedist];
-            end
-            
-        end
-
-        PIVadvance4code(Data,I1dist,I2dist,masknamedist);
-    end
-    fprintf('\n------------------ Job Completed -----------------------\n')
-    matlabpool close
-end
