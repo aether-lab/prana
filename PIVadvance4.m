@@ -338,6 +338,19 @@ if isnumeric(f)==0
             if exist('Data')~=0
                 vn=0;
                 while vn==0
+                    
+                    %Attempt to make backwards-compatible with older
+                    %versions of PIVadvance4
+                    if ~isfield(Data,'version')
+                        if ~isfield(Data,'par')
+                            Data.par='0';
+                            Data.parprocessors='1';
+                            Data.version='4.0';
+                        else
+                            handles.data.version='4.1';
+                        end
+                    end
+                                        
                     if isfield(handles,Data.batchname)
                         Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));
                         if isempty(Data.batchname)
@@ -348,6 +361,7 @@ if isnumeric(f)==0
                         vn=1;
                     end
                 end
+
                 if vn~=-1
                     if str2double(handles.Njob)>0
                         Jlist=char(get(handles.joblist,'String'));
@@ -359,18 +373,7 @@ if isnumeric(f)==0
                     handles.Cjob=handles.Njob;
                     set(handles.joblist,'String',Jlist,'Value',str2double(handles.Cjob));
                     
-                    %Attempt to make backwards-compatible with older
-                    %versions of PIVadvance4
-                    if ~isfield(handles.data,'version')
-                        if ~isfield(handles.data,'par')
-                            handles.data.par='0';
-                            handles.data.parprocessors='1';
-                            handles.data.version='4.0';
-                        else
-                            handles.data.version='4.1';
-                        end
-                    end
-
+                    
                     handles=update_data(handles);
                     guidata(hObject,handles)
                 end
@@ -2200,6 +2203,9 @@ for e=1:str2double(handles.data.passes)
     f(e)={['Pass ' num2str(e)]};
 end
 set(handles.passlist,'String',f);
+if get(handles.passlist,'Value')>str2double(handles.data.passes)
+    set(handles.passlist,'Value',str2double(handles.data.passes))
+end
 
 % --- Load PIV Data ---
 function handles=set_PIVcontrols(handles)
@@ -2325,7 +2331,7 @@ else
     set(handles.gridres,'backgroundcolor',[1 1 1]);
     set(handles.winoverlap,'backgroundcolor',0.5*[1 1 1]);
 end
-if get(handles.correlationtype,'Value')==2
+if get(handles.correlationtype,'Value')>=2
     if str2double(get(handles.rpcdiameter,'String'))<2
         if str2double(get(handles.rpcdiameter,'String'))==0
             set(handles.rpcdiameter,'backgroundcolor','r');
@@ -2652,7 +2658,7 @@ for i=1:size(Data.exp_notes,1)
     fprintf(fid,[Data.exp_notes{i},'\n']);
 end
 
-methods={'Multipass','Multigrid','Deform','Ensemble','Multiframe - Persoons Method','Multiframe - Exp. Method','Direct-Phase'};
+methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)','Multigrid - Ensemble (DWO)','Multigrid - Multiframe (DWO)'};
 velinterp={'Nearest Neighbor','Bilinear','Cubic'};
 iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
 fprintf(fid,'\n-----------------------PIV Processing------------------------\n');
@@ -2669,7 +2675,7 @@ if str2double(Data.method)>=5
 end
 
 for i=1:str2double(Data.passes)
-    corr={'SCC','RPC'};
+    corr={'SCC','RPC','SPC'};
     y_n={'No','Yes'};
     A=eval(['Data.PIV' num2str(i)]);
     fprintf(fid,['\n------------------------Pass ',num2str(i),' Setup-------------------------\n']);
@@ -2723,8 +2729,8 @@ for i=1:str2double(Data.passes)
         if str2double(A.savepeakinfo)
             peaks={'1','1,2','1,2,3'};
             fprintf(fid,['Save Data for Peaks:           ',peaks{str2double(A.corrpeaknum)},'\n']);
-            fprintf(fid,['Save Peak Magnitude?:          ',y_n{str2double(A.savepeakmag)+1},'\n']);
-            fprintf(fid,['Save Resulting Vel.?:          ',y_n{str2double(A.savepeakvel)+1},'\n']);
+            fprintf(fid,['Save Peak Magnitude:           ',y_n{str2double(A.savepeakmag)+1},'\n']);
+            fprintf(fid,['Save Resulting Vel.:           ',y_n{str2double(A.savepeakvel)+1},'\n']);
         end
     end
 end
