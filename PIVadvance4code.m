@@ -35,10 +35,17 @@ if str2double(Data.par)
         else
             fprintf('\n--------------- Processing Dataset -------------------\n')
             spmd
-                I1dist=getLocalPart(codistributed(I1,codistributor('1d',2)));
-                I2dist=getLocalPart(codistributed(I2,codistributor('1d',2)));
-                masknamedist=getLocalPart(codistributed(maskname,codistributor('1d',2)));
-
+                verstr=version('-release');
+                if str2double(verstr(1:4))>=2010
+                    I1dist=getLocalPart(codistributed(I1,codistributor('1d',2)));
+                    I2dist=getLocalPart(codistributed(I2,codistributor('1d',2)));
+                    masknamedist=getLocalPart(codistributed(maskname,codistributor('1d',2)));
+                else
+                    I1dist=localPart(codistributed(I1,codistributor('1d',2),'convert'));
+                    I2dist=localPart(codistributed(I2,codistributor('1d',2),'convert'));
+                    masknamedist=localPart(codistributed(maskname,codistributor('1d',2),'convert'));
+                end
+                
                 if str2double(Data.method)==5
                     if labindex~=1
                         previous = labindex-1;
