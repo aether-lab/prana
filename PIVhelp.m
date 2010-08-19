@@ -87,10 +87,11 @@ if A==1
         'References' ... 
         '[1] J Westerweel, "Fundamentals of digital particle image velocimetry." Meas Sci Tech, 1997. 8(12): p. 1379-1392.' ''});
 end
-%Job list
+%Job Setup
 if A==2
     set(handles.edit1,'String',...
-       {'Job Listbox:' 'This lists the currently available PIV jobs.  To create, load, save, copy or delete jobs use the buttons below the job list or go to the file menu.  To run jobs, use the buttons below the image correlation list or go to the execute menu.  To see the different settings of each job, select between the list of jobs.  Jobs cannot have names that begin with numbers or other invalid characters, as information is stored in a structure array.' ''});
+       {'Job Listbox:' 'This lists the currently available PIV jobs.  To create, load, save, copy or delete jobs use the buttons below the job list or go to the file menu.  To run jobs, use the buttons below the image correlation list or go to the execute menu.  To see the different settings of each job, select between the list of jobs.  Jobs cannot have names that begin with numbers or other invalid characters, as information is stored in a structure array.' '' ...
+        'Parallel Processing:' 'If your computer has multiple processor cores, each job can be split up equally and run in parallel. The ''Processors to Use'' defaults to the number processor cores detected on the machine. If an error occurs while setting up a parallel job, the program will default back to using a single processor.'});
 end
 %Physical Parameters
 if A==3
