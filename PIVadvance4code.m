@@ -595,8 +595,15 @@ switch char(M)
             if str2double(Data.par) && matlabpool('size')>1
                 
                 spmd
-                    I1dist=getLocalPart(codistributed(I1,codistributor('1d',2)));
-                    I2dist=getLocalPart(codistributed(I2,codistributor('1d',2)));
+                    verstr=version('-release');
+                    if str2double(verstr(1:4))>=2010
+                        I1dist=getLocalPart(codistributed(I1,codistributor('1d',2)));
+                        I2dist=getLocalPart(codistributed(I2,codistributor('1d',2)));
+                    else
+                        I1dist=localPart(codistributed(I1,codistributor('1d',2),'convert'));
+                        I2dist=localPart(codistributed(I2,codistributor('1d',2),'convert'));
+                    end
+                    
                     for q=1:length(I1dist)
                         t1=tic;
 
