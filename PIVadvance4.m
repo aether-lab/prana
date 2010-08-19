@@ -546,6 +546,48 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 
+% --- Compute IMmin Button ---
+function immin_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    try
+        h = waitbar(0,'1','Name','Computing Minimum of Test Images','CreateCancelBtn','setappdata(gcbf,''canceling'',1)');setappdata(h,'canceling',0);
+        e=0;
+        for im=str2double(handles.data.imfstart):str2double(handles.data.imfend)
+            if mod(im,2)
+                waitbar((im-str2double(handles.data.imfstart))/length(str2double(handles.data.imfstart):str2double(handles.data.imfend)),h,'Analyzing images...')
+            end
+            if getappdata(h,'canceling')
+                e=-1;
+                break
+            end
+            im_read=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],im)])));
+            if im==str2double(handles.data.imfstart)
+                min_im=ones(size(im_read)).*255;
+            end
+            min_im(im_read<min_im)=im_read(im_read<min_im);
+        end
+        delete(h)
+    catch
+        msgbox('Error Loading Images');
+        e=-1;
+    end
+    if e==0
+        try 
+            imwrite(uint8(min_im),fullfile(handles.data.imdirec,'IMmin.tif'),'tif');
+        catch
+            e=-1;
+            msgbox('Error Writing IMmin.tif')
+        end
+    end
+    
+    if e==0
+        figure
+        if gcf~=gcbf
+            imagesc(min_im,[0 255]),colormap gray,axis off
+        end
+    end
+end
+
 % --- Image Basename Text Box ---
 function imagebasename_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -830,6 +872,43 @@ if str2double(handles.Njob)>0 && get(handles.staticmaskbutton,'Value')==1
     set(handles.staticmaskfile,'string',handles.data.staticmaskname);
 end
 
+% --- Static Mask Tool Button ---
+function masktool_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    try
+        im=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
+                
+        stillmasking='Yes';mask=ones(size(im));h=figure;
+        while strcmp(stillmasking,'Yes')
+            figure(h),imshow(im.*mask,[0 255])
+            masktemp=roipoly;
+            mask(masktemp==1)=0;
+            figure(h),imshow(im.*mask,[0 255])
+            stillmasking=questdlg('Mask another region?','Region Masked','Yes','No','No');
+        end
+        close(h)
+        if ~isempty(stillmasking)
+            handles.data.staticmaskname=fullfile(handles.data.imdirec,'staticmask.tif');
+            imwrite(mask,handles.data.staticmaskname,'tif')
+            set(handles.staticmaskfile,'String',handles.data.staticmaskname);
+            handles.data.masktype='static';
+            set(handles.staticmaskbutton,'Value',1)
+            set(handles.dynamicmaskbutton,'Value',0)
+            set(handles.nomaskbutton,'Value',0)
+            Jlist=char(get(handles.joblist,'String'));
+            eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+            handles=update_data(handles);
+            guidata(hObject,handles)
+        else
+            msgbox('Masking Cancelled')
+        end
+    catch
+        msgbox('Image Frame Not Found');
+        e=-1;
+    end
+
+end
+
 % --- Preview Image + Mask Button ---
 function impreview_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -863,7 +942,7 @@ if str2double(handles.Njob)>0
     end
     
     if e==0
-        figure,hold on
+        h=figure;hold on
 
         L=size(im1);
         Ps=get(0,'screensize');
@@ -874,11 +953,10 @@ if str2double(handles.Njob)>0
             dx=0.8*Ps(3);
             dy=dx*(L(1)/L(2));
         end
-        if gcf~=gcbf
-            set(gcf,'position',[(Ps(3)-dx)/2 (Ps(4)-dy)/2 dx dy])
-            set(gcf,'color',0.5*[1 1 1])
-            imagesc(im1,[0 1]),axis image,colormap gray,axis off,set(gca,'position',[0 0 1 1])
-        end
+        figure(h)
+        set(gcf,'position',[(Ps(3)-dx)/2 (Ps(4)-dy)/2 dx dy])
+        set(gcf,'color',0.5*[1 1 1])
+        imagesc(im1,[0 1]),axis image,colormap gray,axis off,set(gca,'position',[0 0 1 1])
 
         A=get(handles.gridbuffer,'String');
         G=[str2double(A(1:(strfind(A,',')-1))) str2double(A((strfind(A,',')+1):end))];
