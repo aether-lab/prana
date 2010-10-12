@@ -1,13 +1,23 @@
 /*
- * MATLAB Compiler: 4.10 (R2009a)
- * Date: Fri May 28 10:52:07 2010
+ * MATLAB Compiler: 4.13 (R2010a)
+ * Date: Tue Oct 12 14:30:25 2010
  * Arguments: "-B" "macro_default" "-o" "PIVadvance4" "-W"
- * "WinMain:PIVadvance4" "-d"
- * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "-T" "link:exe"
- * "-v" "-N" "-p" "curvefit" "-p" "images" "-p" "signal" "-p" "distcomp"
- * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" 
+ * "WinMain:PIVadvance4" "-T" "link:exe" "-d"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4\src" "-w"
+ * "enable:specified_file_mismatch" "-w" "enable:repeated_file" "-w"
+ * "enable:switch_ignored" "-w" "enable:missing_lib_sentinel" "-w"
+ * "enable:demo_license" "-v"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\AETHERlogo.mat" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\defaultsettings.mat" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\documentation" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.asv" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.fig" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4.m~" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4code.asv" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4code.m" "-a"
+ * "W:\matlab_projects\pivadvance\PIVadvance4\PIVadvance4code.m~" 
  */
-
 #include <stdio.h>
 #include "mclmcrrt.h"
 #ifdef __cplusplus
@@ -21,7 +31,6 @@ extern mclComponentData __MCC_PIVadvance4_component_data;
 #endif
 
 static HMCRINSTANCE _mcr_inst = NULL;
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,28 +64,41 @@ static int mclDefaultErrorHandler(const char *s)
 } /* End extern "C" block */
 #endif
 
-/* This symbol is defined in shared libraries. Define it here
- * (to nothing) in case this isn't a shared library. 
- */
-#ifndef LIB_PIVadvance4_C_API 
+#ifndef LIB_PIVadvance4_C_API
 #define LIB_PIVadvance4_C_API /* No special import/export declaration */
 #endif
 
 LIB_PIVadvance4_C_API 
 bool MW_CALL_CONV PIVadvance4InitializeWithHandlers(
     mclOutputHandlerFcn error_handler,
-    mclOutputHandlerFcn print_handler
-)
+    mclOutputHandlerFcn print_handler)
 {
+    int bResult = 0;
   if (_mcr_inst != NULL)
     return true;
   if (!mclmcrInitialize())
     return false;
-  if (!mclInitializeComponentInstanceWithEmbeddedCTF(&_mcr_inst,
+    {
+        mclCtfStream ctfStream = 
+            mclGetEmbeddedCtfStream(NULL, 
+                                    6912179);
+        if (ctfStream) {
+            bResult = mclInitializeComponentInstanceEmbedded(   &_mcr_inst,
+                                                                
                                                      &__MCC_PIVadvance4_component_data,
-                                                     true, NoObjectType,
-                                                     ExeTarget, error_handler,
-                                                     print_handler, 1001299, NULL))
+                                                                true, 
+                                                                NoObjectType, 
+                                                                ExeTarget,
+                                                                error_handler, 
+                                                                print_handler,
+                                                                ctfStream, 
+                                                                6912179);
+            mclDestroyStream(ctfStream);
+        } else {
+            bResult = 0;
+        }
+    }  
+    if (!bResult)
     return false;
   return true;
 }
@@ -84,10 +106,9 @@ bool MW_CALL_CONV PIVadvance4InitializeWithHandlers(
 LIB_PIVadvance4_C_API 
 bool MW_CALL_CONV PIVadvance4Initialize(void)
 {
-  return PIVadvance4InitializeWithHandlers(mclDefaultErrorHandler,
+  return PIVadvance4InitializeWithHandlers(mclDefaultErrorHandler, 
                                            mclDefaultPrintHandler);
 }
-
 LIB_PIVadvance4_C_API 
 void MW_CALL_CONV PIVadvance4Terminate(void)
 {
@@ -106,7 +127,7 @@ int run_main(int argc, const char **argv)
     return -1;
   }
   argc = mclSetCmdLineUserData(mclGetID(_mcr_inst), argc, argv);
-  _retval = mclMain(_mcr_inst, argc, argv, "PIVadvance4", 1);
+  _retval = mclMain(_mcr_inst, argc, argv, "PIVadvance4", 0);
   if (_retval == 0 /* no error */) mclWaitForFiguresToDie(NULL);
   PIVadvance4Terminate();
 #if defined( _MSC_VER)
@@ -128,9 +149,9 @@ int main(int argc, const char **argv)
 #endif
 {
   if (!mclInitializeApplication(
-    __MCC_PIVadvance4_component_data.runtime_options,
+    __MCC_PIVadvance4_component_data.runtime_options, 
     __MCC_PIVadvance4_component_data.runtime_option_count))
     return 0;
-  
+
   return mclRunMain(run_main, argc, argv);
 }

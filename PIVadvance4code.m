@@ -147,6 +147,8 @@ Gres=zeros(P,2);
 Gbuf=zeros(P,2);
 Corr=zeros(P,1);
 D=zeros(P,1);
+Zeromean=zeros(P,1);
+Peaklocator=zeros(P,1);
 Velsmoothswitch=zeros(P,1);
 Velsmoothfilt=zeros(P,1);
 Valswitch=zeros(P,1);
@@ -186,6 +188,8 @@ for e=1:P
     Gbuf(e,:)=[str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
     Corr(e)=str2double(A.corr)-1;
     D(e)=str2double(A.RPCd);
+    Zeromean(e)=str2double(A.zeromean);
+    Peaklocator(e)=str2double(A.peaklocator);
     Velsmoothswitch(e)=str2double(A.velsmooth);
     Velsmoothfilt(e)=str2double(A.velsmoothfilt);
     
@@ -290,7 +294,7 @@ switch char(M)
                 %correlate image pair
                 if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     if Corr(e)<2
-                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -299,16 +303,16 @@ switch char(M)
                             Vc = Vc + Vb(Eval>=0);
                         end
                     else
-                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
                     end
                     
                 else                                    %either first pass, or not deform
                     if Corr(e)<2
-                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
-                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
                 end
                 
@@ -615,7 +619,7 @@ switch char(M)
 %                         L=size(im1);
 
                         %correlate image pair and average correlations
-                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         if q==1
                             CCmdist=CC;
                         else
@@ -625,7 +629,6 @@ switch char(M)
                         fprintf('correlation...                 %0.2i:%0.2i.%0.0f\n',floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
                     end
                 end
-                
                 CCm=zeros(size(CCmdist{1}));
                 for i=1:length(CCmdist)
                     CCm=CCm+CCmdist{i}/length(I1);
@@ -644,7 +647,7 @@ switch char(M)
 %                     L=size(im1);
 
                     %correlate image pair and average correlations
-                    [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     if q==1
                         CCm=CC/length(I1);
                     else
@@ -656,31 +659,32 @@ switch char(M)
             end
                 
             %evaluate subpixel displacement of averaged correlation
+            Z=size(CCm);
+            ZZ=ones(Z(1),Z(2));
+            
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                Uc=zeros(size(X,1),3);
-                Vc=zeros(size(X,1),3);
-                Cc=zeros(size(X,1),3);
+                Uc=zeros(Z(3),3);
+                Vc=zeros(Z(3),3);
+                Cc=zeros(Z(3),3);
                 Ub=repmat(Ub,[1 3]);
                 Vb=repmat(Vb,[1 3]);
                 Eval=repmat(Eval,[1 3]);
             else
-                Uc=zeros(size(X));Vc=zeros(size(X));Cc=[];
+                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];
             end
-            Z=size(CCm);
-            ZZ=ones(Z(1),Z(2));
-            for s=1:length(Xc)
-                [Uc(s,:),Vc(s,:),Ctemp]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+            for s=1:Z(3)
+                [Uc(s,:),Vc(s,:),Ctemp]=subpixel_new(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
                 if ~isempty(Cc)
                     Cc(s,:)=Ctemp;
                 end
             end
 
-            U(Eval>=0)=Uc(Eval>=0)+round(Ub(Eval>=0));
-            V(Eval>=0)=Vc(Eval>=0)+round(Vb(Eval>=0));
+            U(Eval>=0)=Uc(:)+round(Ub(Eval>=0));
+            V(Eval>=0)=Vc(:)+round(Vb(Eval>=0));
             if ~isempty(Cc)
-                C(Eval>=0)=Cc(Eval>=0);
+                C(Eval>=0)=Cc(:);
             end
-
+            
             %validation
             if Valswitch(e)
                 t1=tic;
@@ -829,6 +833,11 @@ switch char(M)
             for n=1:N
                 im1(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]))-IMmin);
                 im2(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]))-IMmin);
+                if Zeromean(e)==1
+                    im1(:,:,n)=im1(:,:,n)-mean(mean(im1(:,:,n)));
+                    im2(:,:,n)=im2(:,:,n)-mean(mean(im2(:,:,n)));
+                end
+                
                 imind1=find(time_full(1,:)==I1(q)-(n-1));
                 imind2=find(time_full(1,:)==I2(q)+(n-1));
                 Dt(n)=time_full(2,imind2)-time_full(2,imind1);
@@ -859,7 +868,7 @@ switch char(M)
                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                         Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                         %correlate image pair
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e,:),0,D(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
@@ -891,7 +900,7 @@ switch char(M)
                     
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                    [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
+                    [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
                         C=zeros(length(X),3);
                         C(repmat(Eval,[1 3])>=0)=Cc;
@@ -1027,7 +1036,7 @@ beep,pause(0.2),beep
 %                           END MAIN FUNCTION                             %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin)
+function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
 
 %convert input parameters
@@ -1121,6 +1130,11 @@ switch upper(tcorr)
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
+            
+            if Zeromean==1
+                zone1=zone1-mean(mean(zone1));
+                zone2=zone2-mean(mean(zone2));
+            end
 
             %apply the image spatial filter
             region1 = (zone1).*sfilt;
@@ -1135,9 +1149,11 @@ switch upper(tcorr)
             G = ifftn(P21,'symmetric');
             G = G(fftindy,fftindx);
             G = abs(G);
-
+            
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);
+            [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+%             winmean=mean(mean(region1))*mean(mean(region2));
+%             [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
             if Peakswitch
                 C(n,:)=Ctemp;
             end
@@ -1177,6 +1193,11 @@ switch upper(tcorr)
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
+            
+            if Zeromean==1
+                zone1=zone1-mean(mean(zone1));
+                zone2=zone2-mean(mean(zone2));
+            end
 
             %apply the image spatial filter
             region1 = (zone1).*sfilt;
@@ -1199,7 +1220,9 @@ switch upper(tcorr)
             G = abs(G);
 
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peakswitch);    
+            [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+%             winmean=mean(mean(region1))*mean(mean(region2));
+%             [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
             if Peakswitch
                 C(n,:)=Ctemp;
             end
@@ -1210,7 +1233,7 @@ end
 U = round(Uin)+U;
 V = round(Vin)+V;
 
-function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,X,Y,Uin,Vin)
+function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,Zeromean,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
 
 %convert input parameters
@@ -1295,6 +1318,11 @@ switch upper(tcorr)
                 zone2 = w2;
             end
             
+            if Zeromean==1
+                zone1=zone1-mean(mean(zone1));
+                zone2=zone2-mean(mean(zone2));
+            end
+            
             %apply the image spatial filter
             region1 = (zone1).*sfilt;
             region2 = (zone2).*sfilt;
@@ -1349,6 +1377,11 @@ switch upper(tcorr)
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
+            
+            if Zeromean==1
+                zone1=zone1-mean(mean(zone1));
+                zone2=zone2-mean(mean(zone2));
+            end
 
             %apply the image spatial filter
             region1 = zone1.*sfilt;
@@ -1376,7 +1409,7 @@ switch upper(tcorr)
         end
 end
 
-function [X,Y,U,V,C,t_opt]=PIVphasecorr(im1,im2,window,res,zpad,D,Peakswitch,X,Y,Uin,Vin,dt)
+function [X,Y,U,V,C,t_opt]=PIVphasecorr(im1,im2,window,res,zpad,D,Zeromean,Peakswitch,X,Y,Uin,Vin,dt)
 % --- DPIV Correlation ---
 
 %convert input parameters
@@ -1470,6 +1503,11 @@ for n=1:length(X)
             w2 = zeros(Ny,Nx);
             w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
             zone2 = w2;
+        end
+        
+        if Zeromean==1
+            zone1=zone1-mean(mean(zone1));
+            zone2=zone2-mean(mean(zone2));
         end
 
         %apply the image spatial filter
@@ -1648,8 +1686,259 @@ En = pi/4*Nx*Ny;
 W  = Ep./((1-q)*En+(q)*Ea);
 W  = W'/max(max(W));
 
-function [u,v,M]=subpixel(G,ccsizex,ccsizey,W,Peakswitch)
+function [u,v,M]=subpixel_new(G,ccsizex,ccsizey,W,Method,Peakswitch)
+%intialize indices
+cc_x = -ccsizex/2:ccsizex/2-1;
+cc_y = -ccsizey/2:ccsizey/2-1;
+
+%find maximum correlation value
+[M,I] = max(G(:));
+
+%if correlation empty
+if M==0
+    if Peakswitch
+        u=zeros(1,3);
+        v=zeros(1,3);
+        M=zeros(1,3);
+    else
+        u=0; v=0;
+    end
+else
+    if Peakswitch
+        %Locate peaks using imregionalmax
+        A=imregionalmax(G);
+        peakmat=G.*A;
+        for i=2:3
+            peakmat(peakmat==M(i-1))=0;
+            [M(i),I(i)]=max(peakmat(:));
+        end
+        j=length(M);
+    else
+        j=1;    
+    end
+    
+    for i=1:j
+        method=Method;
+        
+        %find x and y indices
+        shift_locy = 1+mod(I(i)-1,ccsizey);
+        shift_locx = ceil(I(i)/ccsizey);
+
+        shift_errx=[];
+        shift_erry=[];
+        %find subpixel displacement in x
+        if shift_locx == 1
+            %boundary condition 1
+            shift_errx =  G( shift_locy , shift_locx+1 )/M(i); method=1;
+        elseif shift_locx == ccsizex
+            %boundary condition 2
+            shift_errx = -G( shift_locy , shift_locx-1 )/M(i); method=1;
+        elseif G( shift_locy , shift_locx+1 ) == 0
+            %endpoint discontinuity 1
+            shift_errx = -G( shift_locy , shift_locx-1 )/M(i); method=1;
+        elseif G( shift_locy , shift_locx-1 ) == 0
+            %endpoint discontinuity 2
+            shift_errx =  G( shift_locy , shift_locx+1 )/M(i); method=1;
+        end
+        if shift_locy == 1
+            %boundary condition 1
+            shift_erry = -G( shift_locy+1 , shift_locx )/M(i); method=1;
+        elseif shift_locy == ccsizey
+            %boundary condition 2
+            shift_erry =  G( shift_locy-1 , shift_locx )/M(i); method=1;
+        elseif G( shift_locy+1 , shift_locx ) == 0
+            %endpoint discontinuity 1
+            shift_erry =  G( shift_locy-1 , shift_locx )/M(i); method=1;
+        elseif G( shift_locy-1 , shift_locx ) == 0
+            %endpoint discontinuity 2
+            shift_erry = -G( shift_locy+1 , shift_locx )/M(i); method=1;
+        end
+
+        if method==2
+            
+            %%%%%%%%%%%%%%%%%%%%
+            % 4-Point Gaussian %
+            %%%%%%%%%%%%%%%%%%%%
+            
+            %Since the case where M is located at a border will default to
+            %the 3-point gaussian and we don't have to deal with
+            %saturation, just use 4 points in a tetris block formation:
+            %
+            %             *
+            %            ***
+            
+            points=[shift_locy   shift_locx   G(shift_locy  ,shift_locx  );...
+                    shift_locy-1 shift_locx   G(shift_locy-1,shift_locx  );...
+                    shift_locy   shift_locx-1 G(shift_locy  ,shift_locx-1);...
+                    shift_locy   shift_locx+1 G(shift_locy  ,shift_locx+1)];
+                
+            [Isort,IsortI] = sort(points(:,3),'descend');
+            points = points(IsortI,:);
+
+            x1=points(1,2); x2=points(2,2); x3=points(3,2); x4=points(4,2);
+            y1=points(1,1); y2=points(2,1); y3=points(3,1); y4=points(4,1);
+            a1=points(1,3); a2=points(2,3); a3=points(3,3); a4=points(4,3);
+
+            alpha(1) = (x4^2)*(y2 - y3) + (x3^2)*(y4 - y2) + ((x2^2) + (y2 - y3)*(y2 - y4))*(y3 - y4);
+            alpha(2) = (x4^2)*(y3 - y1) + (x3^2)*(y1 - y4) - ((x1^2) + (y1 - y3)*(y1 - y4))*(y3 - y4);
+            alpha(3) = (x4^2)*(y1 - y2) + (x2^2)*(y4 - y1) + ((x1^2) + (y1 - y2)*(y1 - y4))*(y2 - y4);
+            alpha(4) = (x3^2)*(y2 - y1) + (x2^2)*(y1 - y3) - ((x1^2) + (y1 - y2)*(y1 - y3))*(y2 - y3);
+
+            gamma(1) = (-x3^2)*x4 + (x2^2)*(x4 - x3) + x4*((y2^2) - (y3^2)) + x3*((x4^2) - (y2^2) + (y4^2)) + x2*(( x3^2) - (x4^2) + (y3^2) - (y4^2));
+            gamma(2) = ( x3^2)*x4 + (x1^2)*(x3 - x4) + x4*((y3^2) - (y1^2)) - x3*((x4^2) - (y1^2) + (y4^2)) + x1*((-x3^2) + (x4^2) - (y3^2) + (y4^2));
+            gamma(3) = (-x2^2)*x4 + (x1^2)*(x4 - x2) + x4*((y1^2) - (y2^2)) + x2*((x4^2) - (y1^2) + (y4^2)) + x1*(( x2^2) - (x4^2) + (y2^2) - (y4^2));
+            gamma(4) = ( x2^2)*x3 + (x1^2)*(x2 - x3) + x3*((y2^2) - (y1^2)) - x2*((x3^2) - (y1^2) + (y3^2)) + x1*((-x2^2) + (x3^2) - (y2^2) + (y3^2));
+
+            delta(1) = x4*(y2 - y3) + x2*(y3 - y4) + x3*(y4 - y2);
+            delta(2) = x4*(y3 - y1) + x3*(y1 - y4) + x1*(y4 - y3);
+            delta(3) = x4*(y1 - y2) + x1*(y2 - y4) + x2*(y4 - y1);
+            delta(4) = x3*(y2 - y1) + x2*(y1 - y3) + x1*(y3 - y2);
+
+            deno = 2*(log(a1)*delta(1) + log(a2)*delta(2) + log(a3)*delta(3) + log(a4)*delta(4));
+
+            x_centroid = (log(a1)*alpha(1) + log(a2)*alpha(2) + log(a3)*alpha(3) + log(a4)*alpha(4))/deno;
+            y_centroid = (log(a1)*gamma(1) + log(a2)*gamma(2) + log(a3)*gamma(3) + log(a4)*gamma(4))/deno;
+            shift_errx=x_centroid-shift_locx;
+            shift_erry=y_centroid-shift_locy;
+            
+        elseif method==3
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Gaussian Least Squares %
+            %%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            %Find a suitable window around the peak (5x5 preferred)
+            x_min=shift_locx-2; x_max=shift_locx+2;
+            y_min=shift_locy-2; y_max=shift_locy+2;
+            if x_min<1
+                x_min=1;
+            end
+            if x_max>ccsizex
+                x_max=ccsizex;
+            end
+            if y_min<1
+                y_min=1;
+            end
+            if y_max>ccsizey
+                y_max=ccsizey;
+            end
+            points=G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max);
+            
+            %Options for the lsqnonlin solver
+            options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',5e-6,'TolFun',5e-6,...
+                'LargeScale','off','Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
+                'Algorithm','levenberg-marquardt');
+            
+            %Initial values for the solver
+            x0=[M(i) 1 shift_locx shift_locy];
+
+            [xloc yloc]=meshgrid(x_min:x_max,y_min:y_max);
+
+            %Run solver; default to 3-point gauss if it fails
+            try
+                xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points(:),[yloc(:),xloc(:)]);
+                shift_errx=xvars(3)-shift_locx;
+                shift_erry=xvars(4)-shift_locy;
+            catch
+                keyboard
+                method=1;
+            end
+        end
+        if method==1
+            
+            %%%%%%%%%%%%%%%%%%%%
+            % 3-Point Gaussian %
+            %%%%%%%%%%%%%%%%%%%%
+            
+            if isempty(shift_errx)
+                %gaussian fit
+                lCm1 = log(G( shift_locy , shift_locx-1 )*W( shift_locy , shift_locx-1 ));
+                lC00 = log(G( shift_locy , shift_locx   )*W( shift_locy , shift_locx   ));
+                lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
+                if (2*(lCm1+lCp1-2*lC00)) == 0
+                    shift_errx = 0;
+                else
+                    shift_errx = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+                end
+            end
+            if isempty(shift_erry)
+                lCm1 = log(G( shift_locy-1 , shift_locx )*W( shift_locy-1 , shift_locx ));
+                lC00 = log(G( shift_locy   , shift_locx )*W( shift_locy   , shift_locx ));
+                lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
+                if (2*(lCm1+lCp1-2*lC00)) == 0
+                    shift_erry = 0;
+                else
+                    shift_erry = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+                end
+            end
+            
+        end
+        
+        u=cc_x(shift_locx)+shift_errx;
+        v=cc_y(shift_locy)+shift_erry;
+        
+        if isempty(v)
+            keyboard
+        end
+        
+        if isinf(u(i)) || isinf(v(i))
+            u(i)=0; v(i)=0;
+        end
+    end
+end
+
+function F = leastsquares2D(x,mapint_i,locxy_i)
+%This function is called by lsqnonlin if the least squares or continuous
+%least squares method has been chosen. x contains initial guesses[I0, betas, x_c,
+%y_c]. mapint_i is a matrix containing pixel intensity values, and locxy_i
+%is a 1x2 vector containing the row/column coordinates of the top left
+%pixel in mapint_i
+%
+%F is the variable being minimized - the difference between the gaussian
+%curve and the actual intensity values.
+%
+%Adapted from M. Brady's 'leastsquaresgaussfit' and 'mapintensity'
+%B.Drew - 7.18.2008
+
+I0=x(1);
+betas=x(2);
+x_centroid=x(3);
+y_centroid=x(4);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Just like in the continuous four-point method, lsqnonlin tries negative
+%values for x(2), which will return errors unless the abs() function is
+%used in front of all the x(2)'s.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+num1=(I0*pi)/4;
+num2=sqrt(abs(betas));
+
+gauss_int = zeros(size(mapint_i));
+xp = zeros(size(mapint_i));
+yp = zeros(size(mapint_i));
+for ii = 1:length(mapint_i)
+    xp(ii) = locxy_i(ii,2);
+    yp(ii) = locxy_i(ii,1);
+end
+
+% map an intensity profile of a gaussian function:
+for rr = 1:size(xp,1)
+    gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
+        ((yp(rr))-y_centroid)^2));
+end
+
+% compare the Gaussian curve to the actual pixel intensities
+F=mapint_i-gauss_int;
+
+function [u,v,M]=subpixel(G,ccsizex,ccsizey,W,Peakswitch,winmean)
 % --- 3 Point Gaussian subpixel Estimator Subfunction Plus Peak Return ---
+
+if nargin<6
+    winmean=0;
+end
+% keyboard
+G=G-winmean;
 
 %intialize indices
 cc_x = -ccsizex/2:ccsizex/2-1;
@@ -1682,6 +1971,7 @@ else
     end
 
     for i=1:j
+%         keyboard
         %find x and y indices
         shift_locy = 1+mod(I(i)-1,ccsizey);
         shift_locx = ceil(I(i)/ccsizey);
@@ -1689,16 +1979,16 @@ else
         %find subpixel displacement in x
         if shift_locx == 1
             %boundary condition 1
-            shift_err =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
+            shift_errx =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
         elseif shift_locx == ccsizex
             %boundary condition 2
-            shift_err = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
+            shift_errx = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
         elseif G( shift_locy , shift_locx+1 ) == 0
             %endpoint discontinuity 1
-            shift_err = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
+            shift_errx = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
         elseif G( shift_locy , shift_locx-1 ) == 0
             %endpoint discontinuity 2
-            shift_err =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
+            shift_errx =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
         else
             %gaussian fit
             lCm1 = log(G( shift_locy , shift_locx-1 )*W( shift_locy , shift_locx-1 ));
@@ -1744,6 +2034,10 @@ else
 
         %add subpixel to discete pixel value
         v(i) = (cc_y(shift_locy) + shift_err);
+        
+        if isinf(u(i)) || isinf(v(i))
+            u(i)=0; v(i)=0;
+        end
         
         %subpixel peak magnitude
 %         M(i)=max([Mx,My]);
@@ -1824,7 +2118,7 @@ for i=1:S(1)
 
             %validated vector
             Uval(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
-            Vval(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));          
+            Vval(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));       
         end
     end
 end

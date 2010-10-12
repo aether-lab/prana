@@ -22,11 +22,116 @@ end
 function PIVadvance4_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.syscolor=get(hObject,'color');
 
-handles.data.version='4.2';
+verstr=version('-release');
+if str2double(verstr(1:4))<2009
+    errordlg('PIVadvance4 requires Matlab R2009 or later. A compiled version which does not require a Matlab license is available for down.', 'PIVadvance4')
+end
+
+try
+    load('defaultsettings.mat')
+catch
+    defaultdata.version='4.3';
+    defaultdata.imbase='Img_';
+    defaultdata.imzeros='6';
+    defaultdata.imext='tif';
+    defaultdata.imcstep='1';
+    defaultdata.imfstep='2';
+    defaultdata.imfstart='1';
+    defaultdata.imfend='1';
+
+    defaultdata.wrmag='1';
+    defaultdata.wrsamp='1';
+    defaultdata.wrsep='1';
+    defaultdata.batchname='Proc1';
+    defaultdata.datout='1';
+    defaultdata.multiplematout='0';
+
+    defaultdata.exp_date='';
+    defaultdata.exp_L='';
+    defaultdata.exp_v0='';
+    defaultdata.exp_notes={'Camera Description:' '' 'Lens Description:' '' 'Notes:' ''};
+    defaultdata.exp_density='1000';
+    defaultdata.exp_viscosity='1.308e-3';
+    defaultdata.exp_surfacetension='0.07197';
+    defaultdata.exp_partD='';
+    defaultdata.exp_partdensity='';
+    defaultdata.exp_wavelength='.532';
+    defaultdata.exp_pixelsize='';
+    defaultdata.exp_lensfocal='';
+    defaultdata.exp_lensfnum='';
+    defaultdata.exp_micro='0';
+    defaultdata.exp_NA='';
+    defaultdata.exp_n='';
+    defaultdata.exp_Re='';
+    defaultdata.exp_St='';
+    defaultdata.exp_M='';
+    defaultdata.exp_ROI='';
+    defaultdata.exp_diffractiondiameter='';
+    defaultdata.exp_depthoffocus='';
+
+    defaultdata.masktype='none';
+    defaultdata.staticmaskname='';
+    defaultdata.maskbase='maskfor_Img_';
+    defaultdata.maskzeros='6';
+    defaultdata.maskext='tif';
+    defaultdata.maskfstep='1';
+    defaultdata.maskfstart='1';
+
+    defaultdata.PIV0.winres='32,32';
+    defaultdata.PIV0.winsize='64,64';
+    defaultdata.PIV0.winauto='1';
+    defaultdata.PIV0.gridres='8,8';
+    defaultdata.PIV0.winoverlap='75,75';
+    defaultdata.PIV0.gridtype='1';
+    defaultdata.PIV0.gridbuf='8,8';
+    defaultdata.PIV0.BWO='0,0';
+    defaultdata.PIV0.corr='2';
+    defaultdata.PIV0.RPCd='2.8';
+    defaultdata.PIV0.zeromean='0';
+    defaultdata.PIV0.peaklocator='1';
+    defaultdata.PIV0.velsmooth='0';
+    defaultdata.PIV0.velsmoothfilt='2';
+    defaultdata.PIV0.val='0';
+    defaultdata.PIV0.uod='1';
+    defaultdata.PIV0.bootstrap='0';
+    defaultdata.PIV0.thresh='0';
+    defaultdata.PIV0.uod_type='2';
+    defaultdata.PIV0.uod_window='3,3;3,3';
+    defaultdata.PIV0.uod_thresh='3,2';
+    defaultdata.PIV0.bootstrap_percentsampled='15';
+    defaultdata.PIV0.bootstrap_iterations='700';
+    defaultdata.PIV0.bootstrap_passes='12';
+    defaultdata.PIV0.valuthresh='-16,16';
+    defaultdata.PIV0.valvthresh='-16,16';
+    defaultdata.PIV0.valextrapeaks='0';
+    defaultdata.PIV0.savepeakinfo='0';
+    defaultdata.PIV0.corrpeaknum='1';
+    defaultdata.PIV0.savepeakmag='0';
+    defaultdata.PIV0.savepeakvel='0';
+    defaultdata.PIV0.outbase='PIV_';
+    defaultdata.PIV0.write='1';
+
+    defaultdata.PIV1=defaultdata.PIV0;
+    defaultdata.PIV2=defaultdata.PIV0;
+
+    defaultdata.passes='2';
+    defaultdata.method='1';
+    defaultdata.velinterp='3';
+    defaultdata.iminterp='1';
+    defaultdata.framestep='3';
+    defaultdata.PIVerror='0.1';
+    
+    defaultdata.splash='1';
+    windowdiagramds=zeros(543,568);
+end
+handles.data=defaultdata;
+
 if ispc
     handles.loaddirec=[pwd '\'];
+    addpath([pwd,'\documentation']);
 else
     handles.loaddirec=[pwd '/'];
+    addpath([pwd,'/documentation']);
 end
 handles.data.par='0';
 try
@@ -36,97 +141,27 @@ catch
     handles.data.parprocessors='1';
 end
 handles.data.imdirec=pwd;
-handles.data.imbase='Img_';
-handles.data.imzeros='6';
-handles.data.imext='tif';
-handles.data.imcstep='1';
-handles.data.imfstep='2';
-handles.data.imfstart='1';
-handles.data.imfend='1';
-
-handles.data.wrmag='1';
-handles.data.wrsamp='1';
-handles.data.wrsep='1';
-handles.data.batchname='Proc1';
-handles.data.datout='1';
-handles.data.multiplematout='0';
+handles.data.maskdirec=pwd;
 handles.data.outdirec=pwd;
 
-handles.data.exp_date='';
-handles.data.exp_L='';
-handles.data.exp_v0='';
-handles.data.exp_notes={'Camera Description:' '' 'Lens Description:' '' 'Notes:' ''};
-handles.data.exp_density='1000';
-handles.data.exp_viscosity='1.308e-3';
-handles.data.exp_surfacetension='0.07197';
-handles.data.exp_partD='';
-handles.data.exp_partdensity='';
-handles.data.exp_wavelength='.532';
-handles.data.exp_pixelsize='';
-handles.data.exp_lensfocal='';
-handles.data.exp_lensfnum='';
-handles.data.exp_micro='0';
-handles.data.exp_NA='';
-handles.data.exp_n='';
-handles.data.exp_Re='';
-handles.data.exp_St='';
-handles.data.exp_M='';
-handles.data.exp_ROI='';
-handles.data.exp_diffractiondiameter='';
-handles.data.exp_depthoffocus='';
+if str2double(handles.data.splash)==1 || str2double(handles.data.version)<4.3
+    splash=splashdlg({...
+         'What''s new in Prana v1.0?',...
+         '',...
+         'Updated user interface',...
+         'New correlation peak location methods',...
+         'Option to zero-mean image windows',...
+         'Fixed bugs in ''Ensemble'' method'},...
+         'Prana v1.0','Ok','Don''t show this anymore','Ok');
+    if strcmp(splash,'Don''t show this anymore')
+        defaultdata.splash='0';
+    end
+    defaultdata.version='4.3';
+%     save('defaultsettings.mat','defaultdata','windowdiagramds')
+end
 
-handles.data.masktype='none';
-handles.data.staticmaskname='';
-handles.data.maskdirec=pwd;
-handles.data.maskbase='maskfor_Img_';
-handles.data.maskzeros='6';
-handles.data.maskext='tif';
-handles.data.maskfstep='1';
-handles.data.maskfstart='1';
-
-handles.data.PIV0.winres='32,32';
-handles.data.PIV0.winsize='64,64';
-handles.data.PIV0.winauto='1';
-handles.data.PIV0.gridres='8,8';
-handles.data.PIV0.winoverlap='75,75';
-handles.data.PIV0.gridtype='1';
-handles.data.PIV0.gridbuf='8,8';
-handles.data.PIV0.BWO='0,0';
-handles.data.PIV0.corr='2';
-handles.data.PIV0.RPCd='2.8';
-handles.data.PIV0.velsmooth='0';
-handles.data.PIV0.velsmoothfilt='2';
-handles.data.PIV0.val='0';
-handles.data.PIV0.uod='1';
-handles.data.PIV0.bootstrap='0';
-handles.data.PIV0.thresh='0';
-handles.data.PIV0.uod_type='2';
-handles.data.PIV0.uod_window='3,3;3,3';
-handles.data.PIV0.uod_thresh='3,2';
-handles.data.PIV0.bootstrap_percentsampled='15';
-handles.data.PIV0.bootstrap_iterations='700';
-handles.data.PIV0.bootstrap_passes='12';
-handles.data.PIV0.valuthresh='-16,16';
-handles.data.PIV0.valvthresh='-16,16';
-handles.data.PIV0.valextrapeaks='0';
-handles.data.PIV0.savepeakinfo='0';
-handles.data.PIV0.corrpeaknum='1';
-handles.data.PIV0.savepeakmag='0';
-handles.data.PIV0.savepeakvel='0';
-handles.data.PIV0.outbase='PIV_';
-handles.data.PIV0.write='1';
-
-handles.data.PIV1=handles.data.PIV0;
-handles.data.PIV2=handles.data.PIV0;
-
-handles.data.passes='2';
+set(gca,'children',imshow(windowdiagramds))
 handles.data.cpass=num2str(get(handles.passlist,'Value'));
-handles.data.method='1';
-handles.data.velinterp='3';
-handles.data.iminterp='1';
-handles.data.framestep='3';
-handles.data.PIVerror='0.1';
-
 handles.data0=handles.data;
 handles.Njob=num2str(size(get(handles.joblist,'String'),1));
 handles.Cjob=num2str(get(handles.joblist,'String'));
@@ -134,6 +169,7 @@ handles=rmfield(handles,'data');
 handles=update_data(handles);
 handles.output = hObject;
 guidata(hObject, handles);
+
 
 % --- Outputs from this function are returned to the command line ---
 function varargout = PIVadvance4_OutputFcn(hObject, eventdata, handles) 
@@ -196,6 +232,10 @@ function helpmenu_Callback(hObject, eventdata, handles)
 function helpmenu_about_Callback(hObject, eventdata, handles)
 msgbox({'PIVAdvance4 v1.0','','Modified by B.Drew on 5/14/10','','[License / Copyright]'},'About')
 
+% --- Help Menu -> Getting Started ---
+function gettingstarted_Callback(hObject, eventdata, handles)
+web('gettingstarted.htm')
+
 % --- Help Menu -> Help Topics ---
 function helpmenu_helptopics_Callback(hObject, eventdata, handles)
 PIVhelp
@@ -223,6 +263,18 @@ set(handles.outputtoggle,'Value',0)
 set(handles.imagepanel,'Visible','off')
 set(handles.outputpanel,'Visible','off')
 set(handles.processingpanel,'Visible','on')
+
+% --- Grid and Correlation Setup Tab ---
+function gridsetuptoggle_Callback(hObject, eventdata, handles)
+set(handles.validationtoggle,'Value',0)
+set(handles.validationpanel,'Visible','off')
+set(handles.gridsetuppanel,'Visible','on')
+
+% --- Validation and Output Tab ---
+function validationtoggle_Callback(hObject, eventdata, handles)
+set(handles.gridsetuptoggle,'Value',0)
+set(handles.gridsetuppanel,'Visible','off')
+set(handles.validationpanel,'Visible','on')
 
 % --- Job List ---
 function joblist_Callback(hObject, eventdata, handles)
@@ -338,7 +390,6 @@ if isnumeric(f)==0
             if exist('Data')~=0
                 vn=0;
                 while vn==0
-                    
                     %Attempt to make backwards-compatible with older
                     %versions of PIVadvance4
                     if ~isfield(Data,'version')
@@ -348,6 +399,12 @@ if isnumeric(f)==0
                             Data.version='4.0';
                         else
                             handles.data.version='4.1';
+                        end
+                    end
+                    if str2double(Data.version)<4.3
+                        for pass=0:str2double(Data.passes)
+                            eval(['Data.PIV',num2str(pass),'.zeromean=''0'';']);
+                            eval(['Data.PIV',num2str(pass),'.peaklocator=''1'';']);
                         end
                     end
                                         
@@ -1080,9 +1137,13 @@ end
 function addpassbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     N=str2double(handles.data.passes);
-    eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
-    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
     handles.data.passes=num2str(N+1);
+    if str2double(handles.data.method)==1
+        eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV1);']);
+    else
+        eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
+    end
+    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
     load_PIVlist(handles);
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
@@ -1203,7 +1264,7 @@ end
 
 % --- ? Button Next to Algorithm Drop-Down Menu ---
 function algorithmhelp_Callback(hObject, eventdata, handles)
-PIVhelp(5)
+PIVhelp(9)
 
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
@@ -1449,6 +1510,24 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Subpixel Correlation Peak Location Drop-down Menu ---
+function subpixelinterp_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.peaklocator = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+function subpixelinterp_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Zero-Mean Windows Checkbox ---
+function zeromeancheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.zeromean = num2str(get(hObject,''Value''));'])
+    guidata(hObject,handles)
+end
+
 % --- Smoothing Check Box ---
 function smoothingcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -1483,7 +1562,7 @@ end
 
 % --- ? Button Next to Validation Options ---
 function validationhelp_Callback(hObject, eventdata, handles)
-PIVhelp(8)
+PIVhelp(12)
 
 % --- Universal Outlier Detection Checkbox ---
 function uodcheckbox_Callback(hObject, eventdata, handles)
@@ -2071,6 +2150,7 @@ if str2double(handles.Njob)==0
     set(handles.passtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.uod_type,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.subpixelinterp,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.velocityinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.staticmaskfile,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2137,6 +2217,7 @@ else
     set(handles.passtype,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.uod_type,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.subpixelinterp,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.velocityinterptype,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.framestep,'String','','backgroundcolor',[1 1 1]);
     set(handles.PIVerror,'String','','backgroundcolor',[1 1 1]);
@@ -2297,6 +2378,8 @@ set(handles.winoverlap,'string',A.winoverlap);
 set(handles.gridbuffer,'string',A.gridbuf);
 set(handles.bulkwinoffset,'string',A.BWO);
 set(handles.correlationtype,'Value',str2double(A.corr));
+set(handles.subpixelinterp,'Value',str2double(A.peaklocator));
+set(handles.zeromeancheckbox,'Value',str2double(A.zeromean));
 set(handles.rpcdiameter,'string',str2double(A.RPCd));
 set(handles.smoothingsize,'String',A.velsmoothfilt);
 set(handles.smoothingcheckbox,'Value',str2double(A.velsmooth));
@@ -2754,6 +2837,7 @@ end
 
 for i=1:str2double(Data.passes)
     corr={'SCC','RPC','SPC'};
+    peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
     y_n={'No','Yes'};
     A=eval(['Data.PIV' num2str(i)]);
     fprintf(fid,['\n------------------------Pass ',num2str(i),' Setup-------------------------\n']);
@@ -2764,8 +2848,10 @@ for i=1:str2double(Data.passes)
     fprintf(fid,['Grid Buffer (pix):             ',A.gridbuf,'\n']);
     fprintf(fid,['Bulk Window Offset (pix):      ',A.BWO,'\n']);
     fprintf(fid,['Correlation:                   ',corr{str2double(A.corr)},'\n']);
+    fprintf(fid,['Zero-Mean Image Windows:       ',y_n{str2double(A.zeromean)+1},'\n']);
+    fprintf(fid,['Subpixel Peak Location Method: ',peak{str2double(A.peaklocator)},'\n']);
     if str2double(Data.method)~=1 && str2double(Data.method)~=5
-        fprintf(fid,['Smoothing?:                    ',y_n{str2double(A.velsmooth)+1},'\n']);
+        fprintf(fid,['Smoothing:                     ',y_n{str2double(A.velsmooth)+1},'\n']);
         if str2double(A.velsmooth)
             fprintf(fid,['Smoothing Size:                ',A.velsmoothfilt,'\n']);
         end
@@ -2843,3 +2929,498 @@ else
 end
 
 fclose(fid);
+
+function ButtonName=splashdlg(Question,Title,Btn1,Btn2,Btn3,Default)
+%QUESTDLG Question dialog box.
+%  ButtonName = QUESTDLG(Question) creates a modal dialog box that
+%  automatically wraps the cell array or string (vector or matrix)
+%  Question to fit an appropriately sized window.  The name of the
+%  button that is pressed is returned in ButtonName.  The Title of
+%  the figure may be specified by adding a second string argument:
+%
+%    ButtonName = questdlg(Question, Title)
+%
+%  Question will be interpreted as a normal string.
+%
+%  QUESTDLG uses UIWAIT to suspend execution until the user responds.
+%
+%  The default set of buttons names for QUESTDLG are 'Yes','No' and
+%  'Cancel'.  The default answer for the above calling syntax is 'Yes'.
+%  This can be changed by adding a third argument which specifies the
+%  default Button:
+%
+%    ButtonName = questdlg(Question, Title, 'No')
+%
+%  Up to 3 custom button names may be specified by entering
+%  the button string name(s) as additional arguments to the function
+%  call.  If custom button names are entered, the default button
+%  must be specified by adding an extra argument, DEFAULT, and
+%  setting DEFAULT to the same string name as the button you want
+%  to use as the default button:
+%
+%    ButtonName = questdlg(Question, Title, Btn1, Btn2, DEFAULT);
+%
+%  where DEFAULT is set to Btn1.  This makes Btn1 the default answer.
+%  If the DEFAULT string does not match any of the button string names,
+%  a warning message is displayed.
+%
+%  To use TeX interpretation for the Question string, a data
+%  structure must be used for the last argument, i.e.
+%
+%    ButtonName = questdlg(Question, Title, Btn1, Btn2, OPTIONS);
+%
+%  The OPTIONS structure must include the fields Default and Interpreter.
+%  Interpreter may be 'none' or 'tex' and Default is the default button
+%  name to be used.
+%
+%  If the dialog is closed without a valid selection, the return value
+%  is empty.
+%
+%  Example:
+%
+%  ButtonName = questdlg('What is your favorite color?', ...
+%                        'Color Question', ...
+%                        'Red', 'Green', 'Blue', 'Green');
+%  switch ButtonName,
+%    case 'Red',
+%     disp('Your favorite color is Red');
+%    case 'Blue',
+%     disp('Your favorite color is Blue.')
+%     case 'Green',
+%      disp('Your favorite color is Green.');
+%  end % switch
+%
+%  See also DIALOG, ERRORDLG, HELPDLG, INPUTDLG, LISTDLG,
+%    MSGBOX, WARNDLG, FIGURE, TEXTWRAP, UIWAIT, UIRESUME.
+
+
+%  Copyright 1984-2007 The MathWorks, Inc.
+%  $Revision: 5.55.4.14 $
+
+%  modified by bdrew on 10/12/10 to add AEThER logo and checkbox
+
+
+
+if nargin<1
+  error('MATLAB:questdlg:TooFewArguments', 'Too few arguments for QUESTDLG');
+end
+
+Interpreter='none';
+if ~iscell(Question),Question=cellstr(Question);end
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% General Info. %%%
+%%%%%%%%%%%%%%%%%%%%%
+Black      =[0       0        0      ]/255;
+% LightGray  =[192     192      192    ]/255;
+% LightGray2 =[160     160      164    ]/255;
+% MediumGray =[128     128      128    ]/255;
+% White      =[255     255      255    ]/255;
+
+%%%%%%%%%%%%%%%%%%%%
+%%% Nargin Check %%%
+%%%%%%%%%%%%%%%%%%%%
+if nargout>1
+  error('MATLAB:questdlg:WrongNumberOutputs', 'Wrong number of output arguments for QUESTDLG');
+end
+if nargin==1,Title=' ';end
+if nargin<=2, Default='Yes';end
+if nargin==3, Default=Btn1 ;end
+if nargin<=3, Btn1='Yes'; Btn2='No'; Btn3='Cancel';NumButtons=3;end
+if nargin==4, Default=Btn2;Btn2=[];Btn3=[];NumButtons=1;end
+if nargin==5, Default=Btn3;Btn3=[];NumButtons=2;end
+if nargin==6, NumButtons=3;end
+if nargin>6
+  error('MATLAB:questdlg:TooManyInputs', 'Too many input arguments');NumButtons=3; %#ok
+end
+
+if isstruct(Default),
+  Interpreter=Default.Interpreter;
+  Default=Default.Default;
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%%% Create QuestFig %%%
+%%%%%%%%%%%%%%%%%%%%%%%
+FigPos    = get(0,'DefaultFigurePosition');
+FigPos(3) = 300;
+FigPos(4) =  90;
+FigPos    = getnicedialoglocation(FigPos, get(0,'DefaultFigureUnits'));
+
+QuestFig=dialog(                                    ...
+  'Visible'         ,'off'                      , ...
+  'Name'            ,Title                      , ...
+  'Pointer'         ,'arrow'                    , ...
+  'Position'        ,FigPos                     , ...
+  'KeyPressFcn'     ,@doFigureKeyPress          , ...
+  'IntegerHandle'   ,'off'                      , ...
+  'WindowStyle'     ,'normal'                   , ...
+  'HandleVisibility','callback'                 , ...
+  'CloseRequestFcn' ,@delete                  , ...
+  'Tag'             ,Title                      , ...
+  'Color'           ,[1 1 1]                      ...
+  );
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% Set Positions %%%
+%%%%%%%%%%%%%%%%%%%%%
+DefOffset  =20;
+
+IconWidth  =300;
+IconHeight =150;
+IconXOffset=DefOffset;
+IconYOffset=FigPos(4)-DefOffset-IconHeight;  %#ok
+IconCMap=[Black;get(QuestFig,'Color')];  %#ok
+
+DefBtnWidth =56;
+BtnHeight   =22;
+
+BtnYOffset=DefOffset;
+
+BtnWidth=DefBtnWidth;
+
+ExtControl=uicontrol(QuestFig   , ...
+  'Style'    ,'pushbutton', ...
+  'String'   ,' '          ...
+  );
+
+btnMargin=1.4;
+set(ExtControl,'String',Btn1);
+BtnExtent=get(ExtControl,'Extent');
+BtnWidth=max(BtnWidth,BtnExtent(3)+20);
+if NumButtons > 1
+  set(ExtControl,'String',Btn2);
+  BtnExtent=get(ExtControl,'Extent');
+  BtnWidth=max(BtnWidth,BtnExtent(3)+20);
+  if NumButtons > 2
+    set(ExtControl,'String',Btn3);
+    BtnExtent=get(ExtControl,'Extent');
+    BtnWidth=max(BtnWidth,BtnExtent(3)*btnMargin);
+  end
+end
+BtnHeight = max(BtnHeight,BtnExtent(4)*btnMargin);
+
+delete(ExtControl);
+
+MsgTxtXOffset=IconXOffset+IconWidth;
+
+FigPos(3)=max(FigPos(3),MsgTxtXOffset+NumButtons*(BtnWidth+2*DefOffset));
+set(QuestFig,'Position',FigPos);
+
+BtnXOffset=zeros(NumButtons,1);
+
+if NumButtons==1,
+  BtnXOffset=(FigPos(3)-BtnWidth)/2;
+elseif NumButtons==2,
+  BtnXOffset=[MsgTxtXOffset
+    FigPos(3)-DefOffset-BtnWidth];
+elseif NumButtons==3,
+  BtnXOffset=[MsgTxtXOffset
+    0
+    FigPos(3)-DefOffset-BtnWidth];
+  BtnXOffset(2)=(BtnXOffset(1)+BtnXOffset(3))/2;
+end
+
+MsgTxtYOffset=DefOffset+BtnYOffset+BtnHeight;
+MsgTxtWidth=FigPos(3)-DefOffset-MsgTxtXOffset-IconWidth;
+MsgTxtHeight=FigPos(4)-DefOffset-MsgTxtYOffset;
+MsgTxtForeClr=Black;
+MsgTxtBackClr=[0 0 0];%get(QuestFig,'Color');
+
+CBString='uiresume(gcbf)';
+DefaultValid = false;
+DefaultWasPressed = false;
+BtnHandle = [];
+DefaultButton = 0;
+
+for i = 1:NumButtons
+  switch i
+    case 1
+      ButtonString=Btn1;
+      ButtonTag='Btn1';
+      ButtonType='pushbutton';
+      if strcmp(ButtonString, Default)
+        DefaultValid = true;
+        DefaultButton = 1;
+      end
+
+    case 2
+      ButtonString=Btn2;
+      ButtonTag='Btn2';
+      ButtonType='checkbox';
+      if strcmp(ButtonString, Default)
+        DefaultValid = true;
+        DefaultButton = 2;
+      end
+  end
+
+  BtnHandle(end+1)=uicontrol(QuestFig            , ...
+    'Style'              ,ButtonType, ...
+    'Position'           ,[ BtnXOffset(1) BtnYOffset BtnWidth BtnHeight ]           , ...
+    'KeyPressFcn'        ,@doControlKeyPress , ...
+    'CallBack'           ,CBString    , ...
+    'String'             ,ButtonString, ...
+    'HorizontalAlignment','center'    , ...
+    'Tag'                ,ButtonTag     ...
+    );
+end
+
+if ~DefaultValid
+  warnstate = warning('backtrace','off');
+  warning('MATLAB:QUESTDLG:stringMismatch','Default string does not match any button string name.');
+  warning(warnstate);
+end
+
+MsgHandle=uicontrol(QuestFig            , ...
+  'Style'              ,'text'         , ...
+  'Position'           ,[MsgTxtXOffset MsgTxtYOffset .95*MsgTxtWidth MsgTxtHeight ]              , ...
+  'String'             ,{' '}          , ...
+  'Tag'                ,'Question'     , ...
+  'HorizontalAlignment','left'         , ...
+  'FontWeight'         ,'bold'         , ...
+  'BackgroundColor'    ,MsgTxtBackClr  , ...
+  'ForegroundColor'    ,MsgTxtForeClr    ...
+  );
+
+[WrapString,NewMsgTxtPos]=textwrap(MsgHandle,Question,75);
+
+% NumLines=size(WrapString,1);
+
+AxesHandle=axes('Parent',QuestFig,'Position',[0 0 1 1],'Visible','off');
+
+texthandle=text( ...  
+    'Parent'              ,AxesHandle                      , ...
+    'Units'               ,'pixels'                        , ...
+    'Color'               ,get(BtnHandle(1),'ForegroundColor')   , ...
+    'HorizontalAlignment' ,'left'                          , ...
+    'FontName'            ,get(BtnHandle(1),'FontName')    , ...
+    'FontSize'            ,14.0                            , ...
+    'FontWeight'          ,'normal'                          , ...
+    'VerticalAlignment'   ,'bottom'                        , ...
+    'String'              ,WrapString                      , ...
+    'Interpreter'         ,Interpreter                     , ...
+    'Tag'                 ,'Question'                        ...
+    );  %#ok
+
+textExtent = get(texthandle, 'extent');
+
+% (g357851)textExtent and extent from uicontrol are not the same. For window, extent from uicontrol is larger
+%than textExtent. But on Mac, it is reverse. Pick the max value.
+MsgTxtWidth=max([MsgTxtWidth NewMsgTxtPos(3)+2 textExtent(3)]);
+MsgTxtHeight=max([MsgTxtHeight NewMsgTxtPos(4)+2 textExtent(4)]);
+
+MsgTxtXOffset=IconXOffset+IconWidth+DefOffset;
+FigPos(3)=max(NumButtons*(BtnWidth+DefOffset)+DefOffset, ...
+  MsgTxtXOffset+MsgTxtWidth+DefOffset);
+
+
+% Center Vertically around icon
+if IconHeight>MsgTxtHeight,
+  IconYOffset=BtnYOffset+BtnHeight+DefOffset;
+  MsgTxtYOffset=IconYOffset+(IconHeight-MsgTxtHeight)/2;
+  FigPos(4)=IconYOffset+IconHeight+DefOffset;
+  % center around text
+else
+  MsgTxtYOffset=BtnYOffset+BtnHeight+DefOffset;
+  IconYOffset=MsgTxtYOffset+(MsgTxtHeight-IconHeight)/2;
+  FigPos(4)=MsgTxtYOffset+MsgTxtHeight+DefOffset;
+end
+
+if NumButtons==1,
+  BtnXOffset=(FigPos(3)-BtnWidth)/2;
+elseif NumButtons==2,
+  BtnXOffset=[(FigPos(3)-DefOffset)/2-BtnWidth
+    (FigPos(3)+DefOffset)/2
+    ];
+
+elseif NumButtons==3,
+  BtnXOffset(2)=(FigPos(3)-BtnWidth)/2;
+  BtnXOffset=[BtnXOffset(2)-DefOffset-BtnWidth
+    BtnXOffset(2)
+    BtnXOffset(2)+BtnWidth+DefOffset
+    ];
+end
+
+set(QuestFig ,'Position',getnicedialoglocation(FigPos, get(QuestFig,'Units')));
+
+BtnPos=get(BtnHandle,{'Position'});
+BtnPos=cat(1,BtnPos{:});
+BtnPos(:,1)=BtnXOffset;
+BtnPos=num2cell(BtnPos,2);
+set(BtnHandle,{'Position'},BtnPos);
+
+if DefaultValid
+  setdefaultbutton(QuestFig, BtnHandle(DefaultButton));
+end
+
+delete(MsgHandle);
+
+
+set(texthandle, 'Position',[MsgTxtXOffset MsgTxtYOffset 0]);
+
+
+IconAxes=axes(                                      ...
+  'Parent'      ,QuestFig              , ...
+  'Units'       ,'Pixels'              , ...
+  'Position'    ,[IconXOffset IconYOffset IconWidth IconHeight], ...
+  'NextPlot'    ,'replace'             , ...
+  'Tag'         ,'IconAxes'              ...
+  );
+
+set(QuestFig ,'NextPlot','add');
+
+load AETHERlogo.mat
+Img=image('Cdata',AETHERlogo,'Parent',IconAxes);
+
+set(IconAxes, ...
+  'Visible','off'           , ...
+  'YDir'   ,'reverse'       , ...
+  'XLim'   ,get(Img,'XData'), ...
+  'YLim'   ,get(Img,'YData')  ...
+  );
+
+% make sure we are on screen
+movegui(QuestFig)
+
+
+set(QuestFig ,'WindowStyle','modal','Visible','on');
+drawnow;
+
+if DefaultButton ~= 0
+  uicontrol(BtnHandle(DefaultButton));
+end
+
+if ishghandle(QuestFig)
+  % Go into uiwait if the figure handle is still valid.
+  % This is mostly the case during regular use.
+  uiwait(QuestFig);
+end
+
+% Check handle validity again since we may be out of uiwait because the
+% figure was deleted.
+if ishghandle(QuestFig)
+  if DefaultWasPressed
+    ButtonName=Default;
+  else
+    ButtonName=get(get(QuestFig,'CurrentObject'),'String');
+  end
+    delete(QuestFig);
+else
+  ButtonName='';
+end
+
+function doFigureKeyPress(obj, evd)  %#ok
+switch(evd.Key)
+case {'return','space'}
+if DefaultValid
+  DefaultWasPressed = true;
+  uiresume(gcbf);
+end
+case 'escape'
+    delete(QuestFig);
+end
+
+function doControlKeyPress(obj, evd)  %#ok
+switch(evd.Key)
+case {'return'}
+if DefaultValid
+  DefaultWasPressed = true;
+  uiresume(gcbf);
+end
+case 'escape'
+    delete(QuestFig);
+end
+
+function doDelete(varargin)  %#ok
+delete(QuestFig);
+
+function figure_size = getnicedialoglocation(figure_size, figure_units)
+% adjust the specified figure position to fig nicely over GCBF
+% or into the upper 3rd of the screen
+
+%  Copyright 1999-2006 The MathWorks, Inc.
+%  $Revision: 1.1.6.3 $
+
+parentHandle = gcbf;
+propName = 'Position';
+if isempty(parentHandle)
+    parentHandle = 0;
+    propName = 'ScreenSize';
+end
+
+old_u = get(parentHandle,'Units');
+set(parentHandle,'Units',figure_units);
+container_size=get(parentHandle,propName);
+set(parentHandle,'Units',old_u);
+
+figure_size(1) = container_size(1)  + 1/2*(container_size(3) - figure_size(3));
+figure_size(2) = container_size(2)  + 2/3*(container_size(4) - figure_size(4));
+
+function setdefaultbutton(figHandle, btnHandle)
+% WARNING: This feature is not supported in MATLAB and the API and
+% functionality may change in a future release.
+
+%SETDEFAULTBUTTON Set default button for a figure.
+%  SETDEFAULTBUTTON(BTNHANDLE) sets the button passed in to be the default button
+%  (the button and callback used when the user hits "enter" or "return"
+%  when in a dialog box.
+%
+%  This function is used by inputdlg.m, msgbox.m, questdlg.m and
+%  uigetpref.m.
+%
+%  Example:
+%
+%  f = figure;
+%  b1 = uicontrol('style', 'pushbutton', 'string', 'first', ...
+%       'position', [100 100 50 20]);
+%  b2 = uicontrol('style', 'pushbutton', 'string', 'second', ...
+%       'position', [200 100 50 20]);
+%  b3 = uicontrol('style', 'pushbutton', 'string', 'third', ...
+%       'position', [300 100 50 20]);
+%  setdefaultbutton(b2);
+%
+
+%  Copyright 2005-2007 The MathWorks, Inc.
+
+% Nargin Check
+if nargin<1, error('MATLAB:setdefaultbutton:InvalidNumberOfArguments','Too few arguments for setdefaultbutton'); end
+if nargin>2, error('MATLAB:setdefaultbutton:InvalidNumberOfArguments','Too many arguments for setdefaultbutton'); end
+
+if (usejava('awt') == 1)
+    % We are running with Java Figures
+    useJavaDefaultButton(figHandle, btnHandle)
+else
+    % We are running with Native Figures
+    useHGDefaultButton(figHandle, btnHandle);
+end
+
+function useJavaDefaultButton(figH, btnH)
+% Get a UDD handle for the figure.
+fh = handle(figH);
+% Call the setDefaultButton method on the figure handle
+fh.setDefaultButton(btnH);
+
+function useHGDefaultButton(figHandle, btnHandle)
+% First get the position of the button.
+btnPos = getpixelposition(btnHandle);
+
+% Next calculate offsets.
+leftOffset   = btnPos(1) - 1;
+bottomOffset = btnPos(2) - 2;
+widthOffset  = btnPos(3) + 3;
+heightOffset = btnPos(4) + 3;
+
+% Create the default button look with a uipanel.
+% Use black border color even on Mac or Windows-XP (XP scheme) since
+% this is in natve figures which uses the Win2K style buttons on Windows
+% and Motif buttons on the Mac.
+h1 = uipanel(get(btnHandle, 'Parent'), 'HighlightColor', 'black', ...
+    'BorderType', 'etchedout', 'units', 'pixels', ...
+    'Position', [leftOffset bottomOffset widthOffset heightOffset]);
+
+% Make sure it is stacked on the bottom.
+uistack(h1, 'bottom');
+
+
+% --------------------------------------------------------------------

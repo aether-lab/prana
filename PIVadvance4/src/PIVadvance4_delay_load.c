@@ -1,5 +1,5 @@
 /*
- * MATLAB Compiler: 4.10 (R2009a)
+ * MATLAB Compiler: 4.13 (R2010a)
  * 
  * Manages error reporting when MCLMCRRT (the generated application's interface
  * to the MCR) DLL cannot be found.
@@ -18,13 +18,15 @@
 #endif
 
 
+#ifndef __LCC__
 static void FailedToLoadMCR(void)
 {
-    const LPCSTR mcrMsg = "Could not find version 7.10 of the MCR.\nAttempting to load mclmcrrt710.dll.\nPlease install the correct version of the MCR.\nContact your vendor if you do not have an installer for the MCR.";
+    const LPCSTR mcrMsg = "Could not find version 7.13 of the MCR.\nAttempting to load mclmcrrt713.dll.\nPlease install the correct version of the MCR.\nContact your vendor if you do not have an installer for the MCR.";
     MessageBox(NULL, mcrMsg, "Failed to load MCR.",
                MB_ICONERROR);
     exit(-1);
 }
+#endif
 
 #if defined(_WIN32) && (_MSC_VER >= 1200)
 
