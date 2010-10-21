@@ -1,8 +1,14 @@
-function PIVadvance4code(Data)
+function pranacode(Data)
 %% Set up a parallel job if needed
 if str2double(Data.par)
     fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
     poolopen=1;
+    
+    %Don't open more processors than there are image pairs
+    if length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend)) < str2double(Data.parprocessors)
+        Data.parprocessors=num2str(length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend)));
+    end
+    
     try
         matlabpool('open','local',Data.parprocessors);
     catch
@@ -14,7 +20,7 @@ if str2double(Data.par)
             disp('Error Running Job in Parallel - Defaulting to Single Processor')
             poolopen=0;
             fprintf('\n-------------- Processing Dataset ------------------\n')
-            PIVadvance4processing(Data)
+            pranaprocessing(Data)
             fprintf('---------------- Job Completed ---------------------\n')
         end
     end
@@ -30,7 +36,7 @@ if str2double(Data.par)
         
         if str2double(Data.method)==4
             fprintf('\n-------------- Processing Dataset ------------------\n')
-            PIVadvance4processing(Data)
+            pranaprocessing(Data)
             fprintf('---------------- Job Completed ---------------------\n')
         else
             fprintf('\n--------------- Processing Dataset -------------------\n')
@@ -79,7 +85,7 @@ if str2double(Data.par)
 
                 end
 
-                PIVadvance4processing(Data,I1dist,I2dist,masknamedist);
+                pranaprocessing(Data,I1dist,I2dist,masknamedist);
             end
             fprintf('----------------- Job Completed ----------------------\n')
         end
@@ -87,11 +93,11 @@ if str2double(Data.par)
     end
 else
     fprintf('\n-------------- Processing Dataset ------------------\n')
-    PIVadvance4processing(Data)
+    pranaprocessing(Data)
     fprintf('---------------- Job Completed ---------------------\n')
 end
 
-function PIVadvance4processing(Data,I1,I2,maskname)
+function pranaprocessing(Data,I1,I2,maskname)
 %% --- Read Formatted Parameters ---
 %input/output directory
 if ispc
@@ -232,20 +238,6 @@ for e=1:P
     
 end
 
-%% --- Image Prefilter ---
-%added to multipass, multigrid, deform, and ensemble for image loading
-try
-    if ispc
-        IMmin=double(imread([Data.imdirec '\IMmin.tif']));
-    else
-        IMmin=double(imread([Data.imdirec '/IMmin.tif']));
-    end
-catch
-    if labindex==1
-        disp('Error reading image subtraction file: Resuming without image prefilter...')
-    end
-    IMmin=0*double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
-end
 
 %% --- Evaluate Image Sequence ---
 switch char(M)
@@ -257,8 +249,8 @@ switch char(M)
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
 
             %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
+            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
             im1=flipud(im1);
             im2=flipud(im2);
             L=size(im1);
@@ -612,8 +604,8 @@ switch char(M)
                         t1=tic;
 
                         %load image pair and flip coordinates
-                        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]))-IMmin;
-                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]))-IMmin;
+                        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
+                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
                         im1=flipud(im1);
                         im2=flipud(im2);
 %                         L=size(im1);
@@ -640,8 +632,8 @@ switch char(M)
                     t1=tic;
 
                     %load image pair and flip coordinates
-                    im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]))-IMmin;
-                    im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]))-IMmin;
+                    im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+                    im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
                     im1=flipud(im1);
                     im2=flipud(im2);
 %                     L=size(im1);
@@ -673,7 +665,7 @@ switch char(M)
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];
             end
             for s=1:Z(3)
-                [Uc(s,:),Vc(s,:),Ctemp]=subpixel_new(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                [Uc(s,:),Vc(s,:),Ctemp]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
                 if ~isempty(Cc)
                     Cc(s,:)=Ctemp;
                 end
@@ -831,8 +823,8 @@ switch char(M)
             end
             im1=zeros(size(mask,1),size(mask,2),N); im2=im1;
             for n=1:N
-                im1(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]))-IMmin);
-                im2(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]))-IMmin);
+                im1(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))])));
+                im2(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))])));
                 if Zeromean(e)==1
                     im1(:,:,n)=im1(:,:,n)-mean(mean(im1(:,:,n)));
                     im2(:,:,n)=im2(:,:,n)-mean(mean(im2(:,:,n)));
@@ -1055,7 +1047,7 @@ tcorr = char(ctype(corr+1));
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin <=11
+if nargin <=13
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -1151,9 +1143,9 @@ switch upper(tcorr)
             G = abs(G);
             
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
 %             winmean=mean(mean(region1))*mean(mean(region2));
-%             [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
+%             [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
             if Peakswitch
                 C(n,:)=Ctemp;
             end
@@ -1220,9 +1212,9 @@ switch upper(tcorr)
             G = abs(G);
 
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
 %             winmean=mean(mean(region1))*mean(mean(region2));
-%             [U(n,:),V(n,:),Ctemp]=subpixel_new(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
+%             [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
             if Peakswitch
                 C(n,:)=Ctemp;
             end
@@ -1252,7 +1244,7 @@ tcorr = char(ctype(corr+1));
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin ==10
+if nargin <=11
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -1417,7 +1409,7 @@ im1=double(im1);
 im2=double(im2);
 L=size(im1);
 
-if nargin<12
+if nargin<13
     dt=1;
 end
 
@@ -1428,7 +1420,7 @@ Y=Y(:);
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin <=10
+if nargin <=11 || isempty(Uin) || isempty(Vin)
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -1686,7 +1678,7 @@ En = pi/4*Nx*Ny;
 W  = Ep./((1-q)*En+(q)*Ea);
 W  = W'/max(max(W));
 
-function [u,v,M]=subpixel_new(G,ccsizex,ccsizey,W,Method,Peakswitch)
+function [u,v,M]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch)
 %intialize indices
 cc_x = -ccsizex/2:ccsizex/2-1;
 cc_y = -ccsizey/2:ccsizey/2-1;
@@ -1874,12 +1866,8 @@ else
             
         end
         
-        u=cc_x(shift_locx)+shift_errx;
-        v=cc_y(shift_locy)+shift_erry;
-        
-        if isempty(v)
-            keyboard
-        end
+        u(i)=cc_x(shift_locx)+shift_errx;
+        v(i)=cc_y(shift_locy)+shift_erry;
         
         if isinf(u(i)) || isinf(v(i))
             u(i)=0; v(i)=0;
@@ -1931,118 +1919,6 @@ end
 % compare the Gaussian curve to the actual pixel intensities
 F=mapint_i-gauss_int;
 
-function [u,v,M]=subpixel(G,ccsizex,ccsizey,W,Peakswitch,winmean)
-% --- 3 Point Gaussian subpixel Estimator Subfunction Plus Peak Return ---
-
-if nargin<6
-    winmean=0;
-end
-% keyboard
-G=G-winmean;
-
-%intialize indices
-cc_x = -ccsizex/2:ccsizex/2-1;
-cc_y = -ccsizey/2:ccsizey/2-1;
-
-%find maximum correlation value
-[M,I] = max(G(:));
-
-%if correlation empty
-if M==0
-    if Peakswitch
-        u=zeros(1,3);
-        v=zeros(1,3);
-        M=zeros(1,3);
-    else
-        u=0; v=0;
-    end
-else
-    if Peakswitch
-        %Find peaks using imregionalmax
-        A=imregionalmax(G);
-        peakmat=G.*A;
-        for i=2:3
-            peakmat(peakmat==M(i-1))=0;
-            [M(i),I(i)]=max(peakmat(:));
-        end
-        j=length(M);
-    else
-        j=1;    
-    end
-
-    for i=1:j
-%         keyboard
-        %find x and y indices
-        shift_locy = 1+mod(I(i)-1,ccsizey);
-        shift_locx = ceil(I(i)/ccsizey);
-
-        %find subpixel displacement in x
-        if shift_locx == 1
-            %boundary condition 1
-            shift_errx =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
-        elseif shift_locx == ccsizex
-            %boundary condition 2
-            shift_errx = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
-        elseif G( shift_locy , shift_locx+1 ) == 0
-            %endpoint discontinuity 1
-            shift_errx = -G( shift_locy , shift_locx-1 )/M(i); Mx=M(i);
-        elseif G( shift_locy , shift_locx-1 ) == 0
-            %endpoint discontinuity 2
-            shift_errx =  G( shift_locy , shift_locx+1 )/M(i); Mx=M(i);
-        else
-            %gaussian fit
-            lCm1 = log(G( shift_locy , shift_locx-1 )*W( shift_locy , shift_locx-1 ));
-            lC00 = log(G( shift_locy , shift_locx   )*W( shift_locy , shift_locx   ));
-            lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
-            if (2*(lCm1+lCp1-2*lC00)) == 0
-                shift_err = 0;  Mx=M(i);
-            else
-                shift_err = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
-                sigma=(lCp1-lC00)/(shift_err^2-(cc_x(shift_locx+1)-(cc_x(shift_locx)+shift_err))^2);
-                Mx=G(shift_locy,shift_locx)*W(shift_locy,shift_locx)*exp(shift_err^2/2/sigma);
-            end
-        end
-        %add subpixel to discete pixel value
-        u(i) = cc_x(shift_locx) + shift_err;
-
-        %find subpixel displacement in y
-        if shift_locy == 1
-            %boundary condition 1
-            shift_err = -G( shift_locy+1 , shift_locx )/M(i); My=M(i);
-        elseif shift_locy == ccsizey
-            %boundary condition 2
-            shift_err =  G( shift_locy-1 , shift_locx )/M(i); My=M(i);
-        elseif G( shift_locy+1 , shift_locx ) == 0
-            %endpoint discontinuity 1
-            shift_err =  G( shift_locy-1 , shift_locx )/M(i); My=M(i);
-        elseif G( shift_locy-1 , shift_locx ) == 0
-            %endpoint discontinuity 2
-            shift_err = -G( shift_locy+1 , shift_locx )/M(i); My=M(i);
-        else
-            %gaussian fit
-            lCm1 = log(G( shift_locy-1 , shift_locx )*W( shift_locy-1 , shift_locx ));
-            lC00 = log(G( shift_locy   , shift_locx )*W( shift_locy   , shift_locx ));
-            lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
-            if (2*(lCm1+lCp1-2*lC00)) == 0
-                shift_err = 0; My=M(i);
-            else
-                shift_err = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
-                sigma=(lCp1-lC00)/(shift_err^2-(cc_y(shift_locy+1)-(cc_y(shift_locy)+shift_err))^2);
-                My=G(shift_locy,shift_locx)*W(shift_locy,shift_locx)*exp(shift_err^2/2/sigma);
-            end
-        end
-
-        %add subpixel to discete pixel value
-        v(i) = (cc_y(shift_locy) + shift_err);
-        
-        if isinf(u(i)) || isinf(v(i))
-            u(i)=0; v(i)=0;
-        end
-        
-        %subpixel peak magnitude
-%         M(i)=max([Mx,My]);
-    end
-end
 
 function [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax)
 % --- Validation Subfunction ---

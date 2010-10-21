@@ -1,10 +1,10 @@
-function varargout = PIVadvance4(varargin)
+function varargout = prana(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @PIVadvance4_OpeningFcn, ...
-                   'gui_OutputFcn',  @PIVadvance4_OutputFcn, ...
+                   'gui_OpeningFcn', @prana_OpeningFcn, ...
+                   'gui_OutputFcn',  @prana_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -19,12 +19,13 @@ end
 % End initialization code - DO NOT EDIT
 
 % --- Opening function for figure / variable initialization ---
-function PIVadvance4_OpeningFcn(hObject, eventdata, handles, varargin)
+function prana_OpeningFcn(hObject, eventdata, handles, varargin)
+warning off
 handles.syscolor=get(hObject,'color');
 
 verstr=version('-release');
 if str2double(verstr(1:4))<2009
-    errordlg('PIVadvance4 requires Matlab R2009 or later. A compiled version which does not require a Matlab license is available for down.', 'PIVadvance4')
+    errordlg('prana requires Matlab R2009 or later. A compiled version which does not require a Matlab license is available for down.', 'prana')
 end
 
 try
@@ -157,7 +158,7 @@ if str2double(handles.data.splash)==1 || str2double(handles.data.version)<4.3
         defaultdata.splash='0';
     end
     defaultdata.version='4.3';
-%     save('defaultsettings.mat','defaultdata','windowdiagramds')
+%     save('defaultsettings.mat','defaultdata','windowdiagramds','AETHERlogo')
 end
 
 set(gca,'children',imshow(windowdiagramds))
@@ -172,7 +173,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line ---
-function varargout = PIVadvance4_OutputFcn(hObject, eventdata, handles) 
+function varargout = prana_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
 
 % --- Job Menu ---
@@ -317,7 +318,7 @@ function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data=handles.data;
     write_expsummary(Data,handles);
-    PIVadvance4code(Data);
+    pranaPIVcode(Data);
 end
 
 % --- Run All Jobs Button ---
@@ -329,7 +330,7 @@ if str2double(handles.Njob)>0
     for e=1:size(Jlist,1)
         Data=eval(['handles.' Jlist(e,:)]);
         write_expsummary(Data,handles);
-        PIVadvance4code(Data);
+        pranaPIVcode(Data);
     end
 end
 
@@ -391,7 +392,7 @@ if isnumeric(f)==0
                 vn=0;
                 while vn==0
                     %Attempt to make backwards-compatible with older
-                    %versions of PIVadvance4
+                    %versions of prana
                     if ~isfield(Data,'version')
                         if ~isfield(Data,'par')
                             Data.par='0';
@@ -1264,7 +1265,7 @@ end
 
 % --- ? Button Next to Algorithm Drop-Down Menu ---
 function algorithmhelp_Callback(hObject, eventdata, handles)
-PIVhelp(9)
+PIVhelp(8)
 
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
@@ -1562,7 +1563,7 @@ end
 
 % --- ? Button Next to Validation Options ---
 function validationhelp_Callback(hObject, eventdata, handles)
-PIVhelp(12)
+PIVhelp(11)
 
 % --- Universal Outlier Detection Checkbox ---
 function uodcheckbox_Callback(hObject, eventdata, handles)
@@ -2402,6 +2403,12 @@ set(handles.writeoutputcheckbox,'Value',str2double(A.write));
 set(handles.outputbasename,'string',A.outbase);
 handles.data.cpass=num2str(N);
 
+if N>1
+    set(handles.bulkwinoffset,'backgroundcolor',0.5*[1 1 1]);
+else
+    set(handles.bulkwinoffset,'backgroundcolor',[1 1 1]);
+end
+
 if str2double(A.val)==1
     if strcmp(A.uod,'1')
         set(handles.uodcheckbox,'Value',1);
@@ -3126,7 +3133,7 @@ MsgTxtYOffset=DefOffset+BtnYOffset+BtnHeight;
 MsgTxtWidth=FigPos(3)-DefOffset-MsgTxtXOffset-IconWidth;
 MsgTxtHeight=FigPos(4)-DefOffset-MsgTxtYOffset;
 MsgTxtForeClr=Black;
-MsgTxtBackClr=[0 0 0];%get(QuestFig,'Color');
+MsgTxtBackClr=[1 1 1];%get(QuestFig,'Color');
 
 CBString='uiresume(gcbf)';
 DefaultValid = false;
@@ -3159,6 +3166,7 @@ for i = 1:NumButtons
     'Style'              ,ButtonType, ...
     'Position'           ,[ BtnXOffset(1) BtnYOffset BtnWidth BtnHeight ]           , ...
     'KeyPressFcn'        ,@doControlKeyPress , ...
+    'BackgroundColor'    ,[1 1 1]     , ...
     'CallBack'           ,CBString    , ...
     'String'             ,ButtonString, ...
     'HorizontalAlignment','center'    , ...
@@ -3270,7 +3278,7 @@ IconAxes=axes(                                      ...
 
 set(QuestFig ,'NextPlot','add');
 
-load AETHERlogo.mat
+load defaultsettings.mat AETHERlogo
 Img=image('Cdata',AETHERlogo,'Parent',IconAxes);
 
 set(IconAxes, ...
