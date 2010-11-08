@@ -1,4 +1,4 @@
-function pranacode(Data)
+function pranaPIVcode(Data)
 %% Set up a parallel job if needed
 if str2double(Data.par)
     fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
@@ -53,34 +53,42 @@ if str2double(Data.par)
                 end
                 
                 if str2double(Data.method)==5
-                    if labindex~=1
-                        previous = labindex-1;
-                    else
-                        previous = numlabs;
-                    end
-                    if labindex~=numlabs
-                        next = labindex+1;
-                    else
-                        next = 1;
-                    end
+                    try
+                        if labindex~=1
+                            previous = labindex-1;
+                        else
+                            previous = numlabs;
+                        end
+                        if labindex~=numlabs
+                            next = labindex+1;
+                        else
+                            next = 1;
+                        end
 
-                    I1extra_end=labSendReceive(previous,next,I1dist(1:str2double(Data.framestep)));
-                    I2extra_end=labSendReceive(previous,next,I2dist(1:str2double(Data.framestep)));
-                    masknameextra_end=labSendReceive(previous,next,masknamedist(1:str2double(Data.framestep)));
-                    
-                    I1extra_beg=labSendReceive(next,previous,I1dist((end-str2double(Data.framestep)+1):end));
-                    I2extra_beg=labSendReceive(next,previous,I2dist((end-str2double(Data.framestep)+1):end));
-                    masknameextra_beg=labSendReceive(next,previous,masknamedist((end-str2double(Data.framestep)+1):end));
-                    
-                    if labindex<numlabs
-                        I1dist = [I1dist,I1extra_end];
-                        I2dist = [I2dist,I2extra_end];
-                        masknamedist = [masknamedist,masknameextra_end];
-                    end
-                    if 1<labindex
-                        I1dist = [I1extra_beg,I1dist];
-                        I2dist = [I2extra_beg,I2dist];
-                        masknamedist = [masknameextra_beg,masknamedist];
+                        I1extra_end=labSendReceive(previous,next,I1dist(1:str2double(Data.framestep)));
+                        I2extra_end=labSendReceive(previous,next,I2dist(1:str2double(Data.framestep)));
+                        masknameextra_end=labSendReceive(previous,next,masknamedist(1:str2double(Data.framestep)));
+
+                        I1extra_beg=labSendReceive(next,previous,I1dist((end-str2double(Data.framestep)+1):end));
+                        I2extra_beg=labSendReceive(next,previous,I2dist((end-str2double(Data.framestep)+1):end));
+                        masknameextra_beg=labSendReceive(next,previous,masknamedist((end-str2double(Data.framestep)+1):end));
+
+                        if labindex<numlabs
+                            I1dist = [I1dist,I1extra_end];
+                            I2dist = [I2dist,I2extra_end];
+                            masknamedist = [masknamedist,masknameextra_end];
+                        end
+                        if 1<labindex
+                            I1dist = [I1extra_beg,I1dist];
+                            I2dist = [I2extra_beg,I2dist];
+                            masknamedist = [masknameextra_beg,masknamedist];
+                        end
+                    catch
+                        beep
+                        disp('Error Running Multiframe Job in Parallel (Not Enough Image Pairs) - Defaulting to Single Processor')
+                        matlabpool close
+                        poolopen=0;
+                        pranaprocessing(Data)
                     end
 
                 end
@@ -89,7 +97,9 @@ if str2double(Data.par)
             end
             fprintf('----------------- Job Completed ----------------------\n')
         end
-        matlabpool close
+        if poolopen
+            matlabpool close
+        end
     end
 else
     fprintf('\n-------------- Processing Dataset ------------------\n')
@@ -784,11 +794,11 @@ switch char(M)
         else
             %double-pulsed
             for n=3:2:length(time_full)
-                time_full(2,n)=floor(n/2)/Freq/dt/10^-6;
-                time_full(2,n-1)=floor((n-2)/2)/Freq/dt/10^-6+1;
+                time_full(2,n)=floor(n/2)/Freq/dt;
+                time_full(2,n-1)=floor((n-2)/2)/Freq/dt+1;
             end
         end
-            
+
         if I1(1)==I1_full(1)
             qstart=1;
         else
@@ -830,8 +840,8 @@ switch char(M)
                     im2(:,:,n)=im2(:,:,n)-mean(mean(im2(:,:,n)));
                 end
                 
-                imind1=find(time_full(1,:)==I1(q)-(n-1));
-                imind2=find(time_full(1,:)==I2(q)+(n-1));
+                imind1= time_full(1,:)==I1(q)-(n-1);
+                imind2= time_full(1,:)==I2(q)+(n-1);
                 Dt(n)=time_full(2,imind2)-time_full(2,imind1);
             end
             L=size(im1);
@@ -1832,7 +1842,6 @@ else
                 shift_errx=xvars(3)-shift_locx;
                 shift_erry=xvars(4)-shift_locy;
             catch
-                keyboard
                 method=1;
             end
         end

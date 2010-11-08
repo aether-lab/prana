@@ -3332,10 +3332,10 @@ end
 function doControlKeyPress(obj, evd)  %#ok
 switch(evd.Key)
 case {'return'}
-if DefaultValid
+% if DefaultValid
   DefaultWasPressed = true;
   uiresume(gcbf);
-end
+% end
 case 'escape'
     delete(QuestFig);
 end
