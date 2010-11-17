@@ -261,8 +261,8 @@ switch char(M)
             %load image pair and flip coordinates
             im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
             im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
-            im1=flipud(im1);
-            im2=flipud(im2);
+            im1=flipud(im1(:,:,1));
+            im2=flipud(im2(:,:,1));
             L=size(im1);
             
             %load dynamic mask and flip coordinates
@@ -616,8 +616,8 @@ switch char(M)
                         %load image pair and flip coordinates
                         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
                         im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
-                        im1=flipud(im1);
-                        im2=flipud(im2);
+                        im1=flipud(im1(:,:,1));
+                        im2=flipud(im2(:,:,1));
 %                         L=size(im1);
 
                         %correlate image pair and average correlations
@@ -644,8 +644,8 @@ switch char(M)
                     %load image pair and flip coordinates
                     im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
                     im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
-                    im1=flipud(im1);
-                    im2=flipud(im2);
+                    im1=flipud(im1(:,:,1));
+                    im2=flipud(im2(:,:,1));
 %                     L=size(im1);
 
                     %correlate image pair and average correlations
@@ -833,8 +833,10 @@ switch char(M)
             end
             im1=zeros(size(mask,1),size(mask,2),N); im2=im1;
             for n=1:N
-                im1(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))])));
-                im2(:,:,n)=flipud(double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))])));
+                im1_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]));
+                im2_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
+                im1(:,:,n)=flipud(im1_temp(:,:,1));
+                im2(:,:,n)=flipud(im2_temp(:,:,1));
                 if Zeromean(e)==1
                     im1(:,:,n)=im1(:,:,n)-mean(mean(im1(:,:,n)));
                     im2(:,:,n)=im2(:,:,n)-mean(mean(im2(:,:,n)));

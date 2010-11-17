@@ -1,4 +1,24 @@
 function varargout = prana(varargin)
+% HELP TEXT for running prana from the command line goes here.
+
+%     This file is part of prana, an open-source GUI-driven program for
+%     calculating velocity fields using PIV or PTV.
+%     Copyright (C) 2010  Virginia Polytechnic Institute and State
+%     University
+% 
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -25,12 +45,13 @@ handles.syscolor=get(hObject,'color');
 
 verstr=version('-release');
 if str2double(verstr(1:4))<2009
-    errordlg('prana requires Matlab R2009 or later. A compiled version which does not require a Matlab license is available for down.', 'prana')
+    errordlg('Prana requires Matlab R2009 or later.', 'prana')
 end
 
 try
     load('defaultsettings.mat')
 catch
+    defaultdata.clientversion='0.99';
     defaultdata.version='4.3';
     defaultdata.imbase='Img_';
     defaultdata.imzeros='6';
@@ -123,8 +144,24 @@ catch
     defaultdata.PIVerror='0.1';
     
     defaultdata.splash='1';
-    windowdiagramds=zeros(543,568);
 end
+if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<0.99
+    splash=splashdlg({...
+         'What''s new in Prana v0.99?',...
+         '',...
+         'Updated user interface',...
+         'New correlation peak location methods',...
+         'Option to zero-mean image windows',...
+         'Fixed bugs in ''Ensemble'' method'},...
+         'Prana v0.99','Ok','Don''t show this anymore','Ok');
+    if strcmp(splash,'Don''t show this anymore')
+        defaultdata.splash='0';
+    end
+    defaultdata.clientversion='0.99';
+    defaultdata.version='4.3';
+    save('defaultsettings.mat','defaultdata')
+end
+
 handles.data=defaultdata;
 
 if ispc
@@ -144,28 +181,17 @@ end
 handles.data.imdirec=pwd;
 handles.data.maskdirec=pwd;
 handles.data.outdirec=pwd;
-
-if str2double(handles.data.splash)==1 || str2double(handles.data.version)<4.3
-    splash=splashdlg({...
-         'What''s new in Prana v1.0?',...
-         '',...
-         'Updated user interface',...
-         'New correlation peak location methods',...
-         'Option to zero-mean image windows',...
-         'Fixed bugs in ''Ensemble'' method'},...
-         'Prana v1.0','Ok','Don''t show this anymore','Ok');
-    if strcmp(splash,'Don''t show this anymore')
-        defaultdata.splash='0';
-    end
-    defaultdata.version='4.3';
-%     save('defaultsettings.mat','defaultdata','windowdiagramds','AETHERlogo')
-end
-
-set(gca,'children',imshow(windowdiagramds))
 handles.data.cpass=num2str(get(handles.passlist,'Value'));
 handles.data0=handles.data;
 handles.Njob=num2str(size(get(handles.joblist,'String'),1));
 handles.Cjob=num2str(get(handles.joblist,'String'));
+try
+    windowdiagram=imread(fullfile(pwd,'documentation','windowdiagram.tif'),'tif');
+catch
+    windowdiagram=zeros(564,531);
+end
+set(gca,'children',imshow(windowdiagram))
+
 handles=rmfield(handles,'data');
 handles=update_data(handles);
 handles.output = hObject;
@@ -231,7 +257,9 @@ function helpmenu_Callback(hObject, eventdata, handles)
 
 % --- Help Menu -> About ---
 function helpmenu_about_Callback(hObject, eventdata, handles)
-msgbox({'PIVAdvance4 v1.0','','Modified by B.Drew on 5/14/10','','[License / Copyright]'},'About')
+msgbox({['Prana','',['Client Version ',num2str(handles.data0.clientversion)],'',...
+    ['Data Version ',num2str(handles.data0.clientversion)],'',...
+    'Copyright (C) This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program. If not, see www.gnu.org/licenses']},'About')
 
 % --- Help Menu -> Getting Started ---
 function gettingstarted_Callback(hObject, eventdata, handles)
@@ -935,7 +963,8 @@ function masktool_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     try
         im=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
-                
+        im=im(:,:,1);
+        
         stillmasking='Yes';mask=ones(size(im));h=figure;
         while strcmp(stillmasking,'Yes')
             figure(h),imshow(im.*mask,[0 255])
@@ -972,7 +1001,7 @@ function impreview_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     try
         im1=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
-        im1=flipud(im1)/255;
+        im1=flipud(im1(:,:,1))/255;
         try
             if strcmp(handles.data.masktype,'static')
                 mask = double(imread(handles.data.staticmaskname));
@@ -3004,9 +3033,6 @@ function ButtonName=splashdlg(Question,Title,Btn1,Btn2,Btn3,Default)
 %  Copyright 1984-2007 The MathWorks, Inc.
 %  $Revision: 5.55.4.14 $
 
-%  modified by bdrew on 10/12/10 to add AEThER logo and checkbox
-
-
 
 if nargin<1
   error('MATLAB:questdlg:TooFewArguments', 'Too few arguments for QUESTDLG');
@@ -3278,8 +3304,12 @@ IconAxes=axes(                                      ...
 
 set(QuestFig ,'NextPlot','add');
 
-load defaultsettings.mat AETHERlogo
-Img=image('Cdata',AETHERlogo,'Parent',IconAxes);
+try
+    logo=imread(fullfile(pwd,'documentation','logo.tif'),'tif');
+catch
+    logo=zeros(500,1000);
+end
+Img=image('Cdata',logo,'Parent',IconAxes);
 
 set(IconAxes, ...
   'Visible','off'           , ...
