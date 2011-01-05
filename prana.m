@@ -1937,6 +1937,7 @@ end
 function exp_partD_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.exp_partD = get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
 end
 function exp_partD_CreateFcn(hObject, eventdata, handles)
@@ -1948,6 +1949,7 @@ end
 function exp_partdensity_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.exp_partdensity = get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
 end
 function exp_partdensity_CreateFcn(hObject, eventdata, handles)
@@ -1959,6 +1961,7 @@ end
 function exp_wavelength_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.exp_wavelength = get(hObject,'String');
+    [handles]=load_data(handles);
     guidata(hObject,handles)
 end
 function exp_wavelength_CreateFcn(hObject, eventdata, handles)
@@ -2755,14 +2758,14 @@ if ~isempty(handles.data.wrmag)
                             dz=2*str2double(handles.data.exp_lensfnum)*d*(M+1)/M^2;
 
                             if isnan(d) || isnan(dz)
-                                handles.data.exp_diffractiondaimeter='';
+                                handles.data.exp_diffractiondiameter='';
                                 handles.data.exp_depthoffocus='';
                             else
                                 handles.data.exp_diffractiondiameter=num2str(d);
                                 handles.data.exp_depthoffocus=num2str(dz);
                             end
                         catch
-                            handles.data.exp_diffractiondaimeter='';
+                            handles.data.exp_diffractiondiameter='';
                             handles.data.exp_depthoffocus='';
                         end
                     elseif ~(isempty(handles.data.exp_NA) || isempty(handles.data.exp_n) || isempty(handles.data.exp_wavelength)) && str2double(handles.data.exp_micro)
@@ -2772,14 +2775,14 @@ if ~isempty(handles.data.wrmag)
                             dz=2*fnum*d*(M+1)/M^2;
 
                             if isnan(d) || isnan(dz)
-                                handles.data.exp_diffractiondaimeter='';
+                                handles.data.exp_diffractiondiameter='';
                                 handles.data.exp_depthoffocus='';
                             else
                                 handles.data.exp_diffractiondiameter=num2str(d);
                                 handles.data.exp_depthoffocus=num2str(dz);
                             end
                         catch
-                            handles.data.exp_diffractiondaimeter='';
+                            handles.data.exp_diffractiondiameter='';
                             handles.data.exp_depthoffocus='';
                         end
                     else
@@ -2822,7 +2825,15 @@ else
 end
 fid=fopen(fname,'w');
 if fid==-1
-    error(['error writing experiment summary ',fname])
+    try
+        mkdir(Data.outdirec)
+        fid=fopen(fname,'w');
+        if fid==-1
+            error(['error writing experiment summary ',fname])
+        end
+    catch
+        error(['error writing experiment summary ',fname])
+    end
 end
 
 fprintf(fid,['Summary for PIV Job: ',Data.batchname,'\n']);
