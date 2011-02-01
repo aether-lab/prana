@@ -163,13 +163,13 @@ if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<0.
 end
 
 handles.data=defaultdata;
+pranadir=which('prana');
+addpath([pranadir(1:end-7),'documentation']);
 
 if ispc
     handles.loaddirec=[pwd '\'];
-    addpath([pwd,'\documentation']);
 else
     handles.loaddirec=[pwd '/'];
-    addpath([pwd,'/documentation']);
 end
 handles.data.par='0';
 try
@@ -186,7 +186,7 @@ handles.data0=handles.data;
 handles.Njob=num2str(size(get(handles.joblist,'String'),1));
 handles.Cjob=num2str(get(handles.joblist,'String'));
 try
-    windowdiagram=imread(fullfile(pwd,'documentation','windowdiagram.tif'),'tif');
+    windowdiagram=imread(fullfile(pranadir(1:end-8),'documentation','windowdiagram.tif'),'tif');
 catch
     windowdiagram=zeros(564,531);
 end
@@ -3317,8 +3317,9 @@ IconAxes=axes(                                      ...
 
 set(QuestFig ,'NextPlot','add');
 
+pranadir=which('prana');
 try
-    logo=imread(fullfile(pwd,'documentation','logo.tif'),'tif');
+    logo=imread(fullfile(pranadir(1:end-8),'documentation','logo.tif'),'tif');
 catch
     logo=zeros(500,1000);
 end

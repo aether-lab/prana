@@ -1976,7 +1976,7 @@ end
 %replacement
 for i=1:S(1)
     for j=1:S(2)
-        if Evalval(i,j)>0 && Evalval(i,j)<200
+        if Evalval(i,j)~=0
             %initialize replacement search size
             q=0;
             s=0;
@@ -2140,7 +2140,7 @@ else
     end
 end
 
-function [U,V,Eval] = bootstrapping(X,Y,U,V,per,iter,kmax,Eval)
+function [U,V,Eval] = bootstrapping(X,Y,u,v,per,iter,kmax,Eval)
 % Bootstrapping Validation Subfunction 
 %
 % [U,V,Eval] = bootstraping(x,y,u,v,per,iter,kmax,Eval)
@@ -2171,8 +2171,8 @@ while tol > 0 && ktol <= kmax+1
         S(:,1) = X(m==1);
         S(:,2) = Y(m==1);
 
-        Up = U(m==1);
-        Vp = V(m==1);
+        Up = u(m==1);
+        Vp = v(m==1);
         M(:,:,i) = m;
         
         Ui = gridfit(S(:,1),S(:,2),Up,X(1,:),Y(:,1));
