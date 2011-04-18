@@ -787,16 +787,18 @@ switch char(M)
         
         I1_full=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
         time_full=str2double(Data.imfstart):(str2double(Data.imfend)+str2double(Data.imcstep));
-        
+
         %single-pulsed
         if round(1/Freq*10^6)==round(dt)
             time_full(2,:)=time_full(1,:);
         else
             %double-pulsed
+            sample_t=1/Freq*10^6;
             for n=3:2:length(time_full)
-                time_full(2,n)=floor(n/2)/Freq/dt;
-                time_full(2,n-1)=floor((n-2)/2)/Freq/dt+1;
+                time_full(2,n)=floor(n/2)*sample_t/dt;
+                time_full(2,n-1)=(floor((n-2)/2)*sample_t+dt)/dt;
             end
+            time_full(2,end)=time_full(2,end-1)+1;
         end
 
         if I1(1)==I1_full(1)
