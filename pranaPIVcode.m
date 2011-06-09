@@ -622,20 +622,32 @@ switch char(M)
 
                         %correlate image pair and average correlations
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        if q==1
-                            CCmdist=CC;
-                        else
-                            CCmdist=CCmdist+CC;
+                        if Corr(e)<2 %SCC or RPC processor
+                            if q==1
+                                CCmdist=CC;
+                            else
+                                CCmdist=CCmdist+CC;
+                            end
+                        elseif Corr(e)==2 %SPC processor
+                           error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
                         fprintf('correlation...                 %0.2i:%0.2i.%0.0f\n',floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
                     end
                 end
-                CCm=zeros(size(CCmdist{1}));
-                for i=1:length(CCmdist)
-                    CCm=CCm+CCmdist{i}/length(I1);
-                end
-                
+%                 if Corr(e)<2 %SCC or RPC processor
+                    CCm=zeros(size(CCmdist{1}));
+                    for i=1:length(CCmdist)
+                        CCm=CCm+CCmdist{i}/length(I1);
+                    end
+%                 elseif Corr(e)==2 %SPC processor
+%                     CCm=zeros(size(CCmdist{1},1),size(CCmdist{1},2),size(CCmdist{1},3),length(I1));
+%                     ind=1;
+%                     for i=1:length(CCmdist)
+%                         CCm(:,:,:,ind:ind+size(CCmdist{i},4)-1)=CCmdist{i};
+%                         ind=ind+size(CCmdist{i},4);
+%                     end
+%                 end
             else
                 
                 for q=1:length(I1)
@@ -650,18 +662,27 @@ switch char(M)
 
                     %correlate image pair and average correlations
                     [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    if q==1
-                        CCm=CC/length(I1);
-                    else
-                        CCm=CCm+CC/length(I1);
+                    if Corr(e)<2 %SCC or RPC processor
+                        if q==1
+                            CCm=CC/length(I1);
+                        else
+                            CCm=CCm+CC/length(I1);
+                        end
+                    elseif Corr(e)==2 %SPC processor
+                        if q==1
+                            CCm=CC;
+                        else
+                            CCm.U=[CCm.U,CC.U];
+                            CCm.V=[CCm.V,CC.V];
+                            CCm.C=[CCm.C,CC.C];
+                        end
                     end
                     corrtime=toc(t1);
                     fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
                 end
             end
-                
-            %evaluate subpixel displacement of averaged correlation
-            Z=size(CCm);
+
+            Z=[Wsize(e,2),Wsize(e,1),length(X(Eval>=0))];
             ZZ=ones(Z(1),Z(2));
             
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
@@ -674,10 +695,44 @@ switch char(M)
             else
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];
             end
-            for s=1:Z(3)
-                [Uc(s,:),Vc(s,:),Ctemp]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
-                if ~isempty(Cc)
-                    Cc(s,:)=Ctemp;
+   
+            
+                
+            if Corr(e)<2 %SCC or RPC processor
+                for s=1:Z(3) %Loop through grid points    
+                    %Find the subpixel fit of the average correlation matrix
+                    [Uc(s,:),Vc(s,:),Ctemp]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                end
+            elseif Corr(e)==2 %SPC processor
+                    %RPC filter for weighting function
+                cutoff=2/pi/D(e);
+                wt = energyfilt(Z(2),Z(1),D(e),0);
+                wtX=wt(:,Z(1)/2+1)';
+                wtX(wtX<cutoff)=0;
+                wtY=wt(Z(2)/2+1,:);
+                wtY(wtY<cutoff)=0;
+                lsqX=(0:Z(2)-1)-Z(2)/2;
+                lsqY=(0:Z(1)-1)-Z(1)/2;
+                lsqX=repmat(lsqX,[1 length(I1)]);
+                lsqY=repmat(lsqY,[1 length(I1)]);               
+                Qp=squeeze(CCm.C(1,:,:)./CCm.C(2,:,:));
+                Qp_norm=(Qp-repmat(min(Qp),[length(I1) 1]))./repmat(max(Qp)-min(Qp),[length(I1) 1]);
+                
+                for s=1:Z(3) 
+                    wtX_cum=repmat(wtX,[1 length(I1)]);
+                    wtY_cum=repmat(wtY,[1 length(I1)]);
+                
+                    for q=1:length(I1)
+                        indX=(1:Z(2))+Z(2)*(q-1);
+                        indY=(1:Z(1))+Z(1)*(q-1);
+                        wtX_cum(indX)=wtX_cum(indX).*Qp_norm(q,s);
+                        wtY_cum(indY)=wtX_cum(indY).*Qp_norm(q,s);
+                    end
+
+                    %Perform the weighted lsq regression
+                    Uc(s)= wlsq(CCm.U(1,:,s),lsqX,wtX_cum)*Z(2)/2/pi;
+                    Vc(s)=-wlsq(CCm.V(1,:,s),lsqY,wtY_cum)*Z(1)/2/pi;
+                    Ctemp=CCm.C(:,:,s)';
                 end
             end
 
@@ -882,6 +937,7 @@ switch char(M)
 
                     velmag=sqrt(U(:,1,:).^2+V(:,1,:).^2);
                     Qp=C(:,1,:)./C(:,2,:).*(1-ds./velmag);
+%                     Qp=1-2.*exp(-0.5)./velmag.*(C(:,1,:)./C(:,2,:)-1).^(-1);
                     [Qmax,t_opt]=max(Qp,[],3);
                     for i=1:size(U,1)
                         Uval(i,:)=U(i,:,t_opt(i));
@@ -1252,7 +1308,7 @@ X=X(:);
 Y=Y(:);
 
 %correlation and window mask types
-ctype    = {'SCC','RPC'};
+ctype    = {'SCC','RPC','SPC'};
 tcorr = char(ctype(corr+1)); 
 
 %preallocate velocity fields and grid format
@@ -1284,14 +1340,14 @@ spectral = fftshift(energyfilt(Sx,Sy,D,0));
 fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
 
-%initialize correlation tensor
-CC = zeros(Sy,Sx,length(X));
-
 switch upper(tcorr)
 
     %Standard Cross Correlation
     case 'SCC'
-
+        
+        %initialize correlation tensor
+        CC = zeros(Sy,Sx,length(X));
+        
         for n=1:length(X)
 
             %apply the second order discrete window offset
@@ -1351,6 +1407,9 @@ switch upper(tcorr)
 
     %Robust Phase Correlation
     case 'RPC'
+        
+        %initialize correlation tensor
+        CC = zeros(Sy,Sx,length(X));
         
         for n=1:length(X)
 
@@ -1413,6 +1472,85 @@ switch upper(tcorr)
             CC(:,:,n) = G;
 
         end
+        
+    %Spectral Phase Correlation    
+    case 'SPC'
+        
+        %initialize correlation tensor
+        CC.U = zeros(3,Sx,length(X));
+        CC.V = zeros(3,Sy,length(X));
+        CC.C = zeros(3, 1,length(X));
+        
+        for n=1:length(X)
+
+            %apply the second order discrete window offset
+            x1 = X(n) - floor(round(Uin(n))/2);
+            x2 = X(n) +  ceil(round(Uin(n))/2);
+
+            y1 = Y(n) - floor(round(Vin(n))/2);
+            y2 = Y(n) +  ceil(round(Vin(n))/2);
+
+            xmin1 = x1-Nx/2+1;
+            xmax1 = x1+Nx/2;
+            xmin2 = x2-Nx/2+1;
+            xmax2 = x2+Nx/2;
+            ymin1 = y1-Ny/2+1;
+            ymax1 = y1+Ny/2;
+            ymin2 = y2-Ny/2+1;
+            ymax2 = y2+Ny/2;
+
+            %find the image windows
+            zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
+            zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
+            if size(zone1,1)~=Ny || size(zone1,2)~=Nx
+                w1 = zeros(Ny,Nx);
+                w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                zone1 = w1;
+            end
+            if size(zone2,1)~=Ny || size(zone2,2)~=Nx
+                w2 = zeros(Ny,Nx);
+                w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                zone2 = w2;
+            end
+            
+            if Zeromean==1
+                zone1=zone1-mean(mean(zone1));
+                zone2=zone2-mean(mean(zone2));
+            end
+
+            %apply the image spatial filter
+            region1 = zone1.*sfilt;
+            region2 = zone2.*sfilt;
+
+            %FFTs and Cross-Correlation
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
+            P21  = f2.*conj(f1);
+
+            %Phase Correlation
+            W = ones(Sy,Sx);
+            Wden = sqrt(P21.*conj(P21));
+            W(P21~=0) = Wden(P21~=0);
+            R = P21./W;
+            R = R(fftindy,fftindx);
+            [u,s,v]=svd(R);
+
+            %Unwrap the 3 most dominant modes and save their eigenvalues
+            for m=1:3
+                v_unwrapped(:,m)=unwrap(angle(v(:,m)'))'; % U-component
+                u_unwrapped(:,m)=unwrap(angle(u(:,m)'))'; % V-component
+            end
+            Ctemp=[s(1,1) s(2,2) s(3,3)]';
+            
+            %Shift so that the midpoint of the data crosses the origin
+            um=(v_unwrapped-repmat(v_unwrapped(Sx/2+1,:),[length(v_unwrapped) 1]))';
+            vm=(u_unwrapped-repmat(u_unwrapped(Sy/2+1,:),[length(u_unwrapped) 1]))';
+
+            %store data
+            CC.U(:,:,n) = um;
+            CC.V(:,:,n) = vm;
+            CC.C(:,:,n) = Ctemp;
+        end
 end
 
 function [X,Y,U,V,C,t_opt]=PIVphasecorr(im1,im2,window,res,zpad,D,Zeromean,Peakswitch,X,Y,Uin,Vin,dt)
@@ -1444,13 +1582,13 @@ V = zeros(length(X),1);
 C = [];
 t_opt=zeros(length(X),1);
 
-%RPC Cutoff filter
+%RPC cutoff weighting
 wt = energyfilt(Nx,Ny,D,0);
-wt=wt(Nx/2+1,:);
-% cutoff=2/pi/D;
-% cutoff=exp(-1);
-cutoff=0;
-wt(wt<cutoff)=0;
+wtX=wt(Nx/2+1,:);
+wtY=wt(:,Ny/2+1)';
+cutoff=2/pi/D;
+wtX(wtX<cutoff)=0;
+wtY(wtY<cutoff)=0;
 
 %sets up extended domain size
 if zpad~=0
@@ -1479,14 +1617,14 @@ fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
 
 for n=1:length(X)
-    um_cum=[];vm_cum=[];wt_cum=[];lsqX_cum=[];lsqY_cum=[];
+    S=[];um_cum=[];vm_cum=[];wtX_cum=[];wtY_cum=[];lsqX_cum=[];lsqY_cum=[];t_good=[];
     for t=1:size(im1,3)     
         %apply the second order discrete window offset
-        x1 = X(n) - floor(round(Uin(n)*dt(t))/2);
-        x2 = X(n) +  ceil(round(Uin(n)*dt(t))/2);
+        x1 = X(n) - floor(round(Uin(n))*dt(t)/2);
+        x2 = X(n) +  ceil(round(Uin(n))*dt(t)/2);
 
-        y1 = Y(n) - floor(round(Vin(n)*dt(t))/2);
-        y2 = Y(n) +  ceil(round(Vin(n)*dt(t))/2);
+        y1 = Y(n) - floor(round(Vin(n))*dt(t)/2);
+        y2 = Y(n) +  ceil(round(Vin(n))*dt(t)/2);
 
         xmin1 = x1-Nx/2+1;
         xmax1 = x1+Nx/2;
@@ -1536,27 +1674,49 @@ for n=1:length(X)
         um=(v-v(Sx/2+1))';
         u=unwrap(angle(u(:,1)));
         vm=(u-u(Sy/2+1))';
-
-        if (s(1,1)/s(2,2)>1.5 && t>1) || t==1
+                
+        S(:,t)=[s(1,1) s(2,2)]';
+        if (S(1,t)/S(2,t)>1.5 && t>1) || t==1
+            if sum(abs(Uin))>0
+                um=um./dt(t);
+                vm=vm./dt(t);
+            end
             um_cum=[um_cum,um];
             vm_cum=[vm_cum,vm];
-            wt_cum=[wt_cum,wt];
             lsqX_cum=[lsqX_cum,lsqX{t}];
             lsqY_cum=[lsqY_cum,lsqY{t}];
+
             t_opt(n)=t;
+            t_good=[t_good,t];
+            if t>1
+                velmag=sqrt((U(n).*dt(1:t)).^2+(V(n).*dt(1:t)).^2);
+%                 Qp=1-exp(-2).*(S(1,:)./S(2,:)-1).^-1./velmag; %Uncertainty-based Quality
+                Qp=S(1,:)./S(2,:).*(1-0.1./velmag); %Persoons Quality
+                for T=1:length(t_good)
+                    %Normalized by quality
+                    wtX_cum((1:Sx)+Sx*(T-1))=wtX.*(Qp(t_good(T))-min(Qp))./(max(Qp)-min(Qp));
+                    wtY_cum((1:Sy)+Sy*(T-1))=wtY.*(Qp(t_good(T))-min(Qp))./(max(Qp)-min(Qp));
+                    %Un-normalized
+%                     wtX_cum((1:Sx)+Sx*(T-1))=wtX;
+%                     wtY_cum((1:Sy)+Sy*(T-1))=wtY;
+                end
+            else
+                wtX_cum=wtX;
+                wtY_cum=wtY;
+            end
+            
         end
 
-%         wt_cum=[wt_cum,wt.*s(1,1)./s(2,2)];
-%         wt_cum=[wt_cum,wt.*(s(1,1)./s(2,2)-1)];
+        fit= wlsq(um_cum,lsqX_cum,wtX_cum);
+%         um_refined=unwrap_refine(um_cum,lsqX_cum,fit);
+%         fit= wlsq(um_refined,lsqX_cum,wtX_cum).*Sx./2./pi;
+        U(n)=fit(1)*Sx/2/pi;
         
-        U(n)= wlsq(um_cum,lsqX_cum,wt_cum)*Sx/2/pi;
-        V(n)=-wlsq(vm_cum,lsqY_cum,wt_cum)*Sy/2/pi;
-        
-%         U(n)= wlsq(um_cum,[lsqX{1:t}],repmat(wt,[1,t]))*Sx/2/pi;
-%         V(n)=-wlsq(vm_cum,[lsqY{1:t}],repmat(wt,[1,t]))*Sy/2/pi;
-        
+        fit=-wlsq(vm_cum,lsqY_cum,wtY_cum);
+%         vm_refined=unwrap_refine(vm_cum,lsqY_cum,fit);
+%         fit=-wlsq(vm_refined,lsqY_cum,wtY_cum).*Sy./2./pi;
+        V(n)=fit(1)*Sx/2/pi;
 
-        
         if t<size(im1,3)
             %Displacement cutoff
             if U(n)*dt(t+1)>res(1)/4 || V(n)*dt(t+1)>res(2)/4
