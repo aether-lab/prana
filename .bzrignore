@@ -1,4 +1,6 @@
 *.asv
 *.m~
 *.DS_Store
+*.fig
+*.tif
 defaultsettings.mat
