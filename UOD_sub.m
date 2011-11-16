@@ -31,3 +31,5 @@ else
         R = abs(x-M)/(Q+e);
     end
 end
+
+end

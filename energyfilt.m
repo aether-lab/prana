@@ -28,3 +28,6 @@ En = pi/4*Nx*Ny;
 %DPIV SNR spectral filter
 W  = Ep./((1-q)*En+(q)*Ea);
 W  = W'/max(max(W));
+
+
+end

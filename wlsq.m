@@ -7,3 +7,5 @@ W=diag(tempmat(:,3));
 
 % xh=inv(H'*W*H)*H'*W*y;
 xh=(H'*W*H)\(H'*W*y);
+
+end

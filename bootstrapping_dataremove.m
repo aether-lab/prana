@@ -16,3 +16,5 @@ while sum(M1(:))/(Nx*Ny) < ENUM && EN < 1
 end
 
 M1 = double(M1);
+
+end

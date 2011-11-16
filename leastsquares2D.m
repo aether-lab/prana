@@ -41,3 +41,5 @@ end
 
 % compare the Gaussian curve to the actual pixel intensities
 F=mapint_i-gauss_int;
+
+end

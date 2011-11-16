@@ -32,9 +32,21 @@ elseif strcmp(Data.masktype,'dynamic')
 end
 
 %method and passes
-P=str2double(Data.passes);
-Method={'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
-M=Method(str2double(Data.method));
+P = str2double(Data.passes);
+Method = {'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
+M = Method(str2double(Data.method));
+% Color channel
+try
+   if Data.version <= 4.3
+      channel = 1;
+   else
+       keyboard
+      channel = Data.channel;
+   end
+catch
+   channel = 1;
+end
+
 
 %algorithm options
 Velinterp=str2double(Data.velinterp);
@@ -47,10 +59,19 @@ Mag = str2double(Data.wrmag);
 dt = str2double(Data.wrsep);
 Freq = str2double(Data.wrsamp);
 
-%initialization
-Wres=zeros(P,2);
-Wsize=zeros(P,2);
-Gres=zeros(P,2);
+% %initialization
+% Effective size of window after Gaussian filtering
+Wres = zeros(2, 2, P);
+
+% Size of unfiltered window (pixels)
+Wsize = zeros(P,2);
+
+% Grid resolution
+Gres = zeros(P,2);
+
+% NOT SURE
+
+% Not Sure
 Gbuf=zeros(P,2);
 Corr=zeros(P,1);
 D=zeros(P,1);
@@ -81,24 +102,43 @@ wbase=cell(0);
 for e=1:P
     
     %create structure for pass "e"
-    eval(['A=Data.PIV' num2str(e) ';'])
+    eval(['A = Data.PIV' num2str(e) ';']);
     
     %store bulk window offset info
     if e==1
         BWO=[str2double(A.BWO(1:(strfind(A.BWO,',')-1))) str2double(A.BWO((strfind(A.BWO,',')+1):end))];
     end
     
-    %window and grid resolution
-    Wres(e,:)=[str2double(A.winres(1:(strfind(A.winres,',')-1))) str2double(A.winres((strfind(A.winres,',')+1):end))];
-    Wsize(e,:)=[str2double(A.winsize(1:(strfind(A.winsize,',')-1))) str2double(A.winsize((strfind(A.winsize,',')+1):end))];
-    Gres(e,:)=[str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
-    Gbuf(e,:)=[str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
-    Corr(e)=str2double(A.corr)-1;
-    D(e)=str2double(A.RPCd);
-    Zeromean(e)=str2double(A.zeromean);
-    Peaklocator(e)=str2double(A.peaklocator);
-    Velsmoothswitch(e)=str2double(A.velsmooth);
-    Velsmoothfilt(e)=str2double(A.velsmoothfilt);
+    % Window Resolution (eventually move the str2double commands to the GUI callback)
+    
+    try
+    %  Window resolutions for first image in correlation pair
+    xwin_im1 = str2double(A.winres1(1:(strfind(A.winres1,',')-1)));
+    ywin_im1 = str2double(A.winres1((strfind(A.winres1,',') + 1):end));
+    
+    %  Window resolutions for second image in correlation pair
+    xwin_im2 = str2double(A.winres2(1:(strfind(A.winres2,',')-1)));
+    ywin_im2 = str2double(A.winres2((strfind(A.winres2,',') + 1):end));
+    catch
+    xwin_im1 = str2double(A.winres(1:(strfind(A.winres,',')-1)));
+    ywin_im1 = str2double(A.winres((strfind(A.winres,',')+1):end));
+    xwin_im2 = xwin_im1;
+    ywin_im2 = ywin_im1;
+    end
+    
+%     Window resolution matrix
+    Wres(:,:, e) = [xwin_im1 ywin_im1; xwin_im2 ywin_im2];
+    
+%     Window size and grid resolution 
+    Wsize(e,:) = [str2double(A.winsize(1:(strfind(A.winsize,',')-1))) str2double(A.winsize((strfind(A.winsize,',')+1):end))];
+    Gres(e,:) = [str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
+    Gbuf(e,:) = [str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
+    Corr(e) = str2double(A.corr)-1;
+    D(e) = str2double(A.RPCd);
+    Zeromean(e) = str2double(A.zeromean);
+    Peaklocator(e) = str2double(A.peaklocator);
+    Velsmoothswitch(e) = str2double(A.velsmooth);
+    Velsmoothfilt(e) = str2double(A.velsmoothfilt);
     
     %validation and thresholding
     Valswitch(e)=str2double(A.val);
@@ -150,11 +190,47 @@ switch char(M)
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
 
             %load image pair and flip coordinates
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
-            im1=flipud(im1(:,:,1));
-            im2=flipud(im2(:,:,1));
-            L=size(im1);
+            im1 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+            im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            
+            % Specify which color channel(s) to consider
+            %channel = str2double(Data.channel);
+
+             if size(im1, 3) == 1
+            %	Extract only red channel
+                 if channel == 1;
+                    im1 = im1(:,:,1);
+                    im2 = im2(:,:,1);
+            %	Extract only green channel
+                 elseif channel == 2;
+                    im1 = im1(:,:,2);
+                    im2 = im2(:,:,2);
+            %	Extract only blue channel
+                 elseif channel == 3;
+                    im1 = im1(:,:,3);
+                    im2 = im2(:,:,3);
+            %	Weighted average of channels (see rgb2gray for
+            %	explanation of weighting factors)
+                 elseif channel == 4;
+                    im1 = 0.2989 * im1(:, :, 1) + 0.5870 * im1(:, :, 2) + 0.1140 * im1(:, :, 3);
+                    im2 = 0.2989 * im2(:, :, 1) + 0.5870 * im2(:, :, 2) + 0.1140 * im2(:, :, 3);
+            %	Evenly weighted mean of channels
+                 elseif channel == 5;
+                    im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
+                    im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                 end
+             else
+            %	Take only red channel
+                im1 =im1(:,:,1);
+                im2 =im2(:,:,1);
+             end
+
+            %  Flip images
+            im1 = flipud(im1);
+            im2 = flipud(im2);
+
+            %   Determine size of images          
+            L = size(im1);
             
             %load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
@@ -187,7 +263,8 @@ switch char(M)
                 %correlate image pair
                 if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     if Corr(e)<2
-                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                       %  [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -196,16 +273,20 @@ switch char(M)
                             Vc = Vc + Vb(Eval>=0);
                         end
                     else
-                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+%                      [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+ 
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
                     end
                     
                 else                                    %either first pass, or not deform
                     if Corr(e)<2
-                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+%                         [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                            [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));                   
                     else
-                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+ %                       [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
                 end
                 
@@ -286,7 +367,7 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=I1(q)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,char(wbase(e,:)));
                     end
                     
                     if str2double(Data.multiplematout)
@@ -512,7 +593,8 @@ switch char(M)
 %                         L=size(im1);
 
                         %correlate image pair and average correlations
-                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+%                       [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         if Corr(e)<2 %SCC or RPC processor
                             if q==1
                                 CCmdist=CC;
@@ -552,7 +634,8 @@ switch char(M)
 %                     L=size(im1);
 
                     %correlate image pair and average correlations
-                    [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+%                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     if Corr(e)<2 %SCC or RPC processor
                         if q==1
                             CCm=CC/length(I1);
@@ -687,7 +770,9 @@ switch char(M)
                 U(Eval<0)=0;V(Eval<0)=0;
 
                 if str2double(Data.datout)
-                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
+                    time=I1(1)/Freq;
+                    %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
+                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,time,char(wbase(e,:)));
                 end
                 if str2double(Data.multiplematout)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C')
@@ -819,8 +904,10 @@ switch char(M)
                     for t=1:N
                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                         Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+                        
                         %correlate image pair
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+%                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
@@ -853,7 +940,8 @@ switch char(M)
                     
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                    [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e,:),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
+%                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:), Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
+                    [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
                         C=zeros(length(X),3);
                         C(repmat(Eval,[1 3])>=0)=Cc;
@@ -923,7 +1011,8 @@ switch char(M)
 %                         q_full=find(I1_full==I1(q),1,'first');
 %                         time=(q_full-1)/Freq;
                         time=I1(q)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle,t_opt);
+                        %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle,t_opt);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,char(wbase(e,:)),t_opt);
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','t_opt')
@@ -984,3 +1073,7 @@ end
 
 %signal job complete
 beep,pause(0.2),beep
+
+end
+
+

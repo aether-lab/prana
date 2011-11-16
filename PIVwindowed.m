@@ -44,7 +44,8 @@ else
 end
 
 %window masking filter
-sfilt = windowmask([Nx Ny],[res(1) res(2)]);
+sfilt1 = windowmask([Nx Ny],[res(1, 1) res(1, 2)]);
+sfilt2 = windowmask([Nx Ny],[res(2, 1) res(2, 2)]);
 
 %correlation plane normalization function (always off)
 cnorm = ones(Ny,Nx);
@@ -82,6 +83,7 @@ switch upper(tcorr)
             %find the image windows
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]));
             zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]));
+            
             if size(zone1,1)~=Ny || size(zone1,2)~=Nx
                 w1 = zeros(Ny,Nx);
                 w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
@@ -99,8 +101,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = (zone1).*sfilt;
-            region2 = (zone2).*sfilt;
+            region1 = (zone1).*sfilt1;
+            region2 = (zone2).*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
@@ -162,8 +164,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = (zone1).*sfilt;
-            region2 = (zone2).*sfilt;
+            region1 = (zone1).*sfilt1;
+            region2 = (zone2).*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
@@ -194,3 +196,5 @@ end
 %add DWO to estimation
 U = round(Uin)+U;
 V = round(Vin)+V;
+
+end

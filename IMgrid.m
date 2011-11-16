@@ -34,3 +34,6 @@ end
 %vector2matrix conversion
 X=x(ones(length(y),1),:);
 Y=y(:,ones(1,length(x)));
+
+
+end

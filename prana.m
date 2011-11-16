@@ -51,8 +51,8 @@ end
 try
     load('defaultsettings.mat')
 catch
-    defaultdata.clientversion='0.99';
-    defaultdata.version='4.3';
+    defaultdata.clientversion='2.0';
+    defaultdata.version='5.0';
     defaultdata.imbase='Img_';
     defaultdata.imzeros='6';
     defaultdata.imext='tif';
@@ -99,7 +99,9 @@ catch
     defaultdata.maskfstep='1';
     defaultdata.maskfstart='1';
 
-    defaultdata.PIV0.winres='32,32';
+    defaultdata.PIV0.winres='32,32; 32,32';
+    defaultdata.PIV0.winres1='32,32';
+    defaultdata.PIV0.winres2='32,32';
     defaultdata.PIV0.winsize='64,64';
     defaultdata.PIV0.winauto='1';
     defaultdata.PIV0.gridres='8,8';
@@ -142,23 +144,39 @@ catch
     defaultdata.iminterp='1';
     defaultdata.framestep='3';
     defaultdata.PIVerror='0.1';
+    defaultdata.channel = '1';
+    
+    
+    if ispc
+%         defaultdata.loaddirec=[pwd '\'];
+        defaultdata.ID.save_dir        = [pwd,'\ID\'];
+        defaultdata.Size.save_dir      = [pwd,'\Size\'];
+        defaultdata.Track.save_dir     = [pwd,'\Track\'];
+        defaultdata.Track.PIVprops.load_dir= [pwd,'\'];
+    else
+%         defaultdata.loaddirec=[pwd '/'];
+        defaultdata.ID.save_dir        = [pwd,'/ID/'];
+        defaultdata.Size.save_dir      = [pwd,'/Size/'];
+        defaultdata.Track.save_dir     = [pwd,'/Track/'];
+        defaultdata.Track.PIVprops.load_dir= [pwd,'/'];
+    end
     
     defaultdata.splash='1';
 end
-if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<0.99
+
+if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.0
     splash=splashdlg({...
-         'What''s new in Prana v0.99?',...
-         '',...
-         'Updated user interface',...
-         'New correlation peak location methods',...
-         'Option to zero-mean image windows',...
-         'Fixed bugs in ''Ensemble'' method'},...
-         'Prana v0.99','Ok','Don''t show this anymore','Ok');
+         'What''s new in Prana v2.0?' ...
+         '' ...
+         'Particle Identification and Sizing' ...
+         'Particle Tracking Velocimetry' ...
+         },...
+         'Prana v2.0','Ok','Don''t show this anymore','Ok');
     if strcmp(splash,'Don''t show this anymore')
         defaultdata.splash='0';
     end
     defaultdata.clientversion='0.99';
-    defaultdata.version='4.3';
+    defaultdata.version='5.0';
     save('defaultsettings.mat','defaultdata')
 end
 
@@ -168,9 +186,18 @@ addpath([pranadir(1:end-7),'documentation']);
 
 if ispc
     handles.loaddirec=[pwd '\'];
+    handles.data.ID.save_dir        = [pwd,'\ID\'];
+    handles.data.Size.save_dir      = [pwd,'\Size\'];
+    handles.data.Track.save_dir     = [pwd,'\Track\'];
+    handles.data.Track.PIVprops.load_dir= [pwd,'\'];
 else
+    handles.data.ID.save_dir        = [pwd,'/ID/'];
+    handles.data.Size.save_dir      = [pwd,'/Size/'];
+    handles.data.Track.save_dir     = [pwd,'/Track/'];
+    handles.data.Track.PIVprops.load_dir= [pwd,'/'];
     handles.loaddirec=[pwd '/'];
 end
+
 handles.data.par='0';
 try
     compinfo=findResource('scheduler','configuration','local');
@@ -178,19 +205,23 @@ try
 catch
     handles.data.parprocessors='1';
 end
+
 handles.data.imdirec=pwd;
 handles.data.maskdirec=pwd;
 handles.data.outdirec=pwd;
-handles.data.cpass=num2str(get(handles.passlist,'Value'));
-handles.data0=handles.data;
-handles.Njob=num2str(size(get(handles.joblist,'String'),1));
-handles.Cjob=num2str(get(handles.joblist,'String'));
+
 try
     windowdiagram=imread(fullfile(pranadir(1:end-8),'documentation','windowdiagram.tif'),'tif');
 catch
     windowdiagram=zeros(564,531);
 end
-set(gca,'children',imshow(windowdiagram))
+set(gca,'children',imshow(windowdiagram));
+axis off;
+
+handles.data.cpass=num2str(get(handles.passlist,'Value'));
+handles.data0=handles.data;
+handles.Njob=num2str(size(get(handles.joblist,'String'),1));
+handles.Cjob=num2str(get(handles.joblist,'String'));
 
 handles=rmfield(handles,'data');
 handles=update_data(handles);
@@ -272,37 +303,59 @@ function helpmenu_helptopics_Callback(hObject, eventdata, handles)
 PIVhelp
 
 % --- Experiment Parameters Tab ---
-function outputtoggle_Callback(hObject, eventdata, handles)
+function exptoggle_Callback(hObject, eventdata, handles)
+set(hObject,'Value',1)
 set(handles.imagetoggle,'Value',0)
 set(handles.processingtoggle,'Value',0)
+set(handles.particletoggle,'Value',0)
+set(handles.exppanel,'Visible','on')
 set(handles.imagepanel,'Visible','off')
 set(handles.processingpanel,'Visible','off')
-set(handles.outputpanel,'Visible','on')
+set(handles.particlepanel,'Visible','off')
 
 % --- Image and Data I / O Tab ---
 function imagetoggle_Callback(hObject, eventdata, handles)
-set(handles.outputtoggle,'Value',0)
+set(hObject,'Value',1)
+set(handles.exptoggle,'Value',0)
 set(handles.processingtoggle,'Value',0)
-set(handles.outputpanel,'Visible','off')
-set(handles.processingpanel,'Visible','off')
+set(handles.particletoggle,'Value',0)
+set(handles.exppanel,'Visible','off')
 set(handles.imagepanel,'Visible','on')
+set(handles.processingpanel,'Visible','off')
+set(handles.particlepanel,'Visible','off')
 
 % --- PIV Processing Tab ---
 function processingtoggle_Callback(hObject, eventdata, handles)
+set(hObject,'Value',1)
+set(handles.exptoggle,'Value',0)
 set(handles.imagetoggle,'Value',0)
-set(handles.outputtoggle,'Value',0)
+set(handles.particletoggle,'Value',0)
+set(handles.exppanel,'Visible','off')
 set(handles.imagepanel,'Visible','off')
-set(handles.outputpanel,'Visible','off')
 set(handles.processingpanel,'Visible','on')
+set(handles.particlepanel,'Visible','off')
+
+% --- ID, Sizing & Tracking Tab ---
+function particletoggle_Callback(hObject, eventdata, handles)
+set(hObject,'Value',1)
+set(handles.exptoggle,'Value',0)
+set(handles.imagetoggle,'Value',0)
+set(handles.processingtoggle,'Value',0)
+set(handles.exppanel,'Visible','off')
+set(handles.imagepanel,'Visible','off')
+set(handles.processingpanel,'Visible','off')
+set(handles.particlepanel,'Visible','on')
 
 % --- Grid and Correlation Setup Tab ---
 function gridsetuptoggle_Callback(hObject, eventdata, handles)
+set(hObject,'Value',1)
 set(handles.validationtoggle,'Value',0)
 set(handles.validationpanel,'Visible','off')
 set(handles.gridsetuppanel,'Visible','on')
 
 % --- Validation and Output Tab ---
 function validationtoggle_Callback(hObject, eventdata, handles)
+set(hObject,'Value',1)
 set(handles.gridsetuptoggle,'Value',0)
 set(handles.gridsetuppanel,'Visible','off')
 set(handles.validationpanel,'Visible','on')
@@ -316,6 +369,7 @@ if str2double(handles.Njob)>0
     handles=update_data(handles);
     guidata(hObject,handles)
 end
+
 function joblist_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -404,16 +458,22 @@ end
 % --- Load Job Button ---
 function loadjobbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    Jlist=char(get(handles.joblist,'String'));
+    Jlist = char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
 end
-handlesP=handles;
-[f,handles.loaddirec]=uigetfile('*.mat','LOAD JOB',handles.loaddirec,'multiselect','on');
-if ischar(f)==1
+handlesP = handles;
+
+% Select job to load
+%  f is the name of the saved job file. This variable should be renamed
+%  something more descriptive.
+[f, handles.loaddirec]=uigetfile('*.mat','LOAD JOB',handles.loaddirec,'multiselect','on');
+
+if ischar(f) == 1
     f={f};
 else
     f=sort(f);
 end
+
 if isnumeric(f)==0
     try
         for pp=1:length(f)
@@ -438,6 +498,27 @@ if isnumeric(f)==0
                             eval(['Data.PIV',num2str(pass),'.peaklocator=''1'';']);
                         end
                     end
+
+                    if str2double(Data.version)<4.4
+                        Data.runPIV = '1';
+                        
+                        load defaultsettings.mat defaultdata
+                        Data.ID=defaultdata.ID;
+                        Data.Size=defaultdata.Size;
+                        Data.Track=defaultdata.Track;
+                        
+                        if ispc
+                            Data.ID.save_dir        = [Data.outdirec,'\ID\'];
+                            Data.Size.save_dir      = [Data.outdirec,'\Size\'];
+                            Data.Track.save_dir     = [Data.outdirec,'\Track\'];
+                            Data.Track.PIVprops.load_dir       = [Data.outdirec,'\'];
+                        else
+                            Data.ID.save_dir        = [Data.outdirec,'/ID/'];
+                            Data.Size.save_dir      = [Data.outdirec,'/Size/'];
+                            Data.Track.save_dir     = [Data.outdirec,'/Track/'];
+                            Data.Track.PIVprops.load_dir       = [Data.outdirec,'/'];
+                        end
+                    end
                                         
                     if isfield(handles,Data.batchname)
                         Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));
@@ -450,19 +531,19 @@ if isnumeric(f)==0
                     end
                 end
 
-                if vn~=-1
-                    if str2double(handles.Njob)>0
-                        Jlist=char(get(handles.joblist,'String'));
-                        Jlist={Jlist;Data.batchname};
+                if vn ~= -1
+                    if str2double(handles.Njob) > 0
+                        Jlist = char(get(handles.joblist,'String'));
+                        Jlist = {Jlist;Data.batchname};
                     else
-                        Jlist={Data.batchname};
+                        Jlist = {Data.batchname};
                     end
-                    handles.Njob=num2str(str2double(handles.Njob)+1);
-                    handles.Cjob=handles.Njob;
+                    handles.Njob = num2str(str2double(handles.Njob)+1);
+                    handles.Cjob = handles.Njob;
                     set(handles.joblist,'String',Jlist,'Value',str2double(handles.Cjob));
                     
                     
-                    handles=update_data(handles);
+                    handles = update_data(handles);
                     guidata(hObject,handles)
                 end
             end
@@ -478,8 +559,9 @@ end
 % --- Save Job Button ---
 function savejobbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    Data=handles.data;
-    uisave('Data',[handles.loaddirec handles.data.batchname '.mat']);
+    Data = handles.data;
+
+       uisave('Data',[handles.data.imdirec handles.data.batchname '.mat']);
 end
 
 % --- Copy Job Button ---
@@ -534,29 +616,6 @@ if str2double(handles.Njob)>0
         handles=update_data(handles);
         guidata(hObject,handles)
     end
-end
-
-% --- Job Name Text Box ---
-function currentjobname_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    Jlist0=char(get(handles.joblist,'String'));
-    handles=rmfield(handles,handles.data.batchname);
-    handles.data.batchname = get(hObject,'String');
-    Jlist=cell(str2double(handles.Njob),1);
-    for e=1:str2double(handles.Njob)
-        if e==str2double(handles.Cjob)
-            Jlist(e)={handles.data.batchname};
-        else
-            Jlist(e)={Jlist0(e,:)};
-        end
-    end    
-    handles=setfield(handles,handles.data.batchname,handles.data);
-    set(handles.joblist,'String',char(Jlist));
-    guidata(hObject,handles)
-end
-function currentjobname_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
 end
 
 % --- Load First Image Button ---
@@ -650,7 +709,7 @@ if str2double(handles.Njob)>0
             end
             im_read=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],im)])));
             if im==str2double(handles.data.imfstart)
-                min_im=ones(size(im_read)).*255;
+                min_im=ones(size(im_read)) .* 255;
             end
             min_im(im_read<min_im)=im_read(im_read<min_im);
         end
@@ -686,6 +745,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imagebasename_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -701,6 +761,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imagezeros_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -721,6 +782,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imageextension_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -736,6 +798,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imagecorrelationstep_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -781,6 +844,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imageframeend_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -802,7 +866,8 @@ end
 function loadmaskdirectorybutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     D = handles.data.maskdirec;
-    handles.data.maskdirec = uigetdir(handles.data.maskdirec);
+
+    handles.data.maskdirec = uigetdir(handles.data.imdirec);
     if handles.data.maskdirec==0
         handles.data.maskdirec = D;
     end
@@ -951,7 +1016,8 @@ end
 function loadstaticmaskfile_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.staticmaskbutton,'Value')==1
     D = handles.data.staticmaskname;
-    [a,b] = uigetfile('*.*');
+
+    [a,b] = uigetfile([handles.data.imdirec '/*.*'], 'Select static mask file...');
     handles.data.staticmaskname = [b a];
     if handles.data.staticmaskname==0
         handles.data.staticmaskname = D;
@@ -964,8 +1030,33 @@ end
 function masktool_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     try
-        im=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
-        im=im(:,:,1);
+        im = double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
+        
+        channel = str2double(handles.data.channel);
+        
+         if size(im, 3) > 1
+%              Extract only red channel
+             if channel == 1;
+                im = im(:,:,1);
+%                 Extract only green channel
+             elseif channel == 2;
+                im = im(:,:,2);
+%                 Extract only blue channel
+             elseif channel == 3;
+                im = im(:,:,3);
+%                 Weighted average of channels (see rgb2gray for
+%                 explanation of weighting factors)
+             elseif channel == 4;
+                im = 0.2989 * im(:, :, 1) + 0.5870 * im(:, :, 2) + 0.1140 * im(:, :, 3);
+%                 Evenly weighted mean of channels
+             elseif channel == 5;
+                im = (im(:,:,1) + im(:,:,2) + im(:,:,3))/3;
+             end
+         else
+%             Take only red channel
+            im =im(:,:,1);
+        end
+        
         
         stillmasking='Yes';mask=ones(size(im));h=figure;
         while strcmp(stillmasking,'Yes')
@@ -1001,9 +1092,38 @@ end
 % --- Preview Image + Mask Button ---
 function impreview_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
+    
+% Read color channel
+channel = str2double(handles.data.channel);
+    
     try
-        im1=double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
-        im1=flipud(im1(:,:,1))/255;
+        im = double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
+        if size(im, 3) > 1
+%   Extract only red channel
+             if channel == 1;
+                im = im(:,:,1);
+%   Extract only green channel
+             elseif channel == 2;
+                im = im(:,:,2);
+%	Extract only blue channel
+             elseif channel == 3;
+                im = im(:,:,3);
+% 	Weighted average of channels (see rgb2gray for
+%	explanation of weighting factors)
+             elseif channel == 4;
+                im = 0.2989 * im(:, :, 1) + 0.5870 * im(:, :, 2) + 0.1140 * im(:, :, 3);
+%	Evenly weighted mean of channels
+             elseif channel == 5;
+                im = (im(:,:,1) + im(:,:,2) + im(:,:,3))/3;
+             end
+         else
+%   Take only red channel
+            im =im(:,:,1);
+        end
+
+%   Flip and normalize image
+im1 = flipud(im)/255;
+
         try
             if strcmp(handles.data.masktype,'static')
                 mask = double(imread(handles.data.staticmaskname));
@@ -1108,7 +1228,8 @@ end
 function loadoutputdirectorybutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     D = handles.data.outdirec;
-    handles.data.outdirec = uigetdir(handles.data.outdirec);
+
+    handles.data.outdirec = uigetdir(handles.data.imdirec);
     if handles.data.outdirec==0
         handles.data.outdirec = D;
     end
@@ -1160,6 +1281,8 @@ if str2double(handles.Njob)>0
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
+
+
 function passlist_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1199,6 +1322,10 @@ if str2double(handles.Njob)>0
         load_PIVlist(handles)
         guidata(hObject,handles)
     end
+    if str2double(handles.data.passes) < 2
+        set(handles.writeoutputcheckbox, 'Value', 1);
+        handles.data.PIV1.write = '1';
+    end
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
@@ -1209,6 +1336,7 @@ if str2double(handles.Njob)>0
     handles.data.velinterp=num2str(get(hObject,'Value'));
     guidata(hObject,handles)
 end
+
 function velocityinterptype_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1300,40 +1428,89 @@ PIVhelp(8)
 
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.winres = get(hObject,''String'');'])
-    a=get(hObject,'String');
-    wx=str2double(a(1:(strfind(a,',')-1)));
-    wy=str2double(a((strfind(a,',')+1):end));
-    if get(handles.autowinsizecheckbox,'Value')==1
-        xbin = 2^(ceil(log(2*wx)/log(2)));
-        ybin = 2^(ceil(log(2*wy)/log(2)));
+%  If a job has been created or loaded...
+if str2double(handles.Njob) > 0
+        
+%    Read the string in the window resolution textbox
+    A = get(hObject,'String');
+
+% Parse string in window resolution textbox to determine the resolutions of each window
+    [wx1 wy1 wx2 wy2] = parseNum(A);
+    
+% Set "window resolution" field in the "PIV pass" data structure to the string in the winres textbox
+    eval(['handles.data.PIV' handles.data.cpass '.winres = [num2str(wx1) '','' num2str(wy1) '';'' num2str(wx2) '','' num2str(wy2)];'])
+
+% Determine the largest window dimensions for the pass
+    wxMax = max([wx1 wx2]);
+    wyMax = max([wy1 wy2]);
+    
+% Check whether actual window size should be determined automatically
+    if get(handles.autowinsizecheckbox, 'Value') == 1
+        
+% Calculate x- and y- window sizes (pixels)
+        [xbin ybin] = roiSize(A);
+        
+% Set "window size" fields in "PIV pass" data structure to the window sizes calculated above
         eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xbin) '','' num2str(ybin)];'])
-        eval(['set(handles.windowsize,''String'',handles.data.PIV' handles.data.cpass '.winsize)'])
+        eval(['set(handles.windowsize,''String'', handles.data.PIV' handles.data.cpass '.winsize)']) 
     end
-    if wx*wy<256
+    
+% Alert user if window size is smaller than 256 pixels. Not sure why this is important.
+    if wxMax * wyMax < 256
         set(hObject,'backgroundcolor',[1 0.5 0]);
     else
         set(hObject,'backgroundcolor',[1 1 1]);
     end
-    if get(handles.setgridresbutton,'Value')==1
-        A=get(handles.gridres,'String');
-        gx=str2double(A(1:(strfind(A,',')-1)));
-        gy=str2double(A((strfind(A,',')+1):end));
-        overX=(wx-gx)/wx*100;
-        overY=(wy-gy)/wy*100;
+    
+% If specifying grid resolution...
+    if get(handles.setgridresbutton,'Value') == 1
+        
+% Read string in "grid resolution" text box 
+        A = get(handles.gridres,'String');
+        
+% Parse string in "grid resolution" text box to determine x- and y- grid resolutions
+         [gx gy] = parseNum(A);
+        
+% Calculate window overlaps (%)
+        overX=(wxMax - gx) / wxMax * 100;
+        overY=(wyMax - gy) / wyMax * 100;
+        
+%  Set overlaps to zero if overlaps are calculated to be less than zero
+        overX = overX * (overX > 0);
+        overY = overY * (overY > 0);
+        
+% Set "overlap" fields in "PIV pass" data structure to the overlaps calculated above
         eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
+        
+% Otherwise, if specifying window overlap....
     else
-        A=get(handles.winoverlap,'String');
-        overX=str2double(A(1:(strfind(A,',')-1)));
-        overY=str2double(A((strfind(A,',')+1):end));
-        gx=round(wx*(1-overX/100));
-        gy=round(wy*(1-overY/100));
+        
+% Read string in "window overlap" textbox
+        A = get(handles.winoverlap,'String');
+        
+% Parse string in "window overlap" textbox to determine the x- and y- window overlaps (%)
+        [overX overY] = parseNum(A);
+        
+% Calculate x- and y- grid resolutions from overlaps 
+        gx = round(wxMax * (1-overX/100));
+        gy = round(wyMax * (1-overY/100));
+        
+% Update "grid resolution" field in "PIV pass" data structure to the grid resolutions calculated above
         eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
     end
+    
+%  Update "window resolution" fields in "PIV pass" data structure to the
+%  window resolutions calculated above
+    eval(['handles.data.PIV' handles.data.cpass '.winres1 = [num2str(wx1) '','' num2str(wy1)];']); 
+    eval(['handles.data.PIV' handles.data.cpass '.winres2 = [num2str(wx2) '','' num2str(wy2)];']); 
+    
+% Update GUI
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
+    
 end
+
+
 function windowres_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1341,29 +1518,59 @@ end
 
 % --- Window Size Text Box ---
 function windowsize_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if get(handles.autowinsizecheckbox,'Value')==0
-        A=get(hObject,'String');
-        Wx=str2double(A(1:(strfind(A,',')-1)));
-        Wy=str2double(A((strfind(A,',')+1):end));
-        B=get(handles.windowres,'String');
-        Rx=str2double(B(1:(strfind(B,',')-1)));
-        Ry=str2double(B((strfind(B,',')+1):end));
-        if Wx<Rx
-            Wx=Rx;
-            set(hObject,'String',[num2str(Wx) ',' num2str(Wy)]);
+% If a job has been loaded or created....
+if str2double(handles.Njob ) > 0
+
+% If the "auto window size" checkbox is NOT checked (i.e. if the window size is specified explicitly)
+    if get(handles.autowinsizecheckbox,'Value') == 0
+        
+% Read the string in the "Actual Window Size" text box
+        A = get(hObject,'String');
+        
+% Determine the dimensions of the interrogation region by parsing the string in the "Actual Window Size" text box
+        [Rx Ry] = parseNum(A);
+
+% Read the string in the "Window Resolution" text box
+        B = get(handles.windowres,'String');
+        
+% Determine the window resolutions by parsing the string in the "Window Resolution" text box
+        [wx1 wy1 wx2 wy2] = parseNum(B);        
+
+% Determine largest window resolutions
+        wxMax = max(wx1, wx2);
+        wyMax = max(wy1, wy2);
+
+%  If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
+%  re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
+        if Rx < wxMax
+            Rx = wxMax;
+            set(hObject,'String',[num2str(Rx) ',' num2str(Ry)]);
         end
-        if Wy<Ry
-            Wy=Ry;
-            set(hObject,'String',[num2str(Wx) ',' num2str(Wy)]);
+        
+%  If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
+%  re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
+        if Ry < wyMax
+            Ry = wyMax;
+            set(hObject,'String',[num2str(Rx) ',' num2str(Ry)]);
         end
-        eval(['handles.data.PIV' handles.data.cpass '.winsize = get(hObject,''String'');'])
-        handles=set_PIVcontrols(handles);
-        guidata(hObject,handles)
+        
+% Update the "window size" field of the "PIV Pass" data structure to the value of the 
+% string in the "Actual Window Size" text box
+eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(Rx) '','' num2str(Ry)];']);
+ 
+% If the "auto window size" checkbox IS checked (i.e. if the window size is calculated automatically)
     else
+        
+% Set the text in the "Actual Window Size" text box to the value stored in
+% the "PIV Pass" data structure
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winsize);'])
+       
     end
+    % Update the GUI
+        handles = set_PIVcontrols(handles);
+        guidata(hObject,handles)
 end
+
 function windowsize_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1371,8 +1578,15 @@ end
 
 % --- Auto-Size Window Check Box ---
 function autowinsizecheckbox_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.winauto = num2str(get(hObject,''Value''));'])
+% If a job has been created or specified...
+if str2double(handles.Njob) > 0
+  
+    A = get(handles.windowres, 'String');
+    [xROI yROI] = roiSize(A);
+    
+   eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xROI) '','' num2str(yROI)];']); 
+    
+    eval(['handles.data.PIV' handles.data.cpass '.winauto = num2str(get(hObject,''Value''));']);
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
@@ -1395,36 +1609,96 @@ end
 
 % --- Grid Resolution Text Box ---
 function gridres_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if get(handles.setgridresbutton,'Value')==1
-        A=get(hObject,'String');
-        gx=str2double(A(1:(strfind(A,',')-1)));
-        gy=str2double(A((strfind(A,',')+1):end));
-        if str2double(handles.data.method)==1
+
+% If a job has been specified or loaded....
+if str2double(handles.Njob) > 0
+    
+%  If performing a multi-pass job...
+    if get(handles.setgridresbutton,'Value') == 1
+        
+%  Read string in grid resolution texbox
+        A = get(hObject,'String');
+        
+% Parse string in "grid resolution" text box to determine x- and y- grid resolutions
+        [gx gy] = parseNum(A);
+
+%  If performing a multipass run....
+        if str2double(handles.data.method) == 1
+            
+% Then calculate the window overlaps for each pass...
             for e=1:str2double(handles.data.passes)
-                eval(['A=handles.data.PIV', num2str(e) '.winres;'])
-                wx=str2double(A(1:(strfind(A,',')-1)));
-                wy=str2double(A((strfind(A,',')+1):end));
-                overX=(wx-gx)/wx*100;
-                overY=(wy-gy)/wy*100;
-                eval(['handles.data.PIV' num2str(e) '.gridres = get(hObject,''String'');'])
+                
+% Read window resolutions from data structure
+                eval(['A=handles.data.PIV', num2str(e) '.winres1;'])
+                eval(['B=handles.data.PIV', num2str(e) '.winres2;'])
+                
+%  Parse the strings containing the window resolution information for each image
+                [wx1 wy1] = parseNum(A);
+                [wx2 wy2] = parseNum(B);
+
+%  Determine the size of the largest window resolution in each dimension
+                wxMax = max(wx1, wx2);
+                wyMax = max(wy1, wy2);
+                
+% Calculate the x- and y- window overlaps
+                overX = (wxMax - gx) / wxMax * 100;
+                overY = (wyMax - gy) / wyMax * 100;
+                
+%  Set overlaps to zero if "overlap" is calculated to be less than zero
+            overX = overX * (overX > 0);
+            overY = overY * (overY > 0);
+                
+%  Update the "grid resolution" and "window overlap" fields in the "pass" data structure
+                eval(['handles.data.PIV' num2str(e) '.gridres = [num2str(gx) '','' num2str(gy)];'])
                 eval(['handles.data.PIV' num2str(e) '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
-            end
+                
+%  End of "multipass" case...
+        end
+            
+%  Otherwise, If NOT performing a multipass run...  
         else
-            A=get(handles.windowres,'String');
-            wx=str2double(A(1:(strfind(A,',')-1)));
-            wy=str2double(A((strfind(A,',')+1):end));
-            overX=(wx-gx)/wx*100;
-            overY=(wy-gy)/wy*100;
-            eval(['handles.data.PIV' handles.data.cpass '.gridres = get(hObject,''String'');'])
+       
+% Read string in the "Grid Resolution" text box;
+        A = get(hObject, 'String');
+        [gx gy] = parseNum(A);
+            
+% Read string in window resolution textbox
+            B = get(handles.windowres,'String');
+            
+% Parse string in window resolution textbox to determine the resolutions of each window
+            [wx1 wy1 wx2 wy2] = parseNum(B);
+            
+% Determine the size of the largest window resolution in each dimension
+            wxMax = max(wx1, wx2);
+            wyMax = max(wy1, wy2);
+            
+% Calculate the x- and y- window overlaps
+            overX = (wxMax - gx) / wxMax * 100;
+            overY = (wyMax - gy) / wyMax * 100;
+            
+%  Set overlaps to zero if "overlap" is calculated to be less than zero
+            overX = overX * (overX > 0);
+            overY = overY * (overY > 0);
+            
+%  Update the "grid resolution" and "window overlap" fields in the "pass" data structure   
+            eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx) '','' num2str(gy)];'])
             eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
         end
+        
+% Update GUI
         handles=set_PIVcontrols(handles);
         guidata(hObject,handles)
     else
+        
+%  If specifying window overlap rather than grid resolution, just read the
+%  grid resolution. 
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.gridres);'])
+    
     end
+    
 end
+
+
 function gridres_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1432,7 +1706,7 @@ end
 
 % --- Set Window Overlap Button ---
 function setwinoverlapbutton_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0 && str2double(handles.data.method)~=1
+if str2double(handles.Njob) > 0 && str2double(handles.data.method)~=1
     set(hObject,'Value',1)
     set(handles.setgridresbutton,'Value',0)
     eval(['handles.data.PIV' handles.data.cpass '.gridtype = ''2'';']);
@@ -1444,24 +1718,52 @@ end
 
 % --- Window Overlap Text Box ---
 function winoverlap_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    if get(handles.setwinoverlapbutton,'Value')==1
+
+% If a job has been loaded or created...
+if str2double(handles.Njob) > 0
+
+% If specifying window overlap...
+    if get(handles.setwinoverlapbutton,'Value') == 1
+
+% Read string in "window resolution" text box
         A=get(handles.windowres,'String');
-        wx=str2double(A(1:(strfind(A,',')-1)));
-        wy=str2double(A((strfind(A,',')+1):end));
-        A=get(hObject,'String');
-        overX=str2double(A(1:(strfind(A,',')-1)));
-        overY=str2double(A((strfind(A,',')+1):end));
-        gx=round(wx*(1-overX/100));
-        gy=round(wy*(1-overY/100));
+
+% Parse string in "window resolution" text box to determine the desired window resolutions
+        [wx1 wy1 wx2 wy2] = parseNum(A);
+        
+% Determine sizes of largest window dimensions
+        wxMax = max(wx1, wx2);
+        wyMax = max(wy1, wy2);
+
+% Read string in "Window Overlap" text box
+        B = get(hObject,'String');
+        
+% Parse string in "Window Overlap" text box to determine the desired window overlaps
+        [overX overY] = parseNum(B);
+        
+% Calculate grid resolution from specified overlaps
+        gx = round(wxMax * (1 - overX / 100));
+        gy = round(wyMax * (1 - overY / 100));
+        
+% Update "Window Overlap" field in "Piv Pass" data structure
         eval(['handles.data.PIV' handles.data.cpass '.winoverlap = get(hObject,''String'');'])
+        
+% Update "Grid Resolution" field in "Piv Pass" data structure
         eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
+        
+% Update GUI
         handles=set_PIVcontrols(handles);
         guidata(hObject,handles)
+        
+% Otherwise, if specifying grid resolution... 
     else
+        
+% Update the "Window Overlap" field in the "PIV Pass" data structure to the value calculated automatically
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winoverlap);'])
+        
     end
 end
+
 function winoverlap_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1548,6 +1850,7 @@ if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.peaklocator = num2str(get(hObject,''Value''));'])
     guidata(hObject,handles)
 end
+
 function subpixelinterp_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1579,6 +1882,7 @@ if str2double(handles.Njob)>0 && get(handles.smoothingcheckbox,'Value')==1
     eval(['handles.data.PIV' handles.data.cpass '.velsmoothfilt = num2str(get(hObject,''Value''));'])
     guidata(hObject,handles)
 end
+
 function smoothingsize_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1748,6 +2052,9 @@ end
 % --- Write Output Check Box ---
 function writeoutputcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
+        if strcmp(handles.data.passes, handles.data.cpass);
+             set(hObject, 'Value', 1);
+        end
     if get(hObject,'Value')==0
         set(handles.corrpeaknum,'BackgroundColor',0.5*[1 1 1])
     else
@@ -2132,14 +2439,15 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 % --- Update All Data ---
-function handles=update_data(handles)
+function handles = update_data(handles)
 set(handles.exp_Re,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_St,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_M,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_ROI,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_diffractiondiameter,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_depthoffocus,'backgroundcolor',0.8*[1 1 1]);
-if str2double(handles.Njob)==0
+
+if str2double(handles.Njob) == 0
     set(handles.passlist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.joblist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.parprocessors,'backgroundcolor',0.5*[1 1 1]);
@@ -2163,7 +2471,7 @@ if str2double(handles.Njob)==0
     set(handles.imageframestart,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imageframeend,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.magnification,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.currentjobname,'String','','backgroundcolor',0.5*[1 1 1]);
+%     set(handles.currentjobname,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.pulseseparation,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.samplingrate,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.smoothingsize,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2186,7 +2494,7 @@ if str2double(handles.Njob)==0
     set(handles.uod_type,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.subpixelinterp,'Value',1,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.velocityinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.velocityinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);    
     set(handles.staticmaskfile,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2210,6 +2518,7 @@ if str2double(handles.Njob)==0
     set(handles.exp_notesbox,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_NA,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_n,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.colorchannel_popupMenu,'Value',1,'backgroundcolor',0.5*[1 1 1]);
 else
     a=get(handles.joblist,'String');
     eval(['handles.data=handles.' char(a(str2double(handles.Cjob),:)) ';']);
@@ -2244,7 +2553,7 @@ else
     set(handles.imageframeend,'String','','backgroundcolor',[1 1 1]);
     set(handles.magnification,'String','','backgroundcolor',[1 1 1]);
     set(handles.staticmaskfile,'String','','backgroundcolor',[1 1 1]);
-    set(handles.currentjobname,'String','','backgroundcolor',[1 1 1]);
+%     set(handles.currentjobname,'String','','backgroundcolor',[1 1 1]);
     set(handles.pulseseparation,'String','','backgroundcolor',[1 1 1]);
     set(handles.samplingrate,'String','','backgroundcolor',[1 1 1]);
     set(handles.smoothingsize,'String','','backgroundcolor',[1 1 1]);
@@ -2252,8 +2561,8 @@ else
     set(handles.passtype,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.uod_type,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.subpixelinterp,'Value',1,'backgroundcolor',[1 1 1]);
-    set(handles.velocityinterptype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.subpixelinterp,'Value',1,'backgroundcolor',[1 1 1]);  
+    set(handles.velocityinterptype,'Value',1,'backgroundcolor',[1 1 1]); 
     set(handles.framestep,'String','','backgroundcolor',[1 1 1]);
     set(handles.PIVerror,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_date,'String','','backgroundcolor',[1 1 1]);
@@ -2268,6 +2577,7 @@ else
     set(handles.exp_v0,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_L,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_notesbox,'String','','backgroundcolor',[1 1 1]);
+    set(handles.colorchannel_popupMenu,'Value',1,'backgroundcolor',[1 1 1]);
 
     if str2double(handles.data.par)==1
         set(handles.parprocessors,'string','','backgroundcolor',[1 1 1])
@@ -2508,12 +2818,10 @@ else
     set(handles.corrpeaknum,'backgroundcolor',0.5*[1 1 1]);
     set(handles.outputbasename,'backgroundcolor',0.5*[1 1 1]);
 end
-if str2double(A.winauto)==1
-    B=get(handles.windowres,'String');
-    Rx=str2double(B(1:(strfind(B,',')-1)));
-    Ry=str2double(B((strfind(B,',')+1):end));
-    Rx = 2^(ceil(log(2*Rx)/log(2)));
-    Ry = 2^(ceil(log(2*Ry)/log(2)));
+
+if str2double(A.winauto) == 1
+     B=get(handles.windowsize,'String');
+     [Rx Ry] = parseNum(B);
     set(handles.windowsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.windowsize,'String',[num2str(Rx) ',' num2str(Ry)]);
     eval(['handles.data.PIV' handles.data.cpass '.winsize = get(handles.windowsize,''String'');'])
@@ -2546,10 +2854,12 @@ if get(handles.correlationtype,'Value')>=2
 else
     set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
 end
+
 a=get(handles.windowres,'String');
-wx=str2double(a(1:(strfind(a,',')-1)));
-wy=str2double(a((strfind(a,',')+1):end));
-if wx*wy<256
+[wx1 wy1 wx2 wy2] = parseNum(a);
+wxMax = max(wx1, wx2);
+wyMax = max(wy1, wy2);
+if wxMax * wyMax<256
     set(handles.windowres,'backgroundcolor',[1 0.5 0]);
 else
     set(handles.windowres,'backgroundcolor',[1 1 1]);
@@ -2603,7 +2913,7 @@ end
 set(handles.magnification,'String',handles.data.wrmag);
 set(handles.pulseseparation,'String',handles.data.wrsep);
 set(handles.samplingrate,'String',handles.data.wrsamp);
-set(handles.currentjobname,'String',handles.data.batchname);
+% set(handles.currentjobname,'String',handles.data.batchname);
 set(handles.outputdirectory,'String',handles.data.outdirec);
 
 set(handles.exp_date,'String',handles.data.exp_date);
@@ -2642,6 +2952,7 @@ end
 set(handles.passtype,'Value',str2double(handles.data.method));
 set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
 set(handles.imageinterptype,'Value',str2double(handles.data.iminterp));
+set(handles.colorchannel_popupMenu,'Value',str2double(handles.data.channel));
 set(handles.framestep,'String',handles.data.framestep);
 set(handles.PIVerror,'String',handles.data.PIVerror);
 
@@ -2864,6 +3175,7 @@ fprintf(fid,['Magnification Factor:          ',Data.exp_M,'\n']);
 fprintf(fid,['Region of Interest (m):        ',Data.exp_ROI,'\n']);
 fprintf(fid,['Diffraction Diameter (um):     ',Data.exp_diffractiondiameter,'\n']);
 fprintf(fid,['Depth of Focus (um):           ',Data.exp_depthoffocus,'\n']);
+
 for i=1:size(Data.exp_notes,1)
     fprintf(fid,[Data.exp_notes{i},'\n']);
 end
@@ -2890,7 +3202,8 @@ for i=1:str2double(Data.passes)
     y_n={'No','Yes'};
     A=eval(['Data.PIV' num2str(i)]);
     fprintf(fid,['\n------------------------Pass ',num2str(i),' Setup-------------------------\n']);
-    fprintf(fid,['Window Resolution (pix):       ',A.winres,'\n']);
+    fprintf(fid,['Window Resolution (first image) (pix):       ',A.winres1,'\n']);
+    fprintf(fid,['Window Resolution (second image) (pix):       ',A.winres2,'\n']);
     fprintf(fid,['Window Size (pix):             ',A.winsize,'\n']);
     fprintf(fid,['Grid Resolution (pix):         ',A.gridres,'\n']);
     fprintf(fid,['Window Overlap Percentage:     ',A.winoverlap,'\n']);
@@ -2957,6 +3270,7 @@ fprintf(fid,['Image Frame Start:             ',Data.imbase,'\n']);
 fprintf(fid,['Image Frame Step:              ',Data.imbase,'\n']);
 fprintf(fid,['Image Frame End:               ',Data.imbase,'\n']);
 fprintf(fid,['Image Correlation Step:        ',Data.imbase,'\n']);
+fprintf(fid, ['Color Channel:                   ', Data.channel,'\n']);
 fprintf(fid,'Masking Type: ');
 if strcmp(Data.masktype,'static')
     if ispc
@@ -3209,7 +3523,7 @@ for i = 1:NumButtons
     'CallBack'           ,CBString    , ...
     'String'             ,ButtonString, ...
     'HorizontalAlignment','center'    , ...
-    'Tag'                ,ButtonTag     ...
+     'Tag'                ,ButtonTag     ...
     );
 end
 
@@ -3365,10 +3679,10 @@ end
 function doFigureKeyPress(obj, evd)  %#ok
 switch(evd.Key)
 case {'return','space'}
-if DefaultValid
+% if DefaultValid
   DefaultWasPressed = true;
   uiresume(gcbf);
-end
+% end
 case 'escape'
     delete(QuestFig);
 end
@@ -3476,3 +3790,392 @@ uistack(h1, 'bottom');
 
 
 % --------------------------------------------------------------------
+
+
+
+
+
+% --- Executes on button press in runidcheckbox.
+function runidcheckbox_Callback(hObject, eventdata, handles)
+
+
+% --- Executes on selection change in idmethod.
+function idmethod_Callback(hObject, eventdata, handles)
+function idmethod_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function idimthresh_Callback(hObject, eventdata, handles)
+function idimthresh_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function idsaveloc_Callback(hObject, eventdata, handles)
+function idsaveloc_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in loadidsaveloc.
+function loadidsaveloc_Callback(hObject, eventdata, handles)
+
+
+
+function idsavebase_Callback(hObject, eventdata, handles)
+function idsavebase_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in runsizingcheckbox.
+function runsizingcheckbox_Callback(hObject, eventdata, handles)
+
+% --- Executes on selection change in sizingmethod.
+function sizingmethod_Callback(hObject, eventdata, handles)
+function sizingmethod_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function sizingstd_Callback(hObject, eventdata, handles)
+function sizingstd_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function sizingsaveloc_Callback(hObject, eventdata, handles)
+function sizingsaveloc_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in loadsizingsaveloc.
+function loadsizingsaveloc_Callback(hObject, eventdata, handles)
+
+
+
+function sizingsavebase_Callback(hObject, eventdata, handles)
+function sizingsavebase_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in runtrackingcheckbox.
+function runtrackingcheckbox_Callback(hObject, eventdata, handles)
+
+
+% --- Executes on selection change in trackingmethod.
+function trackingmethod_Callback(hObject, eventdata, handles)
+function trackingmethod_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function trackingPIVweight_Callback(hObject, eventdata, handles)
+function trackingPIVweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function trackingsaveloc_Callback(hObject, eventdata, handles)
+function trackingsaveloc_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function [num1 num2 num3 num4] = parseNum(str)
+% parseNUM parses a numerical string containing delimiters (, ; : and blank space).
+% Note that the allowed delimiters are specified here as comma, semicolon,
+% colon, and blank space. Also note that each delimiter here is functionally equivalent;
+% i.e., inputs of str = '32,32:16,16' and str = '32:32,16;16' will yield identical results.
+% 
+% INPUTS
+%   str = String containing numbers and delimiters (string)
+%
+% OUTPUTS
+%   [num1 num2 num3 num4] = Numbers parsed from input string (double precision or integer)
+% 
+% EXAMPLE
+%   str = '32, 32 ; 64, 64';
+%   [num1 num2 num3 num4] = parseNum(str);
+% 
+% ans =
+% 
+%     32    32    64    64
+% 
+% SEE ALSO
+%   strread
+% 
+
+% If an empty string is input...
+if strcmp(str, '')
+%  Prompt user for input
+    fprintf(1, 'Enter dimensions...\n\n');
+%  Set numbers to default values
+    num1 = 32;
+    num2 = 32;
+    num3 = 32;
+    num4 = 32;
+else
+
+    
+ %  Read numerical values from string and ignore delimiters (, ; :)
+    nums = strread(str, '%d', -1, 'delimiter', ',;:');
+  
+% Replicate array 4 times (max number of inputs in any texbox in this GUI)
+% to allow simplified input for homogeneous window sizes.
+nums = repmat(nums, 4, 1);
+
+% Specify output numbers
+num1 = nums(1);
+num2 = nums(2);
+num3 = nums(3);
+num4 = nums(4);
+
+end
+
+function [xROI yROI] = roiSize(winRes)
+% roiSize determines the dimensions (in pixels) of a region of interest via
+% the largest window dimension in each direction. winRes is a
+% numerical string containing delimiters (, ; : and blank space).
+% Note that the allowed delimiters are specified here as comma, semicolon,
+% colon, and blank space. Also note that each delimiter here is functionally equivalent;
+% i.e., inputs of "winRes = 32,32:16,16" and "winRes = 32:32,16;16"
+% will yield identical results.
+% 
+% INPUTS
+%   winRes =  String containing window resolutions and delimiters (string)
+% 
+% OUTPUTS
+%   xROI = x-dimension of region of interest (pixels)
+%   yROI = y-dimension of region of interest (pixels)
+% 
+% EXAMPLE
+%   winRes = '32, 64 ; 64, 32';
+%   [xROI yROI] = roiSize(winRes);
+% 
+% ans =
+% 
+%     64    64
+% 
+% SEE ALSO
+%   parseNums, strread
+% 
+
+% Parse string containing window size information
+[wx1 wy1 wx2 wy2] = parseNum(winRes);
+
+% Calculate max dimensions of effective window resolutions
+wxMax = max(wx1, wx2);
+wyMax = max(wy1, wy2);
+
+% Calculate x- and y- sizes of the interrogation region (pixels)
+xROI = 2^(ceil(log(2*wxMax)/log(2)));
+yROI = 2^(ceil(log(2*wyMax)/log(2)));
+
+
+% --------------------------------------------------------------------
+function tools_menuItem_Callback(hObject, eventdata, handles)
+% hObject    handle to tools_menuItem (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% --------------------------------------------------------------------
+function saveworkspace_menuItem_Callback(hObject, eventdata, handles)
+% hObject    handle to saveworkspace_menuItem (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Use image directory as default directory for UIGET function
+imageDir = get(handles.imagedirectory, 'String');
+
+% Specify directory in which to save workspace
+workspaceDir = uigetdir(imageDir);
+
+% Exit save if the user selects 'cancel' in UIGET
+if workspaceDir ~= 0;
+
+%     Read the names of jobs in the present workspace
+    jobs = get(handles.joblist, 'String');
+
+%     Save each job to the directory specified by workspaceDir
+    for n = 1:length(jobs);
+                eval( ['Data = handles.' char(jobs(n)) ';'] );
+                save([workspaceDir '/' char(jobs(n)) '.mat'], 'Data');
+    end
+
+else
+    
+    return
+    
+end
+
+
+% --------------------------------------------------------------------
+
+function trackingestweight_Callback(hObject, eventdata, handles)
+function trackingestweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function trackingiterations_Callback(hObject, eventdata, handles)
+
+function trackingiterations_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Tracking Validation Checkbox ---
+function trackingvalcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.run=num2str(get(hObject,'Value'));
+    update_PTV(handles)
+    guidata(hObject,handles)
+end
+
+% --- Tracking Validation Coefficient ---
+function trackingvalcoefficient_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.C_cutoff=get(hObject,'String');
+end
+function trackingvalcoefficient_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Tracking Validation Radius ---
+function trackingvalradius_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.s_radius=get(hObject,'String');
+end
+function trackingvalradius_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Tracking Validation U Threshold ---
+function trackingvalUthresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.MAD_U=get(hObject,'String');
+end
+function trackingvalUthresh_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Tracking Validation V Threshold ---
+function trackingvalVthresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.MAD_V=get(hObject,'String');
+end
+function trackingvalVthresh_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Run PIV Checkbox ---
+function runPIVcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.runPIV=num2str(get(hObject,'Value'));
+end
+
+
+% --- Executes on button press in loadtrackingsaveloc.
+function loadtrackingsaveloc_Callback(hObject, eventdata, handles)
+
+
+
+function trackingsavebase_Callback(hObject, eventdata, handles)
+function trackingsavebase_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function trackingradius_Callback(hObject, eventdata, handles)
+function trackingradius_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingdistweight_Callback(hObject, eventdata, handles)
+function trackingdistweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingsizeweight_Callback(hObject, eventdata, handles)
+function trackingsizeweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function trackingintensityweight_Callback(hObject, eventdata, handles)
+function trackingintensityweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function trackingestradius_Callback(hObject, eventdata, handles)
+function trackingestradius_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function trackingvectors_Callback(hObject, eventdata, handles)
+function trackingvectors_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in colorchannel_popupMenu.
+function colorchannel_popupMenu_Callback(hObject, eventdata, handles)
+% hObject    handle to colorchannel_popupMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if str2double(handles.Njob)>0
+    handles.data.channel = num2str(get(hObject,'Value'));
+    guidata(hObject,handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function colorchannel_popupMenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to colorchannel_popupMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+
+% --- Executes on selection change in trackingprediction.
+function trackingprediction_Callback(hObject, eventdata, handles)
+function trackingprediction_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

@@ -16,3 +16,5 @@ wx=exp(-px^2.*x.^2/2);
 wy=exp(-py^2.*y.^2/2);
 
 W  = wy*wx;
+
+end

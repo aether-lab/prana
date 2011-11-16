@@ -5,3 +5,5 @@ function [Uf,Vf]=VELfilt(U,V,C)
 A=fspecial('gaussian',[7 7],C);
 Uf=imfilter(U,A,'replicate');
 Vf=imfilter(V,A,'replicate');
+
+end

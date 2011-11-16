@@ -36,7 +36,7 @@ end
 %header lines
 fprintf(fid,['TITLE        = "' frametitle '"\n']);
 fprintf(fid,['VARIABLES    = ',varlist,'\n']);
-fprintf(fid,'ZONE T="Time=%0.6f" I=%i J=%i C=BLACK STRANDID=%i SOLUTIONTIME = %0.6f\n',T,S(2),S(1),strand,T);
+fprintf(fid,'ZONE T="%s,Time=%0.6f" I=%i J=%i C=BLACK STRANDID=%i SOLUTIONTIME = %0.6f\n',frametitle,T,S(2),S(1),strand,T);
     
 
 %write data
@@ -89,3 +89,5 @@ for i=1:S(1)
 end
     
 fclose(fid);
+
+end

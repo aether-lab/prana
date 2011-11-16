@@ -22,3 +22,5 @@ Zf(end,end) = mean([Zf(end-1,end) Zf(end,end-1)]);
 
 %velocity interpolation
 ZI=interp2(Xf,Yf,Zf,XI,YI,char(Method(M)));
+
+end

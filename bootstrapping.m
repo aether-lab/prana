@@ -70,3 +70,6 @@ while tol > 0 && ktol <= kmax+1
     ktol = ktol + 1;
     tol = tol-(tol/(kmax-1))*(ktol-1);
 end
+
+
+end
