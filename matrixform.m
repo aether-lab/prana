@@ -1,4 +1,4 @@
-function [X,Y,U,V,Eval,C]=matrixform(x,y,u,v,eval,c)
+function [X,Y,U,V,Eval,C,D]=matrixform(x,y,u,v,eval,c,d)
 % --- Vector to Matrix Subfunction ---
 
 %find unique x and y grid points
@@ -35,6 +35,18 @@ if ~isempty(c)
     end
 else
     C=[];
+end
+if ~isempty(d)
+    D=nan(length(b),length(a),size(d,2));
+    for i=1:size(d,2)
+        for n=1:N
+            I= b==y(n);
+            J= a==x(n);
+            D(I,J,i)=d(n,i);
+        end
+    end
+else
+    D=[];
 end
 
 end

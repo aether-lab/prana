@@ -40,7 +40,6 @@ try
    if Data.version <= 4.3
       channel = 1;
    else
-       keyboard
       channel = Data.channel;
    end
 catch
@@ -264,7 +263,7 @@ switch char(M)
                 if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     if Corr(e)<2
                        %  [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
-                        [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -275,6 +274,7 @@ switch char(M)
                     else
 %                      [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                          [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                         Dc = zero(size(Cc));
  
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
@@ -283,10 +283,11 @@ switch char(M)
                 else                                    %either first pass, or not deform
                     if Corr(e)<2
 %                         [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                            [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));                   
+                            [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));                   
                     else
  %                       [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        Dc = zero(size(Cc));
                     end
                 end
                 
@@ -296,9 +297,11 @@ switch char(M)
                         V=zeros(size(X,1),3);
                         U(repmat(Eval>=0,[1 3]))=Uc;V(repmat(Eval>=0,[1 3]))=Vc;
                         C=zeros(size(X,1),3);
+                        Di=zeros(size(X,1),3);
                         C(repmat(Eval>=0,[1 3]))=Cc;
+                        Di(repmat(Eval>=0,[1 3]))=Dc;
                     else
-                        U=zeros(size(X));V=zeros(size(X));C=[];
+                        U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
                         U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     end
                 else
@@ -306,9 +309,13 @@ switch char(M)
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     if Peakswitch(e)
                         C=zeros(size(X,1),3);
+                        Di=zeros(size(X,1),3);
                         C(repmat(Eval>=0,[1 3]))=Cc;
+                        Di(repmat(Eval>=0,[1 3]))=Dc;
+                        
                     else 
                         C=[];
+                        Di=[];
                     end
                 end
                 
@@ -318,7 +325,7 @@ switch char(M)
                 if Valswitch(e)
                     t1=tic;
                     
-                    [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                    [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
                     valtime(e)=toc(t1);
@@ -326,8 +333,10 @@ switch char(M)
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                     if ~isempty(C)
                         Cval=C(:,1);
+                        Dval=Di(:,1);
                     else
                         Cval=[];
+                        Dval=[];
                     end
                 end
                 
@@ -344,11 +353,13 @@ switch char(M)
                         end
                         if PeakMag(e)
                             C=[Cval,C(:,1:PeakNum(e))];
+                            Di=[Dval,Di(:,1:PeakNum(e))];
                         else
                             C=Cval;
+                            Di=Dval;
                         end
                     else
-                        U=Uval; V=Vval; C=Cval;
+                        U=Uval; V=Vval; C=Cval; Di=Dval;
                     end
                     Eval=Evalval;
 
@@ -359,7 +370,7 @@ switch char(M)
 
                     %convert to matrix if necessary
                     if size(X,2)==1
-                        [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+                        [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
                     end
 
                     %remove nans from data, replace with zeros
@@ -367,11 +378,11 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=I1(q)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,char(wbase(e,:)));
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
                     end
                     
                     if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
                     end
                     X=Xval;Y=Yval;
                     
@@ -566,8 +577,9 @@ switch char(M)
                 U=zeros(size(X,1),3);
                 V=zeros(size(X,1),3);
                 C=zeros(size(X,1),3);
+                Di=zeros(size(X,1),3);
             else
-                U=zeros(size(X));V=zeros(size(X));C=[];
+                U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
             end
             
             if str2double(Data.par) && matlabpool('size')>1
@@ -598,8 +610,10 @@ switch char(M)
                         if Corr(e)<2 %SCC or RPC processor
                             if q==1
                                 CCmdist=CC;
+                                CC = []; % This clear is required for fine grids
                             else
                                 CCmdist=CCmdist+CC;
+                                CC = []; % This clear is required for fine grids
                             end
                         elseif Corr(e)==2 %SPC processor
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
@@ -663,11 +677,12 @@ switch char(M)
                 Uc=zeros(Z(3),3);
                 Vc=zeros(Z(3),3);
                 Cc=zeros(Z(3),3);
+                Dc=zeros(Z(3),3);
                 Ub=repmat(Ub,[1 3]);
                 Vb=repmat(Vb,[1 3]);
                 Eval=repmat(Eval,[1 3]);
             else
-                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];
+                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
    
             
@@ -675,7 +690,7 @@ switch char(M)
             if Corr(e)<2 %SCC or RPC processor
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
-                    [Uc(s,:),Vc(s,:),Ctemp]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
                 end
             elseif Corr(e)==2 %SPC processor
                     %RPC filter for weighting function
@@ -706,21 +721,23 @@ switch char(M)
                     %Perform the weighted lsq regression
                     Uc(s)= wlsq(CCm.U(1,:,s),lsqX,wtX_cum)*Z(2)/2/pi;
                     Vc(s)=-wlsq(CCm.V(1,:,s),lsqY,wtY_cum)*Z(1)/2/pi;
-                    Ctemp=CCm.C(:,:,s)';
+                    Cc(s)=CCm.C(:,:,s)';
+                    Dc(s)=0;
                 end
             end
 
             U(Eval>=0)=Uc(:)+round(Ub(Eval>=0));
             V(Eval>=0)=Vc(:)+round(Vb(Eval>=0));
-            if ~isempty(Cc)
+            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))%~isempty(Cc)
                 C(Eval>=0)=Cc(:);
+                Di(Eval>=0)=Dc(:);
             end
             
             %validation
             if Valswitch(e)
                 t1=tic;
 
-                [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                     Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
 
                 valtime=toc(t1);
@@ -730,8 +747,10 @@ switch char(M)
                 Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                 if ~isempty(C)
                     Cval=C(:,1);
+                    Dval=Di(:,1);
                 else
                     Cval=[];
+                    Dval=[];
                 end
             end
                 
@@ -749,11 +768,13 @@ switch char(M)
                     end
                     if PeakMag(e)
                         C=[Cval,C(:,1:PeakNum(e))];
+                        Di=[Dval,Di(:,1:PeakNum(e))];
                     else
                         C=Cval;
+                        Di=Dval;
                     end
                 else
-                    U=Uval; V=Vval; Eval=Evalval; C=Cval;
+                    U=Uval; V=Vval; Eval=Evalval; C=Cval; Di=Dval;
                 end
 
                 %convert to physical units
@@ -763,7 +784,7 @@ switch char(M)
 
                 %convert to matrix if necessary
                 if size(X,2)==1
-                    [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+                    [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
                 end
 
                 %remove nans from data, replace with zeros
@@ -772,10 +793,10 @@ switch char(M)
                 if str2double(Data.datout)
                     time=I1(1)/Freq;
                     %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
-                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,time,char(wbase(e,:)));
+                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
                 end
                 if str2double(Data.multiplematout)
-                    save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C')
+                    save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
                 end
                 X=Xval;Y=Yval;
 
@@ -891,7 +912,7 @@ switch char(M)
                 t1=tic;
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
-                Uc=[];Vc=[];Cc=[];
+                Uc=[];Vc=[];Cc=[];Dc=[];
 
                 if Corr(e)<2
                     U=zeros(size(X,1),3,N);
@@ -907,11 +928,12 @@ switch char(M)
                         
                         %correlate image pair
 %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
                     C(repmat(Eval>=0,[1 1 N]))=Cc;
+                    Di(repmat(Eval>=0,[1 1 N]))=Dc;
 
                     velmag=sqrt(U(:,1,:).^2+V(:,1,:).^2);
                     Qp=C(:,1,:)./C(:,2,:).*(1-ds./velmag);
@@ -921,6 +943,7 @@ switch char(M)
                         Uval(i,:)=U(i,:,t_opt(i));
                         Vval(i,:)=V(i,:,t_opt(i));
                         Cval(i,:)=C(i,:,t_opt(i));
+                        Dval(i,:)=Di(i,:,t_opt(i));
                     end
 
                     try
@@ -944,11 +967,12 @@ switch char(M)
                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
                         C=zeros(length(X),3);
+                        Di=zeros(length(X),3);
                         C(repmat(Eval,[1 3])>=0)=Cc;
                         t_opt=zeros(size(X));
                         t_opt(Eval>=0)=t_optc;
                     else
-                        C=[];t_opt=[];
+                        C=[];t_opt=[];Di=[];
                     end
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                 end
@@ -959,7 +983,7 @@ switch char(M)
                 if Valswitch(e)
                     t1=tic;
                     
-                    [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                    [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
                     valtime(e)=toc(t1);
@@ -967,8 +991,10 @@ switch char(M)
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                     if ~isempty(C)
                         Cval=C(:,1);
+                        Dval=Di(:,1);
                     else
                         Cval=[];
+                        Dval=[];
                     end
                 end
 
@@ -985,8 +1011,10 @@ switch char(M)
                         end
                         if PeakMag(e)
                             C=[Cval(:,1),C(:,1:PeakNum(e))];
+                            Di=[Dval(:,1),Di(:,1:PeakNum(e))];                            
                         else
                             C=[];
+                            Di=[];
                         end
                     else
                         t_opt=[];
@@ -998,7 +1026,7 @@ switch char(M)
 
                     %convert to matrix if necessary
                     if size(X,2)==1
-                        [X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+                        [X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
                         if Peakswitch(e)
                             t_opt=reshape(t_opt,size(X,1),size(X,2));
                         end
@@ -1012,10 +1040,10 @@ switch char(M)
 %                         time=(q_full-1)/Freq;
                         time=I1(q)/Freq;
                         %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle,t_opt);
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,char(wbase(e,:)),t_opt);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)),t_opt);
                     end
                     if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','t_opt')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','t_opt')
                     end
                     X=Xval;Y=Yval;
                     

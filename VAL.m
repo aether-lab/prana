@@ -1,4 +1,4 @@
-function [Uval,Vval,Evalval,Cval]=VAL(X,Y,U,V,Eval,C,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax)
+function [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,D,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax)
 % --- Validation Subfunction ---
 if extrapeaks
     j=3;
@@ -6,12 +6,14 @@ else
     j=1;
 end
 
-[X,Y,U,V,Eval,C]=matrixform(X,Y,U,V,Eval,C);
+[X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
 Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
 if ~isempty(C)
     Cval=C(:,:,1);
+    Dval=D(:,:,1);
 else
     Cval=[];
+    Dval= [];
 end
 S=size(X);
 
@@ -31,11 +33,12 @@ if Threshswitch || UODswitch
 %         disp([num2str(sum(sum(Evalval>0))),' bad vectors'])
         %Try additional peaks where validation failed
         if i<j
-            Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);
+            Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);Dtemp=D(:,:,i+1);
             Uval(Evalval>0)=Utemp(Evalval>0);
             Vval(Evalval>0)=Vtemp(Evalval>0);
             Evalval(Evalval>0)=Evaltemp(Evalval>0);
             Cval(Evalval>0)=Ctemp(Evalval>0);
+            Dval(Evalval>0)=Dtemp(Evalval>0);            
         end
     end
 end
@@ -83,6 +86,6 @@ if Bootswitch
 end
 
 %convert back to vector
-[Uval,Vval,Evalval,Cval]=vectorform(X,Y,Uval,Vval,Evalval,Cval);
+[Uval,Vval,Evalval,Cval,Dval]=vectorform(X,Y,Uval,Vval,Evalval,Cval,Dval);
 
 end

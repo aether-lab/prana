@@ -1,4 +1,4 @@
-function [X,Y,U,V,C]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,X,Y,Uin,Vin)
+function [X,Y,U,V,C,Dia]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
 
 %convert input parameters
@@ -28,10 +28,12 @@ if Peakswitch
     U = zeros(length(X),3);
     V = zeros(length(X),3);
     C = zeros(length(X),3);
+    Dia = zeros(length(X),3);
 else
     U = zeros(length(X),1);
     V = zeros(length(X),1);
     C = [];
+    Dia = [];
 end
 
 %sets up extended domain size
@@ -115,11 +117,12 @@ switch upper(tcorr)
             G = abs(G);
             
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+            [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
 %             winmean=mean(mean(region1))*mean(mean(region2));
 %             [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
             if Peakswitch
                 C(n,:)=Ctemp;
+                Dia(n,:)=Dtemp;
             end
         end
 
@@ -184,11 +187,12 @@ switch upper(tcorr)
             G = abs(G);
 
             %subpixel estimation
-            [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+            [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
 %             winmean=mean(mean(region1))*mean(mean(region2));
 %             [U(n,:),V(n,:),Ctemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch,winmean);
             if Peakswitch
                 C(n,:)=Ctemp;
+                Dia(n,:)=Dtemp;
             end
         end
 end

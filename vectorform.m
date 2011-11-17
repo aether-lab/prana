@@ -1,4 +1,4 @@
-function [u,v,eval,c]=vectorform(x,y,U,V,Eval,C)
+function [u,v,eval,c,d]=vectorform(x,y,U,V,Eval,C,D)
 % --- Matrix to Vector Subfunction ---
 x=x(:);y=y(:);
 %find unique x and y grid points
@@ -13,8 +13,10 @@ v    = zeros(S);
 eval = zeros(S);
 if ~isempty(C)
     c = zeros(S);
+    d = zeros(S);
 else
     c = [];
+    d = [];
 end
 
 %generate data vectors where data is available
@@ -26,6 +28,7 @@ for n=1:N
     eval(n) = Eval(I,J);
     if ~isempty(C)
         c(n)    = C(I,J);
+        d(n)    = D(I,J);
     end
 end
 

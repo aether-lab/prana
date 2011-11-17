@@ -1,7 +1,7 @@
-function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,strand,T,frametitle,t_opt)
+function []=write_dat_val_C(fname,X,Y,U,V,Eval,C,D,strand,T,frametitle,t_opt)
 % --- .dat Writer Subfunction ---
 
-if nargin<11
+if nargin<12
     t_opt=[];
 end
 
@@ -17,7 +17,7 @@ end
 varlist='"X" "Y" "U" "V" "Eval"';
 
 if ~isempty(C)
-    varlist=[varlist,' "C"'];
+    varlist=[varlist,' "C" "D"'];
     if size(U,3)>1
         for i=2:size(U,3)
             varlist=[varlist,' "U',num2str(i-1),'" "V',num2str(i-1),'"'];
@@ -25,7 +25,7 @@ if ~isempty(C)
     end
     if size(C,3)>1
         for i=2:size(C,3)
-            varlist=[varlist,' "C',num2str(i-1),'"'];
+            varlist=[varlist,' "C',num2str(i-1),'"',' "D',num2str(i-1),'"'];
         end
     end
 end
@@ -51,10 +51,10 @@ for i=1:S(1)
         end
         
         if ~isempty(C)
-            if isnan(C(i,j,1))
-                fprintf(fid,' %14.6e',0);
+            if isnan(C(i,j,1)) || isnan(D(i,j,1))
+                fprintf(fid,' %14.6e %14.6e',0,0);
             else
-                fprintf(fid,' %14.6e',C(i,j,1));
+                fprintf(fid,' %14.6e %14.6e',C(i,j,1),D(i,j,1));
             end
             if size(U,3)>1
                 for k=2:size(U,3)
@@ -67,10 +67,10 @@ for i=1:S(1)
             end
             if size(C,3)>1
                 for k=2:size(C,3)
-                    if isnan(C(i,j,k))
-                        fprintf(fid,' %14.6e',0);
+                    if isnan(C(i,j,k)) || isnan(D(i,j,k))
+                        fprintf(fid,' %14.6e %14.6e',0,0);
                     else
-                        fprintf(fid,' %14.6e',C(i,j,k));
+                        fprintf(fid,' %14.6e %14.6e',C(i,j,k),D(i,j,k));
                     end
                 end
             end

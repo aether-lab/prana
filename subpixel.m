@@ -1,10 +1,13 @@
-function [u,v,M]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch)
+function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch)
 %intialize indices
 cc_x = -ccsizex/2:ccsizex/2-1;
 cc_y = -ccsizey/2:ccsizey/2-1;
 
 %find maximum correlation value
 [M,I] = max(G(:));
+
+% Use 3 standard deviations for the peak sizing
+sigma = 3;
 
 %if correlation empty
 if M==0
@@ -113,6 +116,9 @@ else
             shift_errx=x_centroid-shift_locx;
             shift_erry=y_centroid-shift_locy;
             
+            betas = abs((log(a2)-log(a1))/((x2-x_centroid)^2+(y2-y_centroid)^2-(x1-x_centroid)^2-(y1-y_centroid)^2));
+            D(i)=sqrt(sigma^2/(2*betas));
+            
         elseif method==3
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -151,12 +157,13 @@ else
                 xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points(:),[yloc(:),xloc(:)]);
                 shift_errx=xvars(3)-shift_locx;
                 shift_erry=xvars(4)-shift_locy;
-            catch
+                D(i) = sqrt(sigma^2/(2*abs(xvars(2))));
+            catch %#ok
                 method=1;
             end
         end
         if method==1
-            
+
             %%%%%%%%%%%%%%%%%%%%
             % 3-Point Gaussian %
             %%%%%%%%%%%%%%%%%%%%
@@ -168,21 +175,33 @@ else
                 lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
                 if (2*(lCm1+lCp1-2*lC00)) == 0
                     shift_errx = 0;
+                    Dx = nan;
                 else
                     shift_errx = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+                    betax = abs(lCm1-lC00)/((-1-shift_errx)^2-(shift_errx)^2);
+                    Dx = sigma./sqrt((2*betax));
                 end
+            else
+                Dx = nan;
             end
+            
             if isempty(shift_erry)
                 lCm1 = log(G( shift_locy-1 , shift_locx )*W( shift_locy-1 , shift_locx ));
                 lC00 = log(G( shift_locy   , shift_locx )*W( shift_locy   , shift_locx ));
                 lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
                 if (2*(lCm1+lCp1-2*lC00)) == 0
                     shift_erry = 0;
+                    Dy = nan;
                 else
                     shift_erry = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
+                    betay = abs(lCm1-lC00)/((-1-shift_erry)^2-(shift_erry)^2);
+                    Dy = sigma./sqrt((2*betay));
                 end
+            else
+                Dy = nan;
             end
             
+            D(i) = nanmean([Dx Dy]);
         end
         
         u(i)=cc_x(shift_locx)+shift_errx;

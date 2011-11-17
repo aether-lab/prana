@@ -1,4 +1,4 @@
-function PTVadvance1code(Data)
+function pranaPTVcode(Data)
 
 if ispc
     Data.slsh='\';
@@ -21,7 +21,7 @@ Data.Size.p_area=str2double(Data.Size.p_area);
 Data.Size.sigma=str2double(Data.Size.sigma);
 Data.Size.errors=str2double(Data.Size.errors);
 Data.Track.run=str2double(Data.Track.run);
-Data.Track.PIV_PTV_weight=str2double(Data.Track.PIV_PTV_weight;
+Data.Track.PIV_PTV_weight=str2double(Data.Track.PIV_PTV_weight);
 Data.Track.plotfig=str2double(Data.Track.plotfig);
 Data.Track.r_weight=str2double(Data.Track.r_weight);
 Data.Track.edgeval=str2double(Data.track.edgeval);
