@@ -195,29 +195,33 @@ switch char(M)
             % Specify which color channel(s) to consider
             %channel = str2double(Data.channel);
 
-             if size(im1, 3) == 1
-            %	Extract only red channel
+             if size(im1, 3) == 3
+                %Extract only red channel
                  if channel == 1;
                     im1 = im1(:,:,1);
                     im2 = im2(:,:,1);
-            %	Extract only green channel
+                %Extract only green channel
                  elseif channel == 2;
                     im1 = im1(:,:,2);
                     im2 = im2(:,:,2);
-            %	Extract only blue channel
+                %Extract only blue channel
                  elseif channel == 3;
                     im1 = im1(:,:,3);
                     im2 = im2(:,:,3);
-            %	Weighted average of channels (see rgb2gray for
-            %	explanation of weighting factors)
+                %Weighted average of channels (see rgb2gray for
+                %explanation of weighting factors)
                  elseif channel == 4;
                     im1 = 0.2989 * im1(:, :, 1) + 0.5870 * im1(:, :, 2) + 0.1140 * im1(:, :, 3);
                     im2 = 0.2989 * im2(:, :, 1) + 0.5870 * im2(:, :, 2) + 0.1140 * im2(:, :, 3);
-            %	Evenly weighted mean of channels
+                %Evenly weighted mean of channels
                  elseif channel == 5;
                     im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
                     im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                 elseif channel == 6;
+                     im1=im1(:,:,1:3);
+                     im2=im2(:,:,1:3);
                  end
+
              else
             %	Take only red channel
                 im1 =im1(:,:,1);
@@ -225,8 +229,9 @@ switch char(M)
              end
 
             %  Flip images
-            im1 = flipud(im1);
-            im2 = flipud(im2);
+            %flipud only works on 2D matices.
+            im1 = im1(end:-1:1,:,:);%flipud(im1);
+            im2 = im2(end:-1:1,:,:);%flipud(im2);
 
             %   Determine size of images          
             L = size(im1);
@@ -600,8 +605,44 @@ switch char(M)
                         %load image pair and flip coordinates
                         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
                         im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
-                        im1=flipud(im1(:,:,1));
-                        im2=flipud(im2(:,:,1));
+                        if size(im1, 3) == 3
+                        %Extract only red channel
+                        if channel == 1;
+                            im1 = im1(:,:,1);
+                            im2 = im2(:,:,1);
+                        %Extract only green channel
+                        elseif channel == 2;
+                            im1 = im1(:,:,2);
+                            im2 = im2(:,:,2);
+                        %Extract only blue channel
+                        elseif channel == 3;
+                            im1 = im1(:,:,3);
+                            im2 = im2(:,:,3);
+                        %Weighted average of channels (see rgb2gray for
+                        %explanation of weighting factors)
+                        elseif channel == 4;
+                            im1 = 0.2989 * im1(:, :, 1) + 0.5870 * im1(:, :, 2) + 0.1140 * im1(:, :, 3);
+                            im2 = 0.2989 * im2(:, :, 1) + 0.5870 * im2(:, :, 2) + 0.1140 * im2(:, :, 3);
+                        %Evenly weighted mean of channels
+                        elseif channel == 5;
+                            im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
+                            im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                        elseif channel == 6;
+                            im1=im1(:,:,1:3);
+                            im2=im2(:,:,1:3);
+                        end
+                        else
+                        %Take only red channel
+                        im1 =im1(:,:,1);
+                        im2 =im2(:,:,1);
+                        end
+
+                        %  Flip images
+                        %flipud only works on 2D matices.
+%                         im1=flipud(im1(:,:,1));
+%                         im2=flipud(im2(:,:,1));
+                        im1 = im1(end:-1:1,:,:);
+                        im2 = im2(end:-1:1,:,:);
 %                         L=size(im1);
 
                         %correlate image pair and average correlations
@@ -643,8 +684,44 @@ switch char(M)
                     %load image pair and flip coordinates
                     im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
                     im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
-                    im1=flipud(im1(:,:,1));
-                    im2=flipud(im2(:,:,1));
+                    if size(im1, 3) == 3
+                        %Extract only red channel
+                        if channel == 1;
+                            im1 = im1(:,:,1);
+                            im2 = im2(:,:,1);
+                        %Extract only green channel
+                        elseif channel == 2;
+                            im1 = im1(:,:,2);
+                            im2 = im2(:,:,2);
+                        %Extract only blue channel
+                        elseif channel == 3;
+                            im1 = im1(:,:,3);
+                            im2 = im2(:,:,3);
+                        %Weighted average of channels (see rgb2gray for
+                        %explanation of weighting factors)
+                        elseif channel == 4;
+                            im1 = 0.2989 * im1(:, :, 1) + 0.5870 * im1(:, :, 2) + 0.1140 * im1(:, :, 3);
+                            im2 = 0.2989 * im2(:, :, 1) + 0.5870 * im2(:, :, 2) + 0.1140 * im2(:, :, 3);
+                        %Evenly weighted mean of channels
+                        elseif channel == 5;
+                            im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
+                            im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                        elseif channel == 6;
+                            im1=im1(:,:,1:3);
+                            im2=im2(:,:,1:3);
+                        end
+                        else
+                        %Take only red channel
+                        im1 =im1(:,:,1);
+                        im2 =im2(:,:,1);
+                    end
+
+                        %  Flip images
+                        %flipud only works on 2D matices.
+%                     im1=flipud(im1(:,:,1));
+%                     im2=flipud(im2(:,:,1));
+                    im1 = im1(end:-1:1,:,:);
+                    im2 = im2(end:-1:1,:,:);
 %                     L=size(im1);
 
                     %correlate image pair and average correlations
@@ -918,6 +995,15 @@ switch char(M)
                     U=zeros(size(X,1),3,N);
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
+                    Di=zeros(size(X,1),3,N);
+                    Uc=zeros(size(im1,1),size(im1,2),N);
+                    Vc=zeros(size(im1,1),size(im1,2),N);
+                    Cc=zeros(size(im1,1),size(im1,2),N);
+                    Dc=zeros(size(im1,1),size(im1,2),N);
+                    Uval=zeros(size(X,1),3);
+                    Vval=zeros(size(X,1),3);
+                    Cval=zeros(size(X,1),3);
+                    Dval=zeros(size(X,1),3);
                     Eval=repmat(reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1),[1 3]);
                     Eval(Eval==0)=-1;
                     Eval(Eval>0)=0;
