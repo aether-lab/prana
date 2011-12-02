@@ -110,7 +110,7 @@ switch upper(tcorr)
 
     %Robust Phase Correlation
     case 'RPC'
-        
+
         %initialize correlation tensor
         CC = zeros(Sy,Sx,length(X));
         

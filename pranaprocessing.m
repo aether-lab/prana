@@ -651,10 +651,10 @@ switch char(M)
                         if Corr(e)<2 %SCC or RPC processor
                             if q==1
                                 CCmdist=CC;
-                                CC = []; % This clear is required for fine grids
+                                CC = []; %#ok% This clear is required for fine grids or big windows
                             else
                                 CCmdist=CCmdist+CC;
-                                CC = []; % This clear is required for fine grids
+                                CC = []; %#ok% This clear is required for fine grids or big windows
                             end
                         elseif Corr(e)==2 %SPC processor
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
@@ -730,8 +730,10 @@ switch char(M)
                     if Corr(e)<2 %SCC or RPC processor
                         if q==1
                             CCm=CC/length(I1);
+                            CC = []; %#ok% This clear is required for fine grids or big windows
                         else
                             CCm=CCm+CC/length(I1);
+                            CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     elseif Corr(e)==2 %SPC processor
                         if q==1
@@ -765,10 +767,13 @@ switch char(M)
             
                 
             if Corr(e)<2 %SCC or RPC processor
+                t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
                     [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
                 end
+                peaktime=toc(t1);
+                fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
             elseif Corr(e)==2 %SPC processor
                     %RPC filter for weighting function
                 cutoff=2/pi/D(e);
