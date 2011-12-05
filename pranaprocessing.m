@@ -26,8 +26,8 @@ elseif strcmp(Data.masktype,'static')
     maskname=[];
 elseif strcmp(Data.masktype,'dynamic')
     if nargin<4
-        maskfend=str2double(Data.maskfstart)+str2double(Data.maskfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
-        maskname=str2double(Data.maskfstart):str2double(Data.maskfstep):maskfend;
+        maskfend=str2double(Data.imfstart)+str2double(Data.imfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
+        maskname=str2double(Data.imfstart):str2double(Data.imfstep):maskfend;
     end
 end
 
@@ -37,13 +37,21 @@ Method = {'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
 M = Method(str2double(Data.method));
 % Color channel
 try
-   if Data.version <= 4.3
-      channel = 1;
-   else
-      channel = Data.channel;
-   end
+    if ischar(Data.version)
+        if str2double(Data.version(1:3)) <= 4.3
+            channel = 1;
+        else
+            channel = str2double(Data.channel);
+        end
+    else
+        if Data.version(1:3) <= 4.3
+            channel = 1;
+        else
+            channel = str2double(Data.channel);
+        end
+    end
 catch
-   channel = 1;
+    channel = 1;
 end
 
 
@@ -407,7 +415,7 @@ switch char(M)
 
                         %velocity smoothing
                         if Velsmoothswitch(e)==1
-                            [U,V]=VELfilt(U,V,Velsmoothfilt(e));
+                            [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                         end
 
                         %velocity interpolation

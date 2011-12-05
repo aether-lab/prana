@@ -179,7 +179,7 @@ if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.
     defaultdata.version='5.0';
     save('defaultsettings.mat','defaultdata')
 end
-
+defaultdata.version=pranaPIVcode('version');
 handles.data=defaultdata;
 pranadir=which('prana');
 addpath([pranadir(1:end-7),'documentation']);
@@ -655,9 +655,9 @@ if str2double(handles.Njob)>0
     set(handles.imageextension,'string',handles.data.imext);
     set(handles.imageframestart,'string',handles.data.imfstart);
     set(handles.imageframeend,'string',handles.data.imfend);
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -666,9 +666,9 @@ end
 function imagedirectory_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imdirec = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -686,9 +686,9 @@ if str2double(handles.Njob)>0
         handles.data.imdirec = D;
     end
     set(handles.imagedirectory,'string',handles.data.imdirec);
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -739,9 +739,9 @@ end
 function imagebasename_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imbase = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -755,9 +755,9 @@ end
 function imagezeros_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imzeros = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -776,9 +776,9 @@ if str2double(handles.Njob)>0
     else
         set(hObject,'backgroundcolor',[1 1 1]);
     end
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -792,9 +792,9 @@ end
 function imagecorrelationstep_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imcstep = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -808,9 +808,9 @@ end
 function imageframestart_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imfstart = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -823,9 +823,9 @@ end
 function imageframestep_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imfstep = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -838,9 +838,9 @@ end
 function imageframeend_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.imfend = get(hObject,'String');
-    if strcmp(handles.data.masktype,'dynamic')
-        load_masklist(handles)
-    end
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
     load_imlist(handles);
     guidata(hObject,handles)
 end
@@ -854,7 +854,7 @@ end
 function maskdirectory_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     handles.data.maskdirec = get(hObject,'String');
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function maskdirectory_CreateFcn(hObject, eventdata, handles)
@@ -872,7 +872,7 @@ if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
         handles.data.maskdirec = D;
     end
     set(handles.maskdirectory,'string',handles.data.maskdirec);
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function loadmaskdirectorybutton_CreateFcn(hObject, eventdata, handles)
@@ -884,7 +884,7 @@ end
 function maskbasename_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     handles.data.maskbase = get(hObject,'String');
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function maskbasename_CreateFcn(hObject, eventdata, handles)
@@ -896,7 +896,7 @@ end
 function maskzeros_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     handles.data.maskzeros = get(hObject,'String');
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function maskzeros_CreateFcn(hObject, eventdata, handles)
@@ -913,7 +913,7 @@ if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     else
         set(hObject,'backgroundcolor',[1 1 1]);
     end
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function maskextension_CreateFcn(hObject, eventdata, handles)
@@ -925,7 +925,7 @@ end
 function maskframestart_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     handles.data.maskfstart = get(hObject,'String');
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function maskframestart_CreateFcn(hObject, eventdata, handles)
@@ -937,7 +937,7 @@ end
 function maskframestep_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.dynamicmaskbutton,'Value')==1
     handles.data.maskfstep = get(hObject,'String');
-    load_masklist(handles);
+%     load_masklist(handles);
     guidata(hObject,handles)
 end
 function maskframestep_CreateFcn(hObject, eventdata, handles)
@@ -2446,7 +2446,8 @@ set(handles.exp_M,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_ROI,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_diffractiondiameter,'backgroundcolor',0.8*[1 1 1]);
 set(handles.exp_depthoffocus,'backgroundcolor',0.8*[1 1 1]);
-
+vernum = pranaPIVcode('version');
+set(handles.version_box,'String',vernum,'backgroundcolor',0.5*[1 1 1]);
 if str2double(handles.Njob) == 0
     set(handles.passlist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.joblist,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2500,9 +2501,9 @@ if str2double(handles.Njob) == 0
     set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskzeros,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskextension,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.maskframestep,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.maskframestart,'String','','backgroundcolor',0.5*[1 1 1]);
-    set(handles.masklist,'String','','backgroundcolor',0.5*[1 1 1]);
+%     set(handles.maskframestep,'String','','backgroundcolor',0.5*[1 1 1]);
+%     set(handles.maskframestart,'String','','backgroundcolor',0.5*[1 1 1]);
+%     set(handles.masklist,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_date,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_wavelength,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_pixelsize,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2595,18 +2596,18 @@ else
         set(handles.maskbasename,'String','','backgroundcolor',[1 1 1]);
         set(handles.maskzeros,'String','','backgroundcolor',[1 1 1]);
         set(handles.maskextension,'String','','backgroundcolor',[1 1 1]);
-        set(handles.maskframestep,'String','','backgroundcolor',[1 1 1]);
-        set(handles.maskframestart,'String','','backgroundcolor',[1 1 1]);
-        set(handles.masklist,'String','','backgroundcolor',[1 1 1]);
-        load_masklist(handles);
+%         set(handles.maskframestep,'String','','backgroundcolor',[1 1 1]);
+%         set(handles.maskframestart,'String','','backgroundcolor',[1 1 1]);
+%         set(handles.masklist,'String','','backgroundcolor',[1 1 1]);
+%         load_masklist(handles);
     else
         set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
         set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
         set(handles.maskzeros,'String','','backgroundcolor',0.5*[1 1 1]);
         set(handles.maskextension,'String','','backgroundcolor',0.5*[1 1 1]);
-        set(handles.maskframestep,'String','','backgroundcolor',0.5*[1 1 1]);
-        set(handles.maskframestart,'String','','backgroundcolor',0.5*[1 1 1]);
-        set(handles.masklist,'backgroundcolor',0.5*[1 1 1]);
+%         set(handles.maskframestep,'String','','backgroundcolor',0.5*[1 1 1]);
+%         set(handles.maskframestart,'String','','backgroundcolor',0.5*[1 1 1]);
+%         set(handles.masklist,'backgroundcolor',0.5*[1 1 1]);
     end
     if str2double(handles.data.datout)==1
         set(handles.datcheckbox,'Value',1)
@@ -2662,43 +2663,43 @@ end
 set(handles.imagelist,'String',filesf,'Value',1);
 handles=load_data(handles);
 
-% --- Load Mask List ---
-function load_masklist(handles)
-dir_struct = dir(handles.data.maskdirec);
-if isempty(dir_struct)
-    set(handles.maskdirectory,'backgroundcolor','r');
-else
-    set(handles.maskdirectory,'backgroundcolor',[1 1 1]);
-end
-
-maskfend=str2double(handles.data.maskfstart)+str2double(handles.data.maskfstep)*length(str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend))-1;
-N=length(str2double(handles.data.maskfstart):str2double(handles.data.maskfstep):maskfend);
-files = cell(N,1);
-e=0;
-for f=str2double(handles.data.maskfstart):str2double(handles.data.maskfstep):maskfend
-    e=e+1;
-    files(e,1)={[handles.data.maskbase sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],f)]};
-end
-
-[sorted_names,sorted_index] = sortrows({dir_struct.name}');
-[files1,id,id1] = intersect(sorted_names,files(:,1));
-
-if isempty(id1)
-    set(handles.masklist,'backgroundcolor','r');
-    set(handles.masklist,'UserData',[]);
-else
-    set(handles.masklist,'backgroundcolor',[1 1 1]);
-    if length(id1)~=size(files,1)
-        set(handles.masklist,'backgroundcolor','r');
-        set(handles.masklist,'UserData',[]);
-    end
-end
-files=files(id1,:);
-filesf=cell(length(files),1);
-for e=1:size(files,1)
-    filesf(e)={[char(files(e,1))]};
-end
-set(handles.masklist,'String',filesf,'Value',1);
+% % --- Load Mask List ---
+% function load_masklist(handles)
+% dir_struct = dir(handles.data.maskdirec);
+% if isempty(dir_struct)
+%     set(handles.maskdirectory,'backgroundcolor','r');
+% else
+%     set(handles.maskdirectory,'backgroundcolor',[1 1 1]);
+% end
+% 
+% maskfend=str2double(handles.data.maskfstart)+str2double(handles.data.maskfstep)*length(str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend))-1;
+% N=length(str2double(handles.data.maskfstart):str2double(handles.data.maskfstep):maskfend);
+% files = cell(N,1);
+% e=0;
+% for f=str2double(handles.data.maskfstart):str2double(handles.data.maskfstep):maskfend
+%     e=e+1;
+%     files(e,1)={[handles.data.maskbase sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],f)]};
+% end
+% 
+% [sorted_names,sorted_index] = sortrows({dir_struct.name}');
+% [files1,id,id1] = intersect(sorted_names,files(:,1));
+% 
+% if isempty(id1)
+%      set(handles.masklist,'backgroundcolor','r');
+%     set(handles.masklist,'UserData',[]);
+% else
+%     set(handles.masklist,'backgroundcolor',[1 1 1]);
+%     if length(id1)~=size(files,1)
+%         set(handles.masklist,'backgroundcolor','r');
+%         set(handles.masklist,'UserData',[]);
+%     end
+% end
+% files=files(id1,:);
+% filesf=cell(length(files),1);
+% for e=1:size(files,1)
+%     filesf(e)={[char(files(e,1))]};
+% end
+% set(handles.masklist,'String',filesf,'Value',1);
 
 % --- Load PIV Pass List ---
 function load_PIVlist(handles)
@@ -2894,8 +2895,8 @@ set(handles.maskdirectory,'String',handles.data.maskdirec);
 set(handles.maskbasename,'String',handles.data.maskbase);
 set(handles.maskzeros,'String',handles.data.maskzeros);
 set(handles.maskextension,'String',handles.data.maskext);
-set(handles.maskframestep,'String',handles.data.maskfstep);
-set(handles.maskframestart,'String',handles.data.maskfstart);
+% set(handles.maskframestep,'String',handles.data.maskfstep);
+% set(handles.maskframestart,'String',handles.data.maskfstart);
 if strcmp(handles.data.masktype,'none')
     set(handles.nomaskbutton,'Value',1)
     set(handles.staticmaskbutton,'Value',0)
@@ -4176,6 +4177,52 @@ function colorchannel_popupMenu_CreateFcn(hObject, eventdata, handles)
 % --- Executes on selection change in trackingprediction.
 function trackingprediction_Callback(hObject, eventdata, handles)
 function trackingprediction_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function verion_box_Callback(hObject, eventdata, handles)
+% hObject    handle to verion_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of verion_box as text
+%        str2double(get(hObject,'String')) returns contents of verion_box as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function verion_box_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to verion_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function version_box_Callback(hObject, eventdata, handles)
+% hObject    handle to version_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of version_box as text
+%        str2double(get(hObject,'String')) returns contents of version_box as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function version_box_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to version_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end

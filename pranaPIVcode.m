@@ -1,4 +1,12 @@
-function pranaPIVcode(Data)
+function varargout=pranaPIVcode(Data)
+
+if ischar(Data)
+    if strcmpi(Data,'version')
+        varargout{1} = '5.0.r2011.12.05';
+    else
+        error('Error: String request must be version.')
+    end
+else
 %% Set up a parallel job if needed
 if str2double(Data.par)
     fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
@@ -106,5 +114,5 @@ else
     pranaprocessing(Data)
     fprintf('---------------- Job Completed ---------------------\n')
 end
-
+end
 end
