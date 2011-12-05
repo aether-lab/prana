@@ -3,5 +3,7 @@
 *.DS_Store
 *.fig
 *.tif
+*.dat
+*.phy
 defaultsettings.mat
 ExpSummary*

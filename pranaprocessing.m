@@ -651,16 +651,18 @@ switch char(M)
                         if Corr(e)<2 %SCC or RPC processor
                             if q==1
                                 CCmdist=CC;
+                                cnvg_est = 0;
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             else
                                 CCmdist=CCmdist+CC;
+                                cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
                         elseif Corr(e)==2 %SPC processor
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        fprintf('correlation...                 %0.2i:%0.2i.%0.0f\n',floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
+                        fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble RMS %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                     end
                 end
 %                 if Corr(e)<2 %SCC or RPC processor
@@ -730,9 +732,11 @@ switch char(M)
                     if Corr(e)<2 %SCC or RPC processor
                         if q==1
                             CCm=CC/length(I1);
+                            cnvg_est = 0;
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         else
                             CCm=CCm+CC/length(I1);
+                            cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     elseif Corr(e)==2 %SPC processor
@@ -745,7 +749,7 @@ switch char(M)
                         end
                     end
                     corrtime=toc(t1);
-                    fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
+                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble RMS %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                 end
             end
 
