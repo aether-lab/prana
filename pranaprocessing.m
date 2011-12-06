@@ -670,7 +670,7 @@ switch char(M)
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble RMS %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                        fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                     end
                 end
 %                 if Corr(e)<2 %SCC or RPC processor
@@ -757,7 +757,7 @@ switch char(M)
                         end
                     end
                     corrtime=toc(t1);
-                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble RMS %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                 end
             end
 

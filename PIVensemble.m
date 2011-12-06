@@ -34,7 +34,8 @@ else
 end
 
 %window masking filter
-sfilt = windowmask([Nx Ny],[res(1) res(2)]);
+sfilt1 = windowmask([Nx Ny],[res(1, 1) res(1, 2)]);
+sfilt2 = windowmask([Nx Ny],[res(2, 1) res(2, 2)]);
 
 %RPC spectral energy filter
 spectral = fftshift(energyfilt(Sx,Sy,D,0));
@@ -92,8 +93,8 @@ switch upper(tcorr)
             end
             
             %apply the image spatial filter
-            region1 = (zone1).*sfilt;
-            region2 = (zone2).*sfilt;
+            region1 = (zone1).*sfilt1;
+            region2 = (zone2).*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1-mean(region1(:)),[Sy Sx]);
@@ -149,8 +150,8 @@ switch upper(tcorr)
             end
             
             %apply the image spatial filter
-            region1 = (zone1).*sfilt;
-            region2 = (zone2).*sfilt;
+            region1 = (zone1).*sfilt1;
+            region2 = (zone2).*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1-mean(region1(:)),[Sy Sx]);
@@ -215,8 +216,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = zone1.*sfilt;
-            region2 = zone2.*sfilt;
+            region1 = zone1.*sfilt1;
+            region2 = zone2.*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
@@ -278,8 +279,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = zone1.*sfilt;
-            region2 = zone2.*sfilt;
+            region1 = zone1.*sfilt1;
+            region2 = zone2.*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
@@ -349,8 +350,8 @@ switch upper(tcorr)
             end
 
             %apply the image spatial filter
-            region1 = zone1.*sfilt;
-            region2 = zone2.*sfilt;
+            region1 = zone1.*sfilt1;
+            region2 = zone2.*sfilt2;
 
             %FFTs and Cross-Correlation
             f1   = fftn(region1,[Sy Sx]);
