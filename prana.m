@@ -52,7 +52,7 @@ try
     load('defaultsettings.mat')
 catch
     defaultdata.clientversion='2.0';
-    defaultdata.version='5.0';
+    defaultdata.version='2.0';
     defaultdata.imbase='Img_';
     defaultdata.imzeros='6';
     defaultdata.imext='tif';
@@ -176,7 +176,7 @@ if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.
         defaultdata.splash='0';
     end
     defaultdata.clientversion='0.99';
-    defaultdata.version='5.0';
+    defaultdata.version='2.0';
     save('defaultsettings.mat','defaultdata')
 end
 defaultdata.version=pranaPIVcode('version');
@@ -1051,43 +1051,70 @@ if str2double(handles.Njob)>0
 %                 Evenly weighted mean of channels
              elseif channel == 5;
                 im = (im(:,:,1) + im(:,:,2) + im(:,:,3))/3;
+             elseif channel == 6
+                 im = im;%#ok
              end
          else
 %             Take only red channel
             im =im(:,:,1);
+         end
+         
+        mask=ones(size(im,1),size(im,2));
+        roiwindow = CROIEditor(im./max(im(:)));
+        while isempty(roiwindow.labels)
+        addlistener(roiwindow,'MaskDefined',@your_roi_defined_callback);
+        drawnow
         end
         
+        mask(roiwindow.labels==0) = 0;
+        handles.data.staticmaskname=fullfile(handles.data.imdirec,'staticmask.tif');
+        imwrite(mask,handles.data.staticmaskname,'tif')
+        set(handles.staticmaskfile,'String',handles.data.staticmaskname);
+        handles.data.masktype='static';
+        set(handles.staticmaskbutton,'Value',1)
+        set(handles.dynamicmaskbutton,'Value',0)
+        set(handles.nomaskbutton,'Value',0)
+        Jlist=char(get(handles.joblist,'String'));
+        eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+        handles=update_data(handles);
+        guidata(hObject,handles)
+
+        close('Analyzer - ROI Editor')
         
-        stillmasking='Yes';mask=ones(size(im));h=figure;
-        while strcmp(stillmasking,'Yes')
-            figure(h),imshow(im.*mask,[0 255])
-            masktemp=roipoly;
-            mask(masktemp==1)=0;
-            figure(h),imshow(im.*mask,[0 255])
-            stillmasking=questdlg('Mask another region?','Region Masked','Yes','No','No');
-        end
-        close(h)
-        if ~isempty(stillmasking)
-            handles.data.staticmaskname=fullfile(handles.data.imdirec,'staticmask.tif');
-            imwrite(mask,handles.data.staticmaskname,'tif')
-            set(handles.staticmaskfile,'String',handles.data.staticmaskname);
-            handles.data.masktype='static';
-            set(handles.staticmaskbutton,'Value',1)
-            set(handles.dynamicmaskbutton,'Value',0)
-            set(handles.nomaskbutton,'Value',0)
-            Jlist=char(get(handles.joblist,'String'));
-            eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-            handles=update_data(handles);
-            guidata(hObject,handles)
-        else
-            msgbox('Masking Cancelled')
-        end
-    catch
+%         stillmasking='Yes';mask=ones(size(im,1),size(im,2));h=figure;
+%         while strcmp(stillmasking,'Yes')
+%             figure(h),imshow(im.*repmat(mask,[1 1 size(im,3)]),[0 255])
+%             masktemp=roipoly;
+%             mask(masktemp==1)=0;
+%             figure(h),imshow(im.*repmat(mask,[1 1 size(im,3)]),[0 255])
+%             stillmasking=questdlg('Mask another region?','Region Masked','Yes','No','No');
+%         end
+%         close(h)
+%         if ~isempty(stillmasking)
+%             handles.data.staticmaskname=fullfile(handles.data.imdirec,'staticmask.tif');
+%             inc_check = get(handles.mask_inclusion,'Value');
+%             imwrite(abs(inc_check-mask),handles.data.staticmaskname,'tif')
+%             set(handles.staticmaskfile,'String',handles.data.staticmaskname);
+%             handles.data.masktype='static';
+%             set(handles.staticmaskbutton,'Value',1)
+%             set(handles.dynamicmaskbutton,'Value',0)
+%             set(handles.nomaskbutton,'Value',0)
+%             Jlist=char(get(handles.joblist,'String'));
+%             eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+%             handles=update_data(handles);
+%             guidata(hObject,handles)
+%         else
+%             msgbox('Masking Cancelled')
+%         end
+    catch ME
         msgbox('Image Frame Not Found');
         e=-1;
     end
 
 end
+function your_roi_defined_callback(h,e)
+[mask, labels, n] = roiwindow.getROIData;
+delete(roiwindow);
 
 % --- Preview Image + Mask Button ---
 function impreview_Callback(hObject, eventdata, handles)
