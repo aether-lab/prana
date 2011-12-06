@@ -1093,36 +1093,38 @@ end
 function impreview_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     
-% Read color channel
-channel = str2double(handles.data.channel);
+    % Read color channel
+    channel = str2double(handles.data.channel);
     
     try
         im = double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
         if size(im, 3) > 1
-%   Extract only red channel
-             if channel == 1;
+            %   Extract only red channel
+            if channel == 1;
                 im = im(:,:,1);
-%   Extract only green channel
-             elseif channel == 2;
+                %   Extract only green channel
+            elseif channel == 2;
                 im = im(:,:,2);
-%	Extract only blue channel
-             elseif channel == 3;
+                %	Extract only blue channel
+            elseif channel == 3;
                 im = im(:,:,3);
-% 	Weighted average of channels (see rgb2gray for
-%	explanation of weighting factors)
-             elseif channel == 4;
+                % 	Weighted average of channels (see rgb2gray for
+                %	explanation of weighting factors)
+            elseif channel == 4;
                 im = 0.2989 * im(:, :, 1) + 0.5870 * im(:, :, 2) + 0.1140 * im(:, :, 3);
-%	Evenly weighted mean of channels
-             elseif channel == 5;
+                %	Evenly weighted mean of channels
+            elseif channel == 5;
                 im = (im(:,:,1) + im(:,:,2) + im(:,:,3))/3;
-             end
-         else
-%   Take only red channel
+            elseif channel == 6;
+                im = im;%#ok
+            end
+        else
+            %   Take only red channel
             im =im(:,:,1);
         end
 
-%   Flip and normalize image
-im1 = flipud(im)/255;
+    %   Flip and normalize image
+    im1 = im(end:-1:1,:,:)./255;
 
         try
             if strcmp(handles.data.masktype,'static')

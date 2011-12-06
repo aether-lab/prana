@@ -37,23 +37,15 @@ Method = {'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
 M = Method(str2double(Data.method));
 % Color channel
 try
-    if ischar(Data.version)
-        if str2double(Data.version(1:3)) <= 4.3
-            channel = 1;
-        else
-            channel = str2double(Data.channel);
-        end
+	channel = str2double(Data.channsdfel);
+catch ER
+    if strcmpi(ER.message,'Reference to non-existent field ''channel''.')
+    fprintf('Could not find color channel information, using ''red'' (first channel) as default\n')
     else
-        if Data.version(1:3) <= 4.3
-            channel = 1;
-        else
-            channel = str2double(Data.channel);
-        end
+	fprintf('Unknown issure with color channel, trying ''red'' (first channel) as default\n')
     end
-catch
     channel = 1;
 end
-
 
 %algorithm options
 Velinterp=str2double(Data.velinterp);
