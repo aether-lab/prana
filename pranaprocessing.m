@@ -37,7 +37,7 @@ Method = {'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
 M = Method(str2double(Data.method));
 % Color channel
 try
-	channel = str2double(Data.channsdfel);
+	channel = str2double(Data.channel);
 catch ER
     if strcmpi(ER.message,'Reference to non-existent field ''channel''.')
     fprintf('Could not find color channel information, using ''red'' (first channel) as default\n')
@@ -606,35 +606,35 @@ switch char(M)
                         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
                         im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
                         if size(im1, 3) == 3
-                        %Extract only red channel
-                        if channel == 1;
-                            im1 = im1(:,:,1);
-                            im2 = im2(:,:,1);
-                        %Extract only green channel
-                        elseif channel == 2;
-                            im1 = im1(:,:,2);
-                            im2 = im2(:,:,2);
-                        %Extract only blue channel
-                        elseif channel == 3;
-                            im1 = im1(:,:,3);
-                            im2 = im2(:,:,3);
-                        %Weighted average of channels (see rgb2gray for
-                        %explanation of weighting factors)
-                        elseif channel == 4;
-                            im1 = 0.2989 * im1(:, :, 1) + 0.5870 * im1(:, :, 2) + 0.1140 * im1(:, :, 3);
-                            im2 = 0.2989 * im2(:, :, 1) + 0.5870 * im2(:, :, 2) + 0.1140 * im2(:, :, 3);
-                        %Evenly weighted mean of channels
-                        elseif channel == 5;
-                            im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
-                            im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
-                        elseif channel == 6;
-                            im1=im1(:,:,1:3);
-                            im2=im2(:,:,1:3);
-                        end
+                            %Extract only red channel
+                            if channel == 1;
+                                im1 = im1(:,:,1);
+                                im2 = im2(:,:,1);
+                                %Extract only green channel
+                            elseif channel == 2;
+                                im1 = im1(:,:,2);
+                                im2 = im2(:,:,2);
+                                %Extract only blue channel
+                            elseif channel == 3;
+                                im1 = im1(:,:,3);
+                                im2 = im2(:,:,3);
+                                %Weighted average of channels (see rgb2gray for
+                                %explanation of weighting factors)
+                            elseif channel == 4;
+                                im1 = 0.2989 * im1(:, :, 1) + 0.5870 * im1(:, :, 2) + 0.1140 * im1(:, :, 3);
+                                im2 = 0.2989 * im2(:, :, 1) + 0.5870 * im2(:, :, 2) + 0.1140 * im2(:, :, 3);
+                                %Evenly weighted mean of channels
+                            elseif channel == 5;
+                                im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
+                                im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                            elseif channel == 6;
+                                im1=im1(:,:,1:3);
+                                im2=im2(:,:,1:3);
+                            end
                         else
-                        %Take only red channel
-                        im1 =im1(:,:,1);
-                        im2 =im2(:,:,1);
+                            %Take only red channel
+                            im1 =im1(:,:,1);
+                            im2 =im2(:,:,1);
                         end
 
                         %  Flip images
