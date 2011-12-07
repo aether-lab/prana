@@ -15,6 +15,7 @@ if M==0
         u=zeros(1,3);
         v=zeros(1,3);
         M=zeros(1,3);
+        D=zeros(1,3);
     else
         u=0; v=0;
     end
