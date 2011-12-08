@@ -38,6 +38,10 @@ M = Method(str2double(Data.method));
 % Color channel
 try
 	channel = str2double(Data.channel);
+    if isnan(channel);
+        fprintf('Color channel returned nan.  Please check color designation\n and confirm that it takes a value of a string.\n Setting color channel to ''red.''\n')
+        channel = 1;
+    end
 catch ER
     if strcmpi(ER.message,'Reference to non-existent field ''channel''.')
     fprintf('Could not find color channel information, using ''red'' (first channel) as default\n')
