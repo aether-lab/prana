@@ -740,7 +740,10 @@ switch char(M)
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         else
                             CCm=CCm+CC/length(I1);
-                            cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
+%                             cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
+                            ave_pre = (CCm*length(I1)/(q-1));
+                            ave_cur = ((CCm*length(I1)+CC)/q);
+                            cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(ave_cur,1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     elseif Corr(e)==2 %SPC processor
@@ -753,7 +756,8 @@ switch char(M)
                         end
                     end
                     corrtime=toc(t1);
-                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+%                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                 end
             end
 
