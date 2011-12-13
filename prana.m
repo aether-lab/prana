@@ -1334,6 +1334,19 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 
+% --- Copy Pass Button ---
+function copypassbutton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    N=str2double(handles.data.passes);
+    handles.data.passes=num2str(N+1);
+    cpass = get(handles.passlist,'Value'); % This grabs the currently selected pass number
+	eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV' num2str(cpass) ');']);
+    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
+    load_PIVlist(handles);
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
 % --- Delete Pass Button ---
 function deletepassbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
