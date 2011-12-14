@@ -164,6 +164,13 @@ catch
     defaultdata.splash='1';
 end
 
+if ~isfield(defaultdata,'outputpassbasename')
+    defaultdata.outputpassbase = 'PIV_';
+    defaultdata.PIV0.outbase = [defaultdata.outputpassbase 'pass0_'];
+    defaultdata.PIV1.outbase = [defaultdata.outputpassbase 'pass1_'];
+    defaultdata.PIV2.outbase = [defaultdata.outputpassbase 'pass2_'];
+end
+
 if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.0
     splash=splashdlg({...
          'What''s new in Prana v2.0?' ...
@@ -1328,7 +1335,8 @@ if str2double(handles.Njob)>0
     else
         eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV0);']);
     end
-    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
+    passbase = get(handles.outputpassbasename,'String');
+    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''' passbase 'pass' num2str(N+1) '_''];']);
     load_PIVlist(handles);
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
@@ -1340,8 +1348,13 @@ if str2double(handles.Njob)>0
     N=str2double(handles.data.passes);
     handles.data.passes=num2str(N+1);
     cpass = get(handles.passlist,'Value'); % This grabs the currently selected pass number
-	eval(['handles.data=setfield(handles.data,''PIV' num2str(N+1) ''',handles.data.PIV' num2str(cpass) ');']);
-    eval(['handles.data.PIV' num2str(N+1) '.outbase=[''Pass'' num2str(N+1) ''_''];']);
+    passbase = get(handles.outputpassbasename,'String');
+    for i = N+1:-1:cpass+1
+        eval(['handles.data=setfield(handles.data,''PIV' num2str(i) ''',handles.data.PIV' num2str(i-1) ');']);
+        eval(['handles.data.PIV' num2str(i) '.outbase=[''' passbase 'pass'  num2str(i) '_''];']);
+    end
+    eval(['handles.data=setfield(handles.data,''PIV' num2str(cpass+1) ''',handles.data.PIV' num2str(cpass) ');']);
+    eval(['handles.data.PIV' num2str(cpass+1) '.outbase=[''' passbase 'pass'  num2str(cpass+1) '_''];']);
     load_PIVlist(handles);
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
@@ -1353,9 +1366,10 @@ if str2double(handles.Njob)>0
     if str2double(handles.data.passes)>1
         p=get(handles.passlist,'Value');
         eval(['handles.data=rmfield(handles.data,''PIV' num2str(p) ''');']);
+        passbase = get(handles.outputpassbasename,'String');
         for e=(p+1):str2double(handles.data.passes)
             eval(['handles.data=setfield(handles.data,''PIV' num2str(e-1) ''',handles.data.PIV' num2str(e) ');']);
-            eval(['handles.data.PIV' num2str(e-1) '.outbase=[''Pass'' num2str(e-1) ''_''];']);
+            eval(['handles.data.PIV' num2str(e-1) '.outbase=[''' passbase 'pass' num2str(e-1) '_''];']);
             if e==str2double(handles.data.passes)
                 eval(['handles.data=rmfield(handles.data,''PIV' num2str(e) ''');']);
             end
@@ -2505,6 +2519,7 @@ if str2double(handles.Njob) == 0
     set(handles.uod_thresh,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.corrpeaknum,'backgroundcolor',0.5*[1 1 1]);
     set(handles.outputbasename,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.outputpassbasename,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.outputdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imagedirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imagebasename,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2586,6 +2601,7 @@ else
     set(handles.uod_thresh,'String','','backgroundcolor',[1 1 1]);
     set(handles.corrpeaknum,'backgroundcolor',[1 1 1]);
     set(handles.outputbasename,'String','','backgroundcolor',[1 1 1]);
+	set(handles.outputpassbasename,'String','','backgroundcolor',[1 1 1]);
     set(handles.imagedirectory,'String','','backgroundcolor',[1 1 1]);
     set(handles.outputdirectory,'String','','backgroundcolor',[1 1 1]);
     set(handles.imagebasename,'String','','backgroundcolor',[1 1 1]);
@@ -2959,6 +2975,7 @@ set(handles.pulseseparation,'String',handles.data.wrsep);
 set(handles.samplingrate,'String',handles.data.wrsamp);
 % set(handles.currentjobname,'String',handles.data.batchname);
 set(handles.outputdirectory,'String',handles.data.outdirec);
+set(handles.outputpassbasename,'String',handles.data.outputpassbase);
 
 set(handles.exp_date,'String',handles.data.exp_date);
 set(handles.exp_wavelength,'String',handles.data.exp_wavelength);
@@ -4261,6 +4278,39 @@ function version_box_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function version_box_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to version_box (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function outputpassbasename_Callback(hObject, eventdata, handles)
+% hObject    handle to outputpassbasename (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of outputpassbasename as text
+%        str2double(get(hObject,'String')) returns contents of outputpassbasename as a double
+if str2double(handles.Njob)>0
+    N=str2double(handles.data.passes);
+    passbase = get(handles.outputpassbasename,'String');
+    for i = 1:N
+        eval(['handles.data.PIV' num2str(i) '.outbase=[''' passbase 'pass' num2str(i) '_''];']);
+    end
+    cpass = get(handles.passlist,'Value'); % This grabs the currently selected pass number
+	set(handles.outputbasename,'String',eval(['handles.data.PIV' num2str(cpass) '.outbase']));
+    guidata(hObject,handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function outputpassbasename_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to outputpassbasename (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
