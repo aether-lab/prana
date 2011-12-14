@@ -494,20 +494,35 @@ if isnumeric(f)==0
                         if ~isfield(Data,'par')
                             Data.par='0';
                             Data.parprocessors='1';
-                            Data.version='4.0';
+                            Data.version='1.5';
                             
                         else
-                            handles.data.version='4.1';
+                            handles.data.version='1.9';
                         end
                     end
-                    if str2double(Data.version)<4.3
+                    if ~isfield(Data.PIV0,'zeromean')
                         for pass=0:str2double(Data.passes)
                             eval(['Data.PIV',num2str(pass),'.zeromean=''0'';']);
                             eval(['Data.PIV',num2str(pass),'.peaklocator=''1'';']);
                         end
                     end
+                    
+                    % This performs a check to see if the job files
+                    % contains the field 'outputpassbase' if not then it
+                    % used the output name from the final pass.
+                    if ~isfield(Data,'outputpassbase')
+                        ll=1; bb = 0;                        
+                        while bb == 0 
+                            if isfield(Data,['PIV' num2str(ll)])
+                                ll = ll+1;
+                            else
+                                bb = 1;
+                            end
+                        end
+                        eval(['Data.outputpassbase = Data.PIV' num2str(ll-1) '.outbase;']);
+                    end
 
-                    if str2double(Data.version)<4.4
+                    if ~isfield(Data,'ID')
                         Data.runPIV = '1';
                         
                         load defaultsettings.mat defaultdata
