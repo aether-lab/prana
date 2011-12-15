@@ -2930,6 +2930,13 @@ if get(handles.correlationtype,'Value')>=2
 else
     set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
 end
+% Grays out the smoothing filt size box when smoothing is not selected when
+% switching between passes.
+if str2double(A.velsmooth)  == 0
+    set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
+else
+    set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
+end
 
 a=get(handles.windowres,'String');
 [wx1 wy1 wx2 wy2] = parseNum(a);

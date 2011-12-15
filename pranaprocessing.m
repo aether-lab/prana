@@ -578,11 +578,11 @@ switch char(M)
             fprintf([frametitle ' (Pass ' num2str(e) '/' num2str(P) ')\n'])
             fprintf('----------------------------------------------------\n')
             
-%             iter = 0;
+%             whileiter = 0;
 %             ei   = 1;
 %             iter_max = 3;
 %             iter_conv = 0.2;            
-%             while iter == 0
+%             while whileiter == 0
                 
             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
             S=size(X);X=X(:);Y=Y(:);
@@ -942,8 +942,8 @@ switch char(M)
 %             % Check for iterative convergence
 %             if ei ~=1
 %                 velconv = norm(sqrt((Upre(Evalval>=0)-Uval(Evalval>=0)).^2 + (Vpre(Evalval>=0)-Vval(Evalval>=0)).^2),2)/sqrt(length(Uval(Evalval>=0)));
-%                 if velconv <= iter_conv
-%                     iter = 1;
+%                 if velconv <= iter_conv && ei > iter_min
+%                     whileiter = 1;
 %                     keyboard
 %                 end
 %             else
@@ -953,7 +953,7 @@ switch char(M)
 %                 fprintf('convergence for iter %2.0f on pass %2.0f = %0.2e\n\n',ei,e,velconv)
 %             end
 %             if ei == iter_max
-%                 iter = 1;
+%                 whileiter = 1;
 %             end
 %             Upre = Uval(:,:,1);
 %             Vpre = Vval(:,:,1);
