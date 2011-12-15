@@ -37,17 +37,18 @@ Method = {'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
 M = Method(str2double(Data.method));
 % Color channel
 try
-	channel = str2double(Data.channel);
-    if isnan(channel);
-        fprintf('Color channel returned nan.  Please check color designation\n and confirm that it takes a value of a string.\n Setting color channel to ''red.''\n')
-        channel = 1;
-    end
-catch ER
-    if strcmpi(ER.message,'Reference to non-existent field ''channel''.')
-    fprintf('Could not find color channel information, using ''red'' (first channel) as default\n')
+    if isfield(Data,'channel')
+        channel = str2double(Data.channel);
+        if isnan(channel);
+            fprintf('Color channel returned nan.  Please check color designation\n and confirm that it takes a value of a string.\n Setting color channel to ''red.''\n')
+            channel = 1;
+        end
     else
-	fprintf('Unknown issure with color channel, trying ''red'' (first channel) as default\n')
+        channel = 1;
+        fprintf('Could not find color channel information, using ''red'' (first channel) as default\n')
     end
+catch ME
+	fprintf('Unknown issure with color channel, trying ''red'' (first channel) as default\n%s',ME.stack(1))
     channel = 1;
 end
 
@@ -114,7 +115,7 @@ for e=1:P
     
     % Window Resolution (eventually move the str2double commands to the GUI callback)
     
-    try
+    if isfield(A,'winres1')
     %  Window resolutions for first image in correlation pair
     xwin_im1 = str2double(A.winres1(1:(strfind(A.winres1,',')-1)));
     ywin_im1 = str2double(A.winres1((strfind(A.winres1,',') + 1):end));
@@ -122,13 +123,13 @@ for e=1:P
     %  Window resolutions for second image in correlation pair
     xwin_im2 = str2double(A.winres2(1:(strfind(A.winres2,',')-1)));
     ywin_im2 = str2double(A.winres2((strfind(A.winres2,',') + 1):end));
-    catch
+    else
     xwin_im1 = str2double(A.winres(1:(strfind(A.winres,',')-1)));
     ywin_im1 = str2double(A.winres((strfind(A.winres,',')+1):end));
     xwin_im2 = xwin_im1;
     ywin_im2 = ywin_im1;
     end
-    
+
 %     Window resolution matrix
     Wres(:,:, e) = [xwin_im1 ywin_im1; xwin_im2 ywin_im2];
     
@@ -187,7 +188,7 @@ end
 switch char(M)
 
     case {'Multipass','Multigrid','Deform'}
-        
+        frametime=zeros(length(I1),1);
         for q=1:length(I1)                   
             tf=tic;
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
@@ -252,6 +253,12 @@ switch char(M)
             UI = BWO(1)*ones(size(XI));
             VI = BWO(2)*ones(size(YI));
 
+            corrtime=zeros(P,1);
+            valtime=zeros(P,1);
+            savetime=zeros(P,1);
+            interptime=zeros(P,1);
+            deformtime=zeros(P,1);
+            
             for e=1:P
                 t1=tic;
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
@@ -271,7 +278,6 @@ switch char(M)
                 %correlate image pair
                 if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     if Corr(e)<2
-                       %  [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
                         [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
@@ -281,9 +287,8 @@ switch char(M)
                             Vc = Vc + Vb(Eval>=0);
                         end
                     else
-%                      [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
-                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
-                         Dc = zero(size(Cc));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                        Dc = zero(size(Cc));
  
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
@@ -291,10 +296,8 @@ switch char(M)
                     
                 else                                    %either first pass, or not deform
                     if Corr(e)<2
-%                         [Xc,Yc,Uc,Vc,Cc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                            [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));                   
+                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));                   
                     else
- %                       [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         Dc = zero(size(Cc));
                     end
@@ -557,6 +560,8 @@ switch char(M)
 
     case 'Ensemble'
         
+        frametime=zeros(P,1);
+        
         %initialize grid and evaluation matrix
         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
         L=size(im1);
@@ -572,8 +577,13 @@ switch char(M)
             fprintf(['Job: ',Data.batchname,'\n'])
             fprintf([frametitle ' (Pass ' num2str(e) '/' num2str(P) ')\n'])
             fprintf('----------------------------------------------------\n')
-                
             
+%             iter = 0;
+%             ei   = 1;
+%             iter_max = 3;
+%             iter_conv = 0.2;            
+%             while iter == 0
+                
             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
             S=size(X);X=X(:);Y=Y(:);
             Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
@@ -659,14 +669,17 @@ switch char(M)
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             else
                                 CCmdist=CCmdist+CC;
-                                cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
+%                                 cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
+                                ave_pre = (CCmdist*length(I1)/(q-1));
+                                ave_cur = ((CCmdist*length(I1)+CC)/q);
+                                cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
                         elseif Corr(e)==2 %SPC processor
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                        fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                     end
                 end
 %                 if Corr(e)<2 %SCC or RPC processor
@@ -743,7 +756,7 @@ switch char(M)
 %                             cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
                             ave_pre = (CCm*length(I1)/(q-1));
                             ave_cur = ((CCm*length(I1)+CC)/q);
-                            cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(ave_cur,1),2));
+                            cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     elseif Corr(e)==2 %SPC processor
@@ -775,8 +788,6 @@ switch char(M)
             else
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
-   
-            
                 
             if Corr(e)<2 %SCC or RPC processor
                 t1=tic;
@@ -847,7 +858,7 @@ switch char(M)
                     Dval=[];
                 end
             end
-                
+            
             %write output
             if Writeswitch(e) 
                 t1=tic;
@@ -927,6 +938,27 @@ switch char(M)
             frametime(e)=eltime;
             comptime=mean(frametime)*(P-e);
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
+            
+%             % Check for iterative convergence
+%             if ei ~=1
+%                 velconv = norm(sqrt((Upre(Evalval>=0)-Uval(Evalval>=0)).^2 + (Vpre(Evalval>=0)-Vval(Evalval>=0)).^2),2)/sqrt(length(Uval(Evalval>=0)));
+%                 if velconv <= iter_conv
+%                     iter = 1;
+%                     keyboard
+%                 end
+%             else
+%                 velconv = 0;
+%             end
+%             if iter_max ~= 1
+%                 fprintf('convergence for iter %2.0f on pass %2.0f = %0.2e\n\n',ei,e,velconv)
+%             end
+%             if ei == iter_max
+%                 iter = 1;
+%             end
+%             Upre = Uval(:,:,1);
+%             Vpre = Vval(:,:,1);
+%             ei = ei+1;
+%             end
         end
         
     case 'Multiframe'

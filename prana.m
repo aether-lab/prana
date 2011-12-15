@@ -4312,13 +4312,14 @@ function outputpassbasename_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of outputpassbasename as text
 %        str2double(get(hObject,'String')) returns contents of outputpassbasename as a double
 if str2double(handles.Njob)>0
-    N=str2double(handles.data.passes);
-    passbase = get(handles.outputpassbasename,'String');
+    N=str2double(handles.data.passes); % Number of passes
+    passbase = get(handles.outputpassbasename,'String'); % Read text in outbasename textbox
     for i = 1:N
         eval(['handles.data.PIV' num2str(i) '.outbase=[''' passbase 'pass' num2str(i) '_''];']);
     end
     cpass = get(handles.passlist,'Value'); % This grabs the currently selected pass number
-	set(handles.outputbasename,'String',eval(['handles.data.PIV' num2str(cpass) '.outbase']));
+    set(handles.outputbasename,'String',eval(['handles.data.PIV' num2str(cpass) '.outbase']));
+    handles.data.outputpassbase = passbase;     
     guidata(hObject,handles)
 end
 
