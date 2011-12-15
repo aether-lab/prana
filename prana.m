@@ -1951,7 +1951,8 @@ end
 % --- Smoothing Size Text Box ---
 function smoothingsize_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.smoothingcheckbox,'Value')==1
-    eval(['handles.data.PIV' handles.data.cpass '.velsmoothfilt = num2str(get(hObject,''Value''));'])
+    eval(['handles.data.PIV' handles.data.cpass '.velsmoothfilt = ''' get(hObject,'String') ''';'])
+    set(hObject,'String',eval(['handles.data.PIV' num2str(handles.data.cpass) '.velsmoothfilt']));
     guidata(hObject,handles)
 end
 
@@ -4319,7 +4320,7 @@ if str2double(handles.Njob)>0
     end
     cpass = get(handles.passlist,'Value'); % This grabs the currently selected pass number
     set(handles.outputbasename,'String',eval(['handles.data.PIV' num2str(cpass) '.outbase']));
-    handles.data.outputpassbase = passbase;     
+    handles.data.outputpassbase = passbase;
     guidata(hObject,handles)
 end
 

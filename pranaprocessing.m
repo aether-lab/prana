@@ -921,7 +921,7 @@ switch char(M)
 
                 %velocity smoothing
                 if Velsmoothswitch(e)==1
-                    [U,V]=VELfilt(U,V,Velsmoothfilt(e));
+                    [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                 end
 
                 %velocity interpolation
@@ -1197,7 +1197,7 @@ switch char(M)
 
                     %velocity smoothing
                     if Velsmoothswitch(e)==1
-                        [U,V]=VELfilt(U,V,Velsmoothfilt(e));
+                        [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                     end
                     
                     %velocity interpolation
