@@ -1,7 +1,6 @@
 *.asv
 *.m~
 *.DS_Store
-*.fig
 *.tif
 *.dat
 *.phy
