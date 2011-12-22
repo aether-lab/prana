@@ -49,10 +49,18 @@ if str2double(verstr(1:4))<2009
 end
 
 try
-    load('defaultsettings.mat')
+    %JJC 2011-12-22:
+    % this can cause problems if defaultsettings.mat exists, but is from a previous version
+    % we should implement a version check before trying to proceed and use the values stored in it
+    %load('defaultsettings.mat')
+    
+    %for now, just always create the default from scratch
+    error('prana:pranaGUI:defaultsettingsVersionError','defaultsettings.mat doesn''t match the current version')
+    
+    %Are we still saving defaultsettings.mat anywhere?  I couldn't find it.
 catch
     defaultdata.clientversion='2.0';
-    defaultdata.version='2.0';
+    %defaultdata.version='2.0'; %gets set below in call to pranaPIVcode('version')
     defaultdata.imbase='Img_';
     defaultdata.imzeros='6';
     defaultdata.imext='tif';
@@ -164,12 +172,15 @@ catch
     defaultdata.splash='1';
 end
 
+%JJC: shouldn't this be in the catch statement as well?
 if ~isfield(defaultdata,'outputpassbasename')
     defaultdata.outputpassbase = 'PIV_';
     defaultdata.PIV0.outbase = [defaultdata.outputpassbase 'pass0_'];
     defaultdata.PIV1.outbase = [defaultdata.outputpassbase 'pass1_'];
     defaultdata.PIV2.outbase = [defaultdata.outputpassbase 'pass2_'];
 end
+
+defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
 
 if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.0
     splash=splashdlg({...
@@ -182,11 +193,25 @@ if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.
     if strcmp(splash,'Don''t show this anymore')
         defaultdata.splash='0';
     end
-    defaultdata.clientversion='0.99';
-    defaultdata.version='2.0';
-    save('defaultsettings.mat','defaultdata')
+    
+    %JJC: Why are these here?  We define them above - redefining them here overwrites them,
+    % but ONLY if the splash screen is displayed.  Also, the version numbers are wrong,
+    % so the splash screen will always show.  
+    % Finally, The save should be outside this splash screen check, or else the default will
+    % be overwritten each time it runs if the user doesn't turn off the splash screen, but 
+    % never saved if it's already disabled.  
+    % It needs to be AFTER the pranaPIVcode('version') check, at any rate.
+    
+    %defaultdata.clientversion='0.99';
+    %defaultdata.version='2.0';
+    
+    %save('defaultsettings.mat','defaultdata')
 end
-defaultdata.version=pranaPIVcode('version');
+
+%JJC: for now, disable this save - running prana drops defaultsettings.mat files in whatever your current working directory is - ANNOYING!
+%save('defaultsettings.mat','defaultdata')
+
+
 handles.data=defaultdata;
 pranadir=which('prana');
 addpath([pranadir(1:end-7),'documentation']);
