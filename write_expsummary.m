@@ -1,9 +1,9 @@
 function write_expsummary(Data)
 
 if ispc
-    fname=[Data.outdirec,'\ExpSummary_',Data.batchname,'.txt'];
+    fname=[Data.outdirec,'\ExpSummary_',Data.batchname,date,'.txt'];
 else
-    fname=[Data.outdirec,'/ExpSummary_',Data.batchname,'.txt'];
+    fname=[Data.outdirec,'/ExpSummary_',Data.batchname,date,'.txt'];
 end
 fid=fopen(fname,'w');
 if fid==-1

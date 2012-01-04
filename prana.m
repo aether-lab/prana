@@ -608,8 +608,7 @@ end
 function savejobbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data = handles.data;
-
-       uisave('Data',[handles.data.imdirec handles.data.batchname '.mat']);
+    uisave('Data',[handles.data.imdirec handles.data.batchname '.mat']);
 end
 
 % --- Copy Job Button ---
@@ -1053,6 +1052,10 @@ end
 function staticmaskfile_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0 && get(handles.staticmaskbutton,'Value')==1
     handles.data.staticmaskname = get(hObject,'String');
+    if ~isempty(dir(handles.data.staticmaskname))
+        set(handles.staticmaskfile,'Backgroundcolor',[1 1 1])
+    end
+    load_imlist(handles);
     guidata(hObject,handles)
 end
 function staticmaskfile_CreateFcn(hObject, eventdata, handles)
@@ -1294,6 +1297,10 @@ end
 function outputdirectory_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.outdirec = get(hObject,'String');
+    if ~isempty(dir(handles.data.outdirec))
+        set(handles.outputdirectory,'Backgroundcolor',[1 1 1])
+    end
+    load_imlist(handles);
     guidata(hObject,handles)
 end
 function outputdirectory_CreateFcn(hObject, eventdata, handles)
@@ -1311,6 +1318,10 @@ if str2double(handles.Njob)>0
         handles.data.outdirec = D;
     end
     set(handles.outputdirectory,'string',handles.data.outdirec);
+    if ~isempty(dir(handles.data.outdirec))
+        set(handles.outputdirectory,'Backgroundcolor',[1 1 1])
+    end
+    load_imlist(handles);
     guidata(hObject,handles)
 end
 
@@ -3103,6 +3114,26 @@ if isempty(dir(handles.data.imdirec))
     set(handles.imagedirectory,'backgroundcolor','r');
 else
     set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
+end
+
+if isempty(dir(handles.data.outdirec))
+    set(handles.outputdirectory,'backgroundcolor','r');
+else
+    set(handles.outputdirectory,'backgroundcolor',[1 1 1]);
+end
+
+if strcmpi(handles.data.masktype,'static')
+    if isempty(dir(handles.data.staticmaskname))
+        set(handles.staticmaskfile,'backgroundcolor','r');
+    else
+        set(handles.staticmaskfile,'backgroundcolor',[1 1 1]);
+    end
+elseif strcmpi(handles.data.masktype,'dynamic')
+	if isempty(dir(handles.data.maskdirec))
+        set(handles.maskdirectory,'backgroundcolor','r');
+    else
+        set(handles.maskdirectory,'backgroundcolor',[1 1 1]);
+    end
 end
 
 if str2double(get(handles.magnification,'String'))<=0
