@@ -531,6 +531,10 @@ if isnumeric(f)==0
                             eval(['Data.PIV',num2str(pass),'.peaklocator=''1'';']);
                         end
                     end
+                    if ~isfield(Data,'channel')
+                        Data.channel = 1;
+                    end
+                    
                     
                     % This performs a check to see if the job files
                     % contains the field 'outputpassbase' if not then it
