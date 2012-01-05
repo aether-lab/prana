@@ -1,9 +1,16 @@
 function write_expsummary(Data)
 
+% This string contains the date and time this function was called and
+% appends it to the end of the expsummary.  This way when the jobs
+% internals are changed but not the batch name a different text file will
+% be created and not over written.
+dateinfo = datestr(now);
+dateinfo(12) = '-';
+dateinfo([15 18]) = '.';
 if ispc
-    fname=[Data.outdirec,'\ExpSummary_',Data.batchname,date,'.txt'];
+    fname=[Data.outdirec,'\ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
 else
-    fname=[Data.outdirec,'/ExpSummary_',Data.batchname,date,'.txt'];
+    fname=[Data.outdirec,'/ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
 end
 fid=fopen(fname,'w');
 if fid==-1
