@@ -618,11 +618,11 @@ end
 % --- Copy Job Button ---
 function copyjobbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    Jlist=char(get(handles.joblist,'String'));
+    Jlist = char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
 end
-Data=handles.data;
-vn=0;
+Data = handles.data;
+vn = 0;
 Data.batchname=char(inputdlg('Job Name?                  ','NEW JOB',1,{strtrim(Jlist(str2double(handles.Cjob),:))}));
 if isempty(Data.batchname)
     vn=-1;
@@ -4160,30 +4160,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
-function verion_box_Callback(hObject, eventdata, handles)
-% hObject    handle to verion_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of verion_box as text
-%        str2double(get(hObject,'String')) returns contents of verion_box as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function verion_box_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to verion_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
 function version_box_Callback(hObject, eventdata, handles)
 % hObject    handle to version_box (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -4204,8 +4180,6 @@ function version_box_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
 
 function outputpassbasename_Callback(hObject, eventdata, handles)
 % hObject    handle to outputpassbasename (see GCBO)
@@ -4238,3 +4212,50 @@ function outputpassbasename_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in renamejob_pushButton.
+function renamejob_pushButton_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob) > 0 % If more than one job exists
+    vn = 0; % Initialize some flag?
+    selectedJob = str2double(handles.Cjob); % Determine which job is selected
+    Jlist = char(get(handles.joblist,'String')); % read the names of the jobs
+
+    % Ask user for the new name
+    newJobName=char(inputdlg('Rename job as                  ','Rename Job',1,{strtrim(Jlist(str2double(handles.Cjob),:))})); % Input dialog
+    if isempty(newJobName) % If no name was input, exit renamer.
+        vn=-1; % Set valid name flag to -1 
+    end
+
+% Check for conditions that could cause errors
+    while vn == 0 % If a valid name was input...
+        if isfield(handles, newJobName) % If the job already exists...
+            newJobName = char(inputdlg('Job already exists, rename?','NEW JOB',1,{strtrim(Jlist(str2double(handles.Cjob),:))})); % Inform user that job exists and ask for a different name
+            if isempty(newJobName) % If an empty string was input for the new name, exit the renamer.
+                vn=-1; % Set valid name flag to -1
+            end
+        else % If a valid string was input for the job name ...
+            vn=1; % Set valid name flag to 1
+        end
+    end
+
+if vn ~= -1 % If a valid name was input...
+        JlistStruct = cellstr(Jlist); % Convert joblist to structure
+        oldJobName = JlistStruct{selectedJob}; % Determine the old name of the job
+        JlistStruct{selectedJob} = newJobName; % Change the job name in the GUI list box (but not in the data structure)
+        Jlist = char(JlistStruct); % Convert job list structure to characters
+        [handles.(newJobName)] = handles.(oldJobName); % Copy the old job data to the new job (this line uses dynamic fields)
+        handles = rmfield(handles, oldJobName); % Remove the old job from the data structure
+end
+
+    set(handles.joblist, 'String', Jlist, 'Value', str2double(handles.Cjob)); % Update joblist text box
+    handles=update_data(handles); % Update handles
+    guidata(hObject,handles)
+    
+end
+
+
+
+% hObject    handle to renamejob_pushButton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
