@@ -433,20 +433,29 @@ end
 function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data=handles.data;
-    %write_expsummary(Data,handles);
-    pranaPIVcode(Data);
+    if get(handles.runPIVcheckbox,'value')
+        pranaPIVcode(Data);
+    end
+    if get(handles.runidcheckbox,'value') || get(handles.runsizingcheckbox,'value') || get(handles.runtrackingcheckbox,'value')
+        pranaPTVcode(Data)
+    end
 end
 
 % --- Run All Jobs Button ---
 function runall_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
+    
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
     
     for e=1:size(Jlist,1)
         Data=eval(['handles.' Jlist(e,:)]);
-        %write_expsummary(Data,handles);
-        pranaPIVcode(Data);
+        if get(handles.runPIVcheckbox,'value')
+            pranaPIVcode(Data);
+        end
+        if get(handles.runidcheckbox,'value') || get(handles.runsizingcheckbox,'value') || get(handles.runtrackingcheckbox,'value')
+            pranaPTVcode(Data)
+        end
     end
 end
 

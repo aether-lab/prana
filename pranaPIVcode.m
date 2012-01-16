@@ -2,11 +2,20 @@ function varargout=pranaPIVcode(Data)
 
 if ischar(Data)
     if strcmpi(Data,'version')
-        varargout{1} = '2.0.beta.r2011.01.11';
+        varargout{1} = '2.0.beta.r2011.01.16';
     else
         error('Error: String request must be version.')
     end
 else
+    
+    
+% Write experimental summary for the given job.  This was previuosly in the
+% GUI but has been moved here so that it is always run even if prana is run
+% via a script.
+% This call also puts the out put on the screen for the user to evaluate.
+write_expsummary(Data)
+    
+    
 %% Set up a parallel job if needed
 if str2double(Data.par)
     fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
