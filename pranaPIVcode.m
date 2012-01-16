@@ -27,9 +27,9 @@ if str2double(Data.par)
             beep
             disp('Error Running Job in Parallel - Defaulting to Single Processor')
             poolopen=0;
-            fprintf('\n-------------- Processing Dataset ------------------\n')
+            fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
             pranaprocessing(Data)
-            fprintf('---------------- Job Completed ---------------------\n')
+            fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
         end
     end
     if poolopen
@@ -103,16 +103,16 @@ if str2double(Data.par)
 
                 pranaprocessing(Data,I1dist,I2dist,masknamedist);
             end
-            fprintf('----------------- Job Completed ----------------------\n')
+            fprintf('----------------- Job Completed at %s----------------------\n', datestr(now));
         end
         if poolopen
             matlabpool close
         end
     end
 else
-    fprintf('\n-------------- Processing Dataset ------------------\n')
+    fprintf('\n-------------- Processing Dataset (started at %s)------------------\n', datestr(now));
     pranaprocessing(Data)
-    fprintf('---------------- Job Completed ---------------------\n')
+    fprintf('---------------- Job Completed at %s---------------------\n', datestr(now))
 end
 end
 end
