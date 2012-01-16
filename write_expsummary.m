@@ -53,9 +53,9 @@ if str2double(Data.method)>=5
     expsummary = [expsummary sprintf(['Maximum Framestep:             ',Data.framestep,'\n'])];
 end
 
-channel = {'Red','Green','Blue','Weighted Average','Mean','Color Ensemble'};
+channel = {'Red (Grey Scale)','Green','Blue','Weighted Average','Mean','Color Ensemble'};
 expsummary = [expsummary sprintf('\n----------------------Images and Masking---------------------\n')];
-% expsummary = [expsummary sprintf(['Image Directory:               ',Data.imdirec,'\n'])];
+expsummary = [expsummary sprintf(['Image Directory:               ',Data.imdirec,'\n'])];
 expsummary = [expsummary sprintf(['Image Basename:                ',Data.imbase,'\n'])];
 expsummary = [expsummary sprintf(['Image Zeros:                   ',Data.imzeros,'\n'])];
 expsummary = [expsummary sprintf(['Image Extension:               ',Data.imext,'\n'])];
@@ -74,7 +74,7 @@ if strcmp(Data.masktype,'static')
     expsummary = [expsummary sprintf(['Static\nMask File: ',Data.staticmaskname(slshind(end)+1:end),'\n'])];
 elseif strcmp(Data.masktype,'dynamic')
     expsummary = [expsummary sprintf('Dynamic\n')];
-%     expsummary = [expsummary sprintf(['Mask Directory:                ',Data.maskdirec,'\n'])];
+    expsummary = [expsummary sprintf(['Mask Directory:               ',Data.maskdirec,'\n'])];
     expsummary = [expsummary sprintf(['Mask Basename:                ',Data.maskbase,'\n'])];
     expsummary = [expsummary sprintf(['Mask Zeros:                   ',Data.maskzeros,'\n'])];
     expsummary = [expsummary sprintf(['Mask Extension:               ',Data.maskext,'\n'])];
