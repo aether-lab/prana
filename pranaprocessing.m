@@ -104,6 +104,7 @@ PeakNum=zeros(P,1);
 PeakMag=zeros(P,1);
 PeakVel=zeros(P,1);
 wbase=cell(0);
+frac_filt=zeros(P,1);
 
 %read data info for each pass
 for e=1:P
@@ -142,6 +143,7 @@ for e=1:P
     Gbuf(e,:) = [str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
     Corr(e) = str2double(A.corr)-1;
     D(e) = str2double(A.RPCd);
+    frac_filt(e) = str2double(A.frac_filt);
     Zeromean(e) = str2double(A.zeromean);
     Peaklocator(e) = str2double(A.peaklocator);
     Velsmoothswitch(e) = str2double(A.velsmooth);
@@ -280,8 +282,8 @@ switch char(M)
 
                 %correlate image pair
                 if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
-                    if Corr(e)<2
-                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0));
+                    if Corr(e)<5
+                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -298,15 +300,15 @@ switch char(M)
                     end
                     
                 else                                    %either first pass, or not deform
-                    if Corr(e)<2
-                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));                   
+                    if Corr(e)<5
+                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        Dc = zero(size(Cc));
+                        Dc = zeros(size(Cc));
                     end
                 end
                 
-                if Corr(e)<2
+                if Corr(e)<5
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                         U=zeros(size(X,1),3);
                         V=zeros(size(X,1),3);
@@ -360,7 +362,7 @@ switch char(M)
                     t1=tic;
                         
                     if Peakswitch(e)
-                        if PeakVel(e) && Corr(e)<2
+                        if PeakVel(e) && Corr(e)<5
                             U=[Uval,U(:,1:PeakNum(e))];
                             V=[Vval,V(:,1:PeakNum(e))];
                         else
@@ -665,7 +667,7 @@ switch char(M)
                         %correlate image pair and average correlations
 %                       [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        if Corr(e)<2 %SCC or RPC processor
+                        if Corr(e)<5 %SCC or RPC processor
                             if q==1
                                 CCmdist=CC;
                                 cnvg_est = 0;
@@ -685,7 +687,7 @@ switch char(M)
                         fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                     end
                 end
-%                 if Corr(e)<2 %SCC or RPC processor
+%                 if Corr(e)<5 %SCC or RPC processor
                     CCm=zeros(size(CCmdist{1}));
                     for i=1:length(CCmdist)
                         CCm=CCm+CCmdist{i}/length(I1);
@@ -749,7 +751,7 @@ switch char(M)
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    if Corr(e)<2 %SCC or RPC processor
+                    if Corr(e)<5 %SCC or RPC processor
                         if q==1
                             CCm=CC/length(I1);
                             cnvg_est = 0;
@@ -792,7 +794,7 @@ switch char(M)
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
                 
-            if Corr(e)<2 %SCC or RPC processor
+            if Corr(e)<5 %SCC or RPC processor
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
@@ -867,7 +869,7 @@ switch char(M)
                 t1=tic;
 
                 if Peakswitch(e)
-                    if PeakVel(e) && Corr(e)<2
+                    if PeakVel(e) && Corr(e)<5
                         U=[Uval,U(:,1:PeakNum(e))];
                         V=[Vval,V(:,1:PeakNum(e))];
                         Eval=[Evalval,Eval(:,1:PeakNum(e))];
@@ -1043,7 +1045,7 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
                 Uc=[];Vc=[];Cc=[];Dc=[];
 
-                if Corr(e)<2
+                if Corr(e)<5
                     U=zeros(size(X,1),3,N);
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
@@ -1066,7 +1068,7 @@ switch char(M)
                         
                         %correlate image pair
 %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,frac_filt(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
@@ -1140,7 +1142,7 @@ switch char(M)
                 if Writeswitch(e) 
                     t1=tic;
                     if Peakswitch(e)                    
-                        if PeakVel(e) && Corr(e)<2
+                        if PeakVel(e) && Corr(e)<5
                             U=[Uval(:,1),U(:,1:PeakNum(e))];
                             V=[Vval(:,1),V(:,1:PeakNum(e))];
                             Eval=[Evalval(:,1),Eval(:,1:PeakNum(e))];

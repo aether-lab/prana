@@ -65,7 +65,7 @@ catch
     defaultdata.imzeros='6';
     defaultdata.imext='tif';
     defaultdata.imcstep='1';
-    defaultdata.imfstep='2';
+    defaultdata.imfstep='1';
     defaultdata.imfstart='1';
     defaultdata.imfend='1';
 
@@ -119,6 +119,7 @@ catch
     defaultdata.PIV0.BWO='0,0';
     defaultdata.PIV0.corr='2';
     defaultdata.PIV0.RPCd='2.8';
+    defaultdata.PIV0.frac_filt='1';
     defaultdata.PIV0.zeromean='0';
     defaultdata.PIV0.peaklocator='1';
     defaultdata.PIV0.velsmooth='0';
@@ -182,7 +183,7 @@ end
 
 defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
 
-if str2double(defaultdata.splash)==1 || str2double(defaultdata.clientversion)<2.0
+if str2double(defaultdata.splash)==0 || str2double(defaultdata.clientversion)<2.0
     splash=splashdlg({...
          'What''s new in Prana v2.0?' ...
          '' ...
@@ -1326,7 +1327,7 @@ function loadoutputdirectorybutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     D = handles.data.outdirec;
 
-    handles.data.outdirec = uigetdir(handles.data.imdirec);
+    handles.data.outdirec = uigetdir(handles.data.imdirec,'Location for PIV Output');
     if handles.data.outdirec==0
         handles.data.outdirec = D;
     end
@@ -1929,11 +1930,18 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
     N=handles.data.cpass;
     A=eval(['handles.data.PIV' num2str(N)]);
-    if str2double(A.corr)==1
+    if any(str2double(A.corr)== [1 3 5])
         set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
     else
         set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
     end
+    if str2double(A.corr) == 4
+        set(handles.frac_filter_weight,'backgroundcolor',[1 1 1]);
+        set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
+    else
+        set(handles.frac_filter_weight,'backgroundcolor',0.5*[1 1 1]);
+    end
+    set(handles.correlationtype,'backgroundcolor',[1 1 1]);
 end
 function correlationtype_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
@@ -1961,6 +1969,26 @@ if str2double(handles.Njob)>0
     end
 end
 function rpcdiameter_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Fractional Filter Text Box ---
+function frac_filter_weight_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.corr_frac_filt = get(hObject,''String'');'])
+    guidata(hObject,handles)
+    if get(handles.correlationtype,'Value')==4
+        if str2double(get(hObject,'String'))==0
+            set(hObject,'backgroundcolor',[1 0.5 0]);
+        else
+            set(hObject,'backgroundcolor',[1 1 1]);
+        end
+    else
+        set(hObject,'backgroundcolor',0.5*[1 1 1]);
+    end
+end
+function frac_filter_weight_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -2605,6 +2633,7 @@ if str2double(handles.Njob) == 0
     set(handles.gridbuffer,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.windowsize,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.rpcdiameter,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.frac_filter_weight,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.bulkwinoffset,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.writeoutputcheckbox,'Value',0,'backgroundcolor',handles.syscolor);
     set(handles.validatecheckbox,'Value',0,'backgroundcolor',handles.syscolor);
@@ -2851,6 +2880,7 @@ set(handles.correlationtype,'Value',str2double(A.corr));
 set(handles.subpixelinterp,'Value',str2double(A.peaklocator));
 set(handles.zeromeancheckbox,'Value',str2double(A.zeromean));
 set(handles.rpcdiameter,'string',str2double(A.RPCd));
+set(handles.frac_filter_weight,'string',str2double(A.frac_filt));
 set(handles.smoothingsize,'String',A.velsmoothfilt);
 set(handles.smoothingcheckbox,'Value',str2double(A.velsmooth));
 set(handles.validatecheckbox,'Value',str2double(A.val));
@@ -2966,7 +2996,7 @@ else
     set(handles.gridres,'backgroundcolor',[1 1 1]);
     set(handles.winoverlap,'backgroundcolor',0.5*[1 1 1]);
 end
-if get(handles.correlationtype,'Value')>=2
+if any(get(handles.correlationtype,'Value')==[2 4])
     if str2double(get(handles.rpcdiameter,'String'))<2
         if str2double(get(handles.rpcdiameter,'String'))==0
             set(handles.rpcdiameter,'backgroundcolor','r');
@@ -2975,6 +3005,11 @@ if get(handles.correlationtype,'Value')>=2
         end
     else
         set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
+    end
+    if get(handles.correlationtype,'Value')==4
+        set(handles.frac_filter_weight,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.frac_filter_weight,'backgroundcolor',0.5.*[1 1 1]);
     end
 else
     set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
@@ -3996,10 +4031,10 @@ function saveworkspace_menuItem_Callback(hObject, eventdata, handles)
 imageDir = get(handles.imagedirectory, 'String');
 
 % Specify directory in which to save workspace
-workspaceDir = uigetdir(imageDir);
+[workspacepath] = uigetdir(imageDir,'Location to Save Workspace');
 
 % Exit save if the user selects 'cancel' in UIGET
-if workspaceDir ~= 0;
+if workspacepath ~= 0;
 
 %     Read the names of jobs in the present workspace
     jobs = get(handles.joblist, 'String');
@@ -4007,7 +4042,7 @@ if workspaceDir ~= 0;
 %     Save each job to the directory specified by workspaceDir
     for n = 1:length(jobs);
                 eval( ['Data = handles.' char(jobs(n)) ';'] );
-                save([workspaceDir '/' char(jobs(n)) '.mat'], 'Data');
+                save([workspacepath '/' char(jobs(n)) '.mat'], 'Data');
     end
 
 else
@@ -4262,9 +4297,3 @@ end
     guidata(hObject,handles)
     
 end
-
-
-
-% hObject    handle to renamejob_pushButton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
