@@ -11,8 +11,6 @@ else
     pltdirec=[Data.outdirec '/'];
 end
 
-
-
 if nargin<3
     I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
     I2 = I1+str2double(Data.imcstep);
@@ -56,11 +54,6 @@ catch ME
     channel = 1;
     Data.channel = '1';
 end
-
-% Write experimental summary for the given job.  This was previuosly in the
-% GUI but has been moved here so that it is always run even if prana is run
-% via a script.
-write_expsummary(Data)
 
 %algorithm options
 Velinterp=str2double(Data.velinterp);
