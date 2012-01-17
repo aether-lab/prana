@@ -538,7 +538,7 @@ switch char(M)
             %output text
             fprintf('\n----------------------------------------------------\n')
             fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ')\n'])
+            fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ') at %s \n'], datestr(now));
             fprintf('----------------------------------------------------\n')
             for e=1:P
                 fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime(e)/60),floor(rem(corrtime(e),60)),rem(corrtime(e),60)-floor(rem(corrtime(e),60)))
@@ -1218,7 +1218,8 @@ switch char(M)
             %output text
             fprintf('\n----------------------------------------------------\n')
             fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf([frametitle ' Completed (' num2str(q+1-qstart) '/' num2str(length(qstart:qend)) ')\n'])
+            fprintf([frametitle ' Completed (' num2str(q+1-qstart) '/' num2str(length(qstart:qend)) ') at %s \n'], datestr(now));
+%             fprintf(1, 'Frame completed at %s \n', datestr(now)); % Print the date and time at which frame was completed
             fprintf('----------------------------------------------------\n')
             for e=1:P
                 fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime(e)/60),floor(rem(corrtime(e),60)),rem(corrtime(e),60)-floor(rem(corrtime(e),60)))
