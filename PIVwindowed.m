@@ -73,7 +73,7 @@ else
 end
 
 
-%% Cross-Correlation
+% Cross-Correlation
 
 Gens=zeros(Ny,Nx,size(im1,3));
 for n=1:length(X)
