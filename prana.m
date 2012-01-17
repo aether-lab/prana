@@ -520,7 +520,7 @@ if isnumeric(f)==0
     try
         for pp=1:length(f)
             load([handles.loaddirec char(f(pp))]);
-            if exist('Data')~=0
+            if exist('Data','var')~=0
                 vn=0;
                 while vn==0
                     %Attempt to make backwards-compatible with older
@@ -544,21 +544,17 @@ if isnumeric(f)==0
                     if ~isfield(Data,'channel')
                         Data.channel = 1;
                     end
-                    
+                    if ~isfield(Data.PIV0,'frac_filt')
+                        for pass=0:str2double(Data.passes)
+                            eval(['Data.PIV',num2str(pass),'.frac_filt=''1'';']);
+                        end
+                    end
                     
                     % This performs a check to see if the job files
                     % contains the field 'outputpassbase' if not then it
                     % used the output name from the final pass.
                     if ~isfield(Data,'outputpassbase')
-                        ll=1; bb = 0;                        
-                        while bb == 0 
-                            if isfield(Data,['PIV' num2str(ll)])
-                                ll = ll+1;
-                            else
-                                bb = 1;
-                            end
-                        end
-                        eval(['Data.outputpassbase = Data.PIV' num2str(ll-1) '.outbase;']);
+                        eval(['Data.outputpassbase = Data.PIV' Data.passes '.outbase;']);
                     end
 
                     if ~isfield(Data,'ID')
@@ -698,17 +694,24 @@ if str2double(handles.Njob)>0
         handles.data.imfend = F;
     else
         i=strfind(imname,'.');
-        handles.data.imext=imname((i+1):end);
-        fstart=0;zeros=0;
-        while ~isnan(fstart)
-            zeros=zeros+1;
-            fstart=str2double(imname((i-zeros):(i-1)));
+        handles.data.imext=imname((i(end)+1):end);
+        j=strfind(imname(1:i(end)-1),'.');
+        if isempty(j)
+            j=0;test = nan;
+            while isnan(test)
+                j = j+1;
+                test=str2double(imname(j(end):i(end)-1));
+            end
+            zeros=i(end)-1-(j(end)-1);
+        else
+            zeros=i(end)-1-j(end);
         end
-        handles.data.imzeros=num2str(zeros-1);
-        fstart=str2double(imname((i-(zeros-1)):(i-1)));
+        handles.data.imbase=imname(1:(i(end)-1-zeros));
+        handles.data.imzeros=num2str(zeros);
+        fstart=str2double(imname((i(end)-zeros):(i(end)-1)));
         handles.data.imfstart=num2str(fstart);
-        handles.data.imfend=num2str(fstart);
-        handles.data.imbase=imname(1:(i-zeros));
+        dirinfo = dir([handles.data.imdirec handles.data.imbase '*.' handles.data.imext]);
+        handles.data.imfend=num2str(str2double(dirinfo(end).name(i(end)-zeros:i(end)-1))-1);
     end
     set(handles.imagedirectory,'string',handles.data.imdirec);
     set(handles.imagebasename,'string',handles.data.imbase);
@@ -1304,6 +1307,7 @@ if str2double(handles.Njob)>0
         if gcf~=gcbf
             plot(X,Y,'r.')
         end
+        set(gcf,'name',sprintf('Image + Mask, %0.0f total vectors locations shown for pass %s',length(X),handles.data.cpass))
     end
 end
 

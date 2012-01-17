@@ -1,4 +1,4 @@
-function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,Zeromean,X,Y,Uin,Vin)
+function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,Zeromean,fracval,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
 
 %convert input parameters
@@ -11,13 +11,13 @@ X=X(:);
 Y=Y(:);
 
 %correlation and window mask types
-ctype    = {'SCC','RPC','SPC'};
+ctype    = {'SCC','RPC','GCC','FWC','SPC'};
 tcorr = char(ctype(corr+1)); 
 
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin <=11
+if nargin <=12
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -43,6 +43,16 @@ spectral = fftshift(energyfilt(Sx,Sy,D,0));
 %fftshift indicies
 fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
+
+if strcmpi(tcorr,'FWC')
+    frac = fracval;
+    spectral = ones(size(spectral));
+elseif strcmpi(tcorr,'GCC')
+    frac = 1;
+    spectral = ones(size(spectral));
+else
+    frac = 1;
+end
 
 switch upper(tcorr)
 
@@ -170,7 +180,7 @@ switch upper(tcorr)
         end
 
     %Robust Phase Correlation
-    case 'RPC'
+    case {'RPC','GCC','FWC'}
 
         %initialize correlation tensor
         CC = zeros(Sy,Sx,length(X));
@@ -228,7 +238,11 @@ switch upper(tcorr)
             W = ones(Sy,Sx);
             Wden = sqrt(P21.*conj(P21));
             W(P21~=0) = Wden(P21~=0);
-            R = P21./W;
+            if frac ~=1
+                R = P21./(W.^frac);
+            else
+                R = P21./W;
+            end
 
             %Robust Phase Correlation with spectral energy filter
             G = ifftn(R.*spectral,'symmetric');
@@ -291,7 +305,11 @@ switch upper(tcorr)
             W = ones(Sy,Sx);
             Wden = sqrt(P21.*conj(P21));
             W(P21~=0) = Wden(P21~=0);
-            R = P21./W;
+            if frac ~=1
+                R = P21./(W.^frac);
+            else
+                R = P21./W;
+            end
 
             %Robust Phase Correlation with spectral energy filter
             G = ifftn(R.*spectral,'symmetric');
