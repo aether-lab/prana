@@ -33,7 +33,7 @@ end
 
 %method and passes
 P = str2double(Data.passes);
-Method = {'Multipass','Multigrid','Deform','Ensemble','Multiframe'};
+Method = {'Multipass','Multigrid','Deform','Ensemble','EDeform','Multiframe'};
 M = Method(str2double(Data.method));
 % Color channel
 try
@@ -191,8 +191,9 @@ end
 
 %% --- Evaluate Image Sequence ---
 switch char(M)
-
+    
     case {'Multipass','Multigrid','Deform'}
+        %% --- Multipass, Multigrid, Deform
         frametime=zeros(length(I1),1);
         for q=1:length(I1)                   
             tf=tic;
@@ -282,7 +283,7 @@ switch char(M)
 
                 %correlate image pair
                 if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
-                    if Corr(e)<5
+                    if Corr(e)<4
                         [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
@@ -300,7 +301,7 @@ switch char(M)
                     end
                     
                 else                                    %either first pass, or not deform
-                    if Corr(e)<5
+                    if Corr(e)<4
                         [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -308,7 +309,7 @@ switch char(M)
                     end
                 end
                 
-                if Corr(e)<5
+                if Corr(e)<4
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                         U=zeros(size(X,1),3);
                         V=zeros(size(X,1),3);
@@ -362,7 +363,7 @@ switch char(M)
                     t1=tic;
                         
                     if Peakswitch(e)
-                        if PeakVel(e) && Corr(e)<5
+                        if PeakVel(e) && Corr(e)<4
                             U=[Uval,U(:,1:PeakNum(e))];
                             V=[Vval,V(:,1:PeakNum(e))];
                         else
@@ -563,8 +564,9 @@ switch char(M)
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
         end
 
-    case 'Ensemble'
         
+    case {'Ensemble','EDeform'}
+        %% --- Ensemble and Ensemble Deform --- 
         frametime=zeros(P,1);
         
         %initialize grid and evaluation matrix
@@ -573,10 +575,10 @@ switch char(M)
         [XI,YI]=IMgrid(L,[0 0]);
         UI = BWO(1)*ones(size(XI));
         VI = BWO(2)*ones(size(XI));
-            
+        
         for e=1:P
             tf=tic;
-
+            
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
             fprintf('\n----------------------------------------------------\n')
             fprintf(['Job: ',Data.batchname,'\n'])
@@ -586,16 +588,18 @@ switch char(M)
 %             whileiter = 0;
 %             ei   = 1;
 %             iter_max = 3;
-%             iter_conv = 0.2;            
+%             iter_conv = 0.2;
 %             while whileiter == 0
-                
+            
             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
             S=size(X);X=X(:);Y=Y(:);
-            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Eval(Eval==0)=-1;
-            Eval(Eval>0)=0;
+            if e==1 || strcmpi(M,'Ensemble')
+                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                Eval(Eval==0)=-1;
+                Eval(Eval>0)=0;
+            end
             
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                 U=zeros(size(X,1),3);
@@ -619,8 +623,7 @@ switch char(M)
                     end
                     
                     for q=1:length(I1dist)
-                        t1=tic;
-
+                        
                         %load image pair and flip coordinates
                         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
                         im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
@@ -655,7 +658,7 @@ switch char(M)
                             im1 =im1(:,:,1);
                             im2 =im2(:,:,1);
                         end
-
+                        
                         %  Flip images
                         %flipud only works on 2D matices.
 %                         im1=flipud(im1(:,:,1));
@@ -663,11 +666,119 @@ switch char(M)
                         im1 = im1(end:-1:1,:,:);
                         im2 = im2(end:-1:1,:,:);
 %                         L=size(im1);
-
+                        
+                        if e~=1 && strcmpi(M,'EDeform')
+                            t1=tic;
+                            keyboard
+                            %translate pixel locations
+                            XD1 = XI+UI/2;
+                            YD1 = YI+VI/2;
+                            XD2 = XI-UI/2;
+                            YD2 = YI-VI/2;
+                            
+                            %preallocate deformed images
+                            im1d = zeros(L);
+                            im2d = zeros(L);
+                            
+                            %cardinal function interpolation
+                            if Iminterp==1
+                                for i=1:L(1)
+                                    for j=1:L(2)
+                                        
+                                        %image 1 interpolation
+                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                            end
+                                        end
+                                        
+                                        %image 2 interpolation
+                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                            end
+                                        end
+                                        
+                                    end
+                                end
+                                
+                                %cardinal function interpolation with Blackman filter
+                            elseif Iminterp==2
+                                
+                                for i=1:L(1)
+                                    for j=1:L(2)
+                                        
+                                        %image 1 interpolation
+                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                                bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                            end
+                                        end
+                                        
+                                        %image 2 interpolation
+                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                        for n=nmin:nmax
+                                            for m=mmin:mmax
+                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                                bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                            end
+                                        end
+                                        
+                                    end
+                                end
+                                
+                            end
+                        
+                            %clip lower values of deformed images
+                            im1d(im1d<0)=0; im1d(isnan(im1d))=0;
+                            im2d(im2d<0)=0; im2d(isnan(im2d))=0;
+                        
+                            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                            Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                            Eval(Eval==0)=-1;
+                            Eval(Eval>0)=0;
+            
+                            deformtime=toc(t1);
+                        end
+                        
+                        t1=tic;
                         %correlate image pair and average correlations
-%                       [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        if Corr(e)<5 %SCC or RPC processor
+%                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        if e~=1 && strcmpi(M,'EDeform')
+                            [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
+                            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                                Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
+                                Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
+                            else
+                                Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
+                                Vc = Vc + Vb(Eval>=0);
+                            end
+                        else
+                            [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        end
+                    
+                        if Corr(e)<4 %SCC or RPC processor
                             if q==1
                                 CCmdist=CC;
                                 cnvg_est = 0;
@@ -684,7 +795,10 @@ switch char(M)
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        fprintf('correlation %4.0f of %4.0f...    %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                        if e~=1 && strcmpi(M,'EDeform')
+                            fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))                        
+                        end
+                        fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                     end
                 end
 %                 if Corr(e)<5 %SCC or RPC processor
@@ -703,7 +817,6 @@ switch char(M)
             else
                 
                 for q=1:length(I1)
-                    t1=tic;
 
                     %load image pair and flip coordinates
                     im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
@@ -748,10 +861,118 @@ switch char(M)
                     im2 = im2(end:-1:1,:,:);
 %                     L=size(im1);
 
+                    if e~=1 && strcmpi(M,'EDeform')
+                        t1=tic;
+
+                        %translate pixel locations
+                        XD1 = XI+UI/2;
+                        YD1 = YI+VI/2;
+                        XD2 = XI-UI/2;
+                        YD2 = YI-VI/2;
+                        
+                        %preallocate deformed images
+                        im1d = zeros(L);
+                        im2d = zeros(L);
+                        
+                        %cardinal function interpolation
+                        if Iminterp==1
+                            for i=1:L(1)
+                                for j=1:L(2)
+                                    
+                                    %image 1 interpolation
+                                    nmin=max([1 (round(YD1(i,j))-3)]);
+                                    nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                    mmin=max([1 (round(XD1(i,j))-3)]);
+                                    mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                    for n=nmin:nmax
+                                        for m=mmin:mmax
+                                            wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                            im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                        end
+                                    end
+                                    
+                                    %image 2 interpolation
+                                    nmin=max([1 (round(YD2(i,j))-3)]);
+                                    nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                    mmin=max([1 (round(XD2(i,j))-3)]);
+                                    mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                    for n=nmin:nmax
+                                        for m=mmin:mmax
+                                            wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                            im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                        end
+                                    end
+                                    
+                                end
+                            end
+                            
+                            %cardinal function interpolation with Blackman filter
+                        elseif Iminterp==2
+                            
+                            for i=1:L(1)
+                                for j=1:L(2)
+                                    
+                                    %image 1 interpolation
+                                    nmin=max([1 (round(YD1(i,j))-3)]);
+                                    nmax=min([L(1) (round(YD1(i,j))+3)]);
+                                    mmin=max([1 (round(XD1(i,j))-3)]);
+                                    mmax=min([L(2) (round(XD1(i,j))+3)]);
+                                    for n=nmin:nmax
+                                        for m=mmin:mmax
+                                            wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
+                                            bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
+                                            im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                        end
+                                    end
+                                    
+                                    %image 2 interpolation
+                                    nmin=max([1 (round(YD2(i,j))-3)]);
+                                    nmax=min([L(1) (round(YD2(i,j))+3)]);
+                                    mmin=max([1 (round(XD2(i,j))-3)]);
+                                    mmax=min([L(2) (round(XD2(i,j))+3)]);
+                                    for n=nmin:nmax
+                                        for m=mmin:mmax
+                                            wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
+                                            bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
+                                            im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                        end
+                                    end
+                                    
+                                end
+                            end
+                            
+                        end
+                        
+                        %clip lower values of deformed images
+                        im1d(im1d<0)=0; im1d(isnan(im1d))=0;
+                        im2d(im2d<0)=0; im2d(isnan(im2d))=0;
+                        
+                        Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                        Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                        Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                        Eval(Eval==0)=-1;
+                        Eval(Eval>0)=0;
+            
+                        deformtime=toc(t1);
+                    end
+                    
+                    t1=tic;
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    if Corr(e)<5 %SCC or RPC processor
+                    if e~=1 && strcmpi(M,'EDeform')
+                        [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
+                        if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                            Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
+                            Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
+                        else
+                            Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
+                            Vc = Vc + Vb(Eval>=0);
+                        end
+                    else
+                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                    end
+                    
+                    if Corr(e)<4 %SCC or RPC processor
                         if q==1
                             CCm=CC/length(I1);
                             cnvg_est = 0;
@@ -764,7 +985,7 @@ switch char(M)
                             cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
-                    elseif Corr(e)==2 %SPC processor
+                    elseif Corr(e)==4 %SPC processor
                         if q==1
                             CCm=CC;
                         else
@@ -774,8 +995,11 @@ switch char(M)
                         end
                     end
                     corrtime=toc(t1);
+                    if e~=1 && strcmpi(M,'EDeform')
+                        fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))
+                    end
 %                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
-                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                 end
             end
 
@@ -794,7 +1018,7 @@ switch char(M)
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
                 
-            if Corr(e)<5 %SCC or RPC processor
+            if Corr(e)<4 %SCC or RPC processor
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
@@ -802,7 +1026,7 @@ switch char(M)
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
-            elseif Corr(e)==2 %SPC processor
+            elseif Corr(e)==4 %SPC processor
                     %RPC filter for weighting function
                 cutoff=2/pi/D(e);
                 wt = energyfilt(Z(2),Z(1),D(e),0);
@@ -869,7 +1093,7 @@ switch char(M)
                 t1=tic;
 
                 if Peakswitch(e)
-                    if PeakVel(e) && Corr(e)<5
+                    if PeakVel(e) && Corr(e)<4
                         U=[Uval,U(:,1:PeakNum(e))];
                         V=[Vval,V(:,1:PeakNum(e))];
                         Eval=[Evalval,Eval(:,1:PeakNum(e))];
@@ -967,7 +1191,7 @@ switch char(M)
         end
         
     case 'Multiframe'
-        
+        %% --- Multiframe ---
         I1_full=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
         time_full=str2double(Data.imfstart):(str2double(Data.imfend)+str2double(Data.imcstep));
 
@@ -1045,7 +1269,7 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
                 Uc=[];Vc=[];Cc=[];Dc=[];
 
-                if Corr(e)<5
+                if Corr(e)<4
                     U=zeros(size(X,1),3,N);
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
@@ -1142,7 +1366,7 @@ switch char(M)
                 if Writeswitch(e) 
                     t1=tic;
                     if Peakswitch(e)                    
-                        if PeakVel(e) && Corr(e)<5
+                        if PeakVel(e) && Corr(e)<4
                             U=[Uval(:,1),U(:,1:PeakNum(e))];
                             V=[Vval(:,1),V(:,1:PeakNum(e))];
                             Eval=[Evalval(:,1),Eval(:,1:PeakNum(e))];

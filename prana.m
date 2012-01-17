@@ -1058,7 +1058,7 @@ set(handles.staticmaskbutton,'Value',0)
 if str2double(handles.Njob)>0
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
-    if get(handles.passtype,'Value')==4 && get(hObject,'Value')==1
+    if any(get(handles.passtype,'Value')==[4 5]) && get(hObject,'Value')==1
         errordlg('Dynamic Masking is not compatible with the Ensemble correlation.','Warning')
     end
     handles=update_data(handles);
@@ -1514,7 +1514,7 @@ if str2double(handles.Njob)>0
             eval(['handles.data.PIV' num2str(e) '.gridres = get(handles.gridres,''String'');'])
             eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.gridbuffer,''String'');'])
         end
-    elseif get(hObject,'Value')>=5
+    elseif get(hObject,'Value')>=6
         set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
         set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
@@ -1524,7 +1524,7 @@ if str2double(handles.Njob)>0
         set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
         set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
-        if get(hObject,'Value')==3
+        if any(get(hObject,'Value')==[3 5])
             set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
         else
             set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
@@ -1536,7 +1536,7 @@ if str2double(handles.Njob)>0
         end 
     end
 
-    if get(hObject,'Value')==4 && strcmp(handles.data.masktype,'dynamic')
+    if any(get(hObject,'Value')==[4 5]) && strcmp(handles.data.masktype,'dynamic')
         errordlg('Dynamic Masking is not compatible with the Ensemble correlation.','Warning')
     end
     handles=set_PIVcontrols(handles);
@@ -3128,7 +3128,7 @@ set(handles.colorchannel_popupMenu,'Value',str2double(handles.data.channel));
 set(handles.framestep,'String',handles.data.framestep);
 set(handles.PIVerror,'String',handles.data.PIVerror);
 
-if get(handles.passtype,'Value')>=5
+if get(handles.passtype,'Value')>=6
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
@@ -3138,7 +3138,7 @@ elseif get(handles.passtype,'Value')>1
     set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
     set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
-    if get(handles.passtype,'Value')==3
+    if any(get(handles.passtype,'Value')==[3 5])
         set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
     else
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
