@@ -64,6 +64,7 @@ expsummary = [expsummary sprintf(['Image Frame Step:              ',Data.imfstep
 expsummary = [expsummary sprintf(['Image Frame End:               ',Data.imfend,'\n'])];
 expsummary = [expsummary sprintf(['Image Correlation Step:        ',Data.imcstep,'\n'])];
 expsummary = [expsummary sprintf(['Image Color Channel:           ',channel{str2double(Data.channel)},'\n'])];
+expsummary = [expsummary sprintf(['Output Directory:              ',Data.outdirec,'\n'])];
 expsummary = [expsummary sprintf('Masking Type:                  ')];
 if strcmp(Data.masktype,'static')
     if ispc
@@ -187,6 +188,9 @@ if fid==-1
     end
 end
 
+fprintf(fid,expsummary);
+
 fclose(fid);
 
-sprintf(expsummary)
+fprintf(expsummary)
+

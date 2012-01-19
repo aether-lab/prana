@@ -124,6 +124,9 @@ catch
     defaultdata.PIV0.peaklocator='1';
     defaultdata.PIV0.velsmooth='0';
     defaultdata.PIV0.velsmoothfilt='2';
+    defaultdata.PIV0.deform_min ='1';
+    defaultdata.PIV0.deform_max ='1';
+    defaultdata.PIV0.deform_conv ='0.1';
     defaultdata.PIV0.val='0';
     defaultdata.PIV0.uod='1';
     defaultdata.PIV0.bootstrap='0';
@@ -547,6 +550,16 @@ if isnumeric(f)==0
                     if ~isfield(Data.PIV0,'frac_filt')
                         for pass=0:str2double(Data.passes)
                             eval(['Data.PIV',num2str(pass),'.frac_filt=''1'';']);
+                            if str2double(eval(['Data.PIV' num2str(pass) '.corr'])) == 3
+                            eval(['Data.PIV',num2str(pass),'.corr=''5'';']);
+                            end
+                        end
+                    end
+                    if ~isfield(Data.PIV0,'deform_min')
+                        for pass=0:str2double(Data.passes)
+                            eval(['Data.PIV',num2str(pass),'.deform_min=''1'';']);
+                            eval(['Data.PIV',num2str(pass),'.deform_max=''1'';']);
+                            eval(['Data.PIV',num2str(pass),'.deform_conv=''0.1'';']);
                         end
                     end
                     
@@ -1479,6 +1492,39 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Min Number of Iterations for Deformation ---
+function deform_min_iter_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.deform_min=get(hObject,''String'');']);
+    guidata(hObject,handles)
+end
+function deform_min_iter_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Max Number of Iterations for Deformation ---
+function deform_max_iter_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.deform_max=get(hObject,''String'');']);
+    guidata(hObject,handles)
+end
+function deform_max_iter_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Convergence value of Iterations for Deformation ---
+function deform_conv_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.deform_conv=get(hObject,''String'');']);
+    guidata(hObject,handles)
+end
+function deform_conv_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
 % --- Maximum Framestep Textbox ---
 function framestep_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -1507,6 +1553,9 @@ if str2double(handles.Njob)>0
     if get(hObject,'Value')==1
         set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_max_iter,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_conv,'backgroundcolor',0.5*[1 1 1]);
         set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
         set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
         set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
@@ -1517,6 +1566,9 @@ if str2double(handles.Njob)>0
     elseif get(hObject,'Value')>=6
         set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_max_iter,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_conv,'backgroundcolor',0.5*[1 1 1]);
         set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
         set(handles.framestep,'backgroundcolor',[1 1 1]);
         set(handles.PIVerror,'backgroundcolor',[1 1 1]);
@@ -1526,8 +1578,14 @@ if str2double(handles.Njob)>0
         set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
         if any(get(hObject,'Value')==[3 5])
             set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
+            set(handles.deform_min_iter,'backgroundcolor',[1 1 1]);
+            set(handles.deform_max_iter,'backgroundcolor',[1 1 1]);
+            set(handles.deform_conv,'backgroundcolor',[1 1 1]);
         else
             set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+            set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
+            set(handles.deform_max_iter,'backgroundcolor',0.5*[1 1 1]);
+            set(handles.deform_conv,'backgroundcolor',0.5*[1 1 1]);
         end
         if get(handles.smoothingcheckbox,'Value')==1
             set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
@@ -2716,6 +2774,9 @@ else
     set(handles.samplingrate,'String','','backgroundcolor',[1 1 1]);
     set(handles.smoothingsize,'String','','backgroundcolor',[1 1 1]);
     set(handles.imageinterptype,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.deform_min_iter,'String','','backgroundcolor',[1 1 1]);
+    set(handles.deform_max_iter,'String','','backgroundcolor',[1 1 1]);
+    set(handles.deform_conv,'String','','backgroundcolor',[1 1 1]);
     set(handles.passtype,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.uod_type,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.correlationtype,'Value',1,'backgroundcolor',[1 1 1]);
@@ -2885,6 +2946,9 @@ set(handles.subpixelinterp,'Value',str2double(A.peaklocator));
 set(handles.zeromeancheckbox,'Value',str2double(A.zeromean));
 set(handles.rpcdiameter,'string',str2double(A.RPCd));
 set(handles.frac_filter_weight,'string',str2double(A.frac_filt));
+set(handles.deform_min_iter,'string',str2double(A.deform_min));
+set(handles.deform_max_iter,'string',str2double(A.deform_max));
+set(handles.deform_conv,'string',str2double(A.deform_conv));
 set(handles.smoothingsize,'String',A.velsmoothfilt);
 set(handles.smoothingcheckbox,'Value',str2double(A.velsmooth));
 set(handles.validatecheckbox,'Value',str2double(A.val));
@@ -3131,6 +3195,9 @@ set(handles.PIVerror,'String',handles.data.PIVerror);
 if get(handles.passtype,'Value')>=6
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.deform_max_iter,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.deform_conv,'backgroundcolor',0.5*[1 1 1]);    
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.framestep,'backgroundcolor',[1 1 1]);
     set(handles.PIVerror,'backgroundcolor',[1 1 1]);
@@ -3140,8 +3207,14 @@ elseif get(handles.passtype,'Value')>1
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
     if any(get(handles.passtype,'Value')==[3 5])
         set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
+        set(handles.deform_min_iter,'backgroundcolor',[1 1 1]);
+        set(handles.deform_max_iter,'backgroundcolor',[1 1 1]);
+        set(handles.deform_conv,'backgroundcolor',[1 1 1]);
     else
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_max_iter,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.deform_conv,'backgroundcolor',0.5*[1 1 1]);
     end
     if get(handles.smoothingcheckbox,'Value')==1
         set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
@@ -3151,6 +3224,9 @@ elseif get(handles.passtype,'Value')>1
 else
     set(handles.velocityinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.deform_max_iter,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.deform_conv,'backgroundcolor',0.5*[1 1 1]);
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
     set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);

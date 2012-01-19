@@ -105,6 +105,9 @@ PeakMag=zeros(P,1);
 PeakVel=zeros(P,1);
 wbase=cell(0);
 frac_filt=zeros(P,1);
+mindefloop=zeros(P,1);
+maxdefloop=zeros(P,1);
+condefloop=zeros(P,1);
 
 %read data info for each pass
 for e=1:P
@@ -148,6 +151,9 @@ for e=1:P
     Peaklocator(e) = str2double(A.peaklocator);
     Velsmoothswitch(e) = str2double(A.velsmooth);
     Velsmoothfilt(e) = str2double(A.velsmoothfilt);
+    mindefloop(e) = str2double(A.deform_min);
+    maxdefloop(e) = str2double(A.deform_max);
+    condefloop(e) = str2double(A.deform_conv);
     
     %validation and thresholding
     Valswitch(e)=str2double(A.val);
@@ -195,7 +201,8 @@ switch char(M)
     case {'Multipass','Multigrid','Deform'}
         %% --- Multipass, Multigrid, Deform
         frametime=zeros(length(I1),1);
-        for q=1:length(I1)                   
+        for q=1:length(I1)
+            
             tf=tic;
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
 
@@ -259,13 +266,20 @@ switch char(M)
             UI = BWO(1)*ones(size(XI));
             VI = BWO(2)*ones(size(YI));
 
-            corrtime=zeros(P,1);
-            valtime=zeros(P,1);
+            corrtime=zeros(P,max(maxdefloop));
+            valtime=zeros(P,max(maxdefloop));
             savetime=zeros(P,1);
-            interptime=zeros(P,1);
-            deformtime=zeros(P,1);
+            interptime=zeros(P,max(maxdefloop));
+            deformtime=zeros(P,max(maxdefloop));
+            defconvU = zeros(P,max(maxdefloop));
+            defconvV = zeros(P,max(maxdefloop));
             
-            for e=1:P
+            e = 0; defloop = 1;
+            while (e<P && defloop == 1) || (e<=P && defloop~=1)%for e=1:P
+                if defloop == 1
+                    e=e+1;
+                end
+                
                 t1=tic;
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
@@ -282,7 +296,7 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                if (e~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
+                if (e~=1 || defloop~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     if Corr(e)<4
                         [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
@@ -337,7 +351,7 @@ switch char(M)
                     end
                 end
                 
-                corrtime(e)=toc(t1);
+                corrtime(e,defloop)=toc(t1);
 
                 %validation
                 if Valswitch(e)
@@ -346,7 +360,7 @@ switch char(M)
                     [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
                     
-                    valtime(e)=toc(t1);
+                    valtime(e,defloop)=toc(t1);
                 else
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
                     if ~isempty(C)
@@ -358,8 +372,28 @@ switch char(M)
                     end
                 end
                 
+                
+                % --- Iterative Deformation Check ---
+                if strcmpi(M,'Deform')
+                    if defloop == 1
+                        Ud = Uval; Vd = Vval;
+                    else
+                        defconvU(e,defloop) = norm(Uval - Ud,2);
+                        defconvV(e,defloop) = norm(Vval - Vd,2);
+                        Ud = Uval; Vd = Vval;
+                    end
+                    if defloop == maxdefloop(e) || (defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
+                        if maxdefloop(e) ~= 1
+                            wbase{e,:} = sprintf([wbase{e,:} 'deform' num2str(defloop) '_']);
+                        end
+                        defloop = 1;
+                    else
+                        defloop = defloop+1;
+                    end
+                end
+                
                 %write output
-                if Writeswitch(e) 
+                if Writeswitch(e) && defloop == 1
                     t1=tic;
                         
                     if Peakswitch(e)
@@ -404,11 +438,11 @@ switch char(M)
                     end
                     X=Xval;Y=Yval;
                     
-                    savetime(e)=toc(t1);
+                    savetime(e,defloop)=toc(t1);
                 end
                 U=Uval; V=Vval;
-        
-                if e~=P
+                
+                if e~=P || (strcmpi(M,'Deform') && defloop ~=1)
                     %reshape from list of grid points to matrix
                     X=reshape(X,[S(1),S(2)]);
                     Y=reshape(Y,[S(1),S(2)]);
@@ -426,8 +460,12 @@ switch char(M)
                         %velocity interpolation
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-
-                        interptime(e)=toc(t1);
+                        
+                        if defloop == 1
+                            interptime(e+1,defloop)=toc(t1);
+                        else
+                            interptime(e,defloop)=toc(t1);
+                        end
                         
                         if strcmp(M,'Deform')
                             t1=tic;
@@ -526,8 +564,13 @@ switch char(M)
 %                             pause
 %                             imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
 %                             imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
-
-                            deformtime(e)=toc(t1);
+                            
+                            if defloop == 1
+                                deformtime(e+1,defloop)=toc(t1);
+                            else
+                                deformtime(e,defloop)=toc(t1);
+                            end
+                                
                         end
                     else
                         UI=U;VI=V;
@@ -542,18 +585,22 @@ switch char(M)
             fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ') at %s \n'], datestr(now));
             fprintf('----------------------------------------------------\n')
             for e=1:P
-                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime(e)/60),floor(rem(corrtime(e),60)),rem(corrtime(e),60)-floor(rem(corrtime(e),60)))
+                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(sum(corrtime(e,:))/60),floor(rem(sum(corrtime(e,:)),60)),rem(sum(corrtime(e,:)),60)-floor(rem(sum(corrtime(e,:)),60)))
                 if Valswitch(e)
-                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime(e)/60),floor(rem(valtime(e),60)),rem(valtime(e),60)-floor(rem(valtime(e),60)))
+                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))
+                end
+                if strcmpi(M,'Deform') && mindefloop(e) ~= 1
+                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))
+                    fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))
                 end
                 if Writeswitch(e)
                     fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),rem(savetime(e),60)-floor(rem(savetime(e),60)))
                 end
-                if strcmp(M,'Multigrid') || strcmp(M,'Deform')
+                if strcmp(M,'Multigrid') || (strcmp(M,'Deform') && mindefloop(e) == 1)
                     if e~=P
-                        fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime(e)/60),floor(rem(interptime(e),60)),rem(interptime(e),60)-floor(rem(interptime(e),60)))
+                        fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))
                         if strcmp(M,'Deform')
-                            fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(deformtime(e)/60),floor(rem(deformtime(e),60)),rem(deformtime(e),60)-floor(rem(deformtime(e),60)))
+                            fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))
                         end
                     end
                 end
@@ -563,7 +610,6 @@ switch char(M)
             comptime=mean(frametime)*(length(I1)-q);
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
         end
-
         
     case {'Ensemble','EDeform'}
         %% --- Ensemble and Ensemble Deform --- 
@@ -576,20 +622,22 @@ switch char(M)
         UI = BWO(1)*ones(size(XI));
         VI = BWO(2)*ones(size(XI));
         
-        for e=1:P
+        defconvU = zeros(P,max(maxdefloop));
+        defconvV = zeros(P,max(maxdefloop));
+        
+        e = 0; defloop = 1;
+        while (e<P && defloop == 1) || (e<=P && defloop~=1)%for e=1:P
+            if defloop == 1
+                e=e+1;
+                        
+                frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
+                fprintf('\n----------------------------------------------------\n')
+                fprintf(['Job: ',Data.batchname,'\n'])
+                fprintf([frametitle ' (Pass ' num2str(e) '/' num2str(P) ')\n'])
+                fprintf('----------------------------------------------------\n')
+            
+            end
             tf=tic;
-            
-            frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(1)) ' to Frame' sprintf(['%0.' Data.imzeros 'i'],I2(end))];
-            fprintf('\n----------------------------------------------------\n')
-            fprintf(['Job: ',Data.batchname,'\n'])
-            fprintf([frametitle ' (Pass ' num2str(e) '/' num2str(P) ')\n'])
-            fprintf('----------------------------------------------------\n')
-            
-%             whileiter = 0;
-%             ei   = 1;
-%             iter_max = 3;
-%             iter_conv = 0.2;
-%             while whileiter == 0
             
             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
             S=size(X);X=X(:);Y=Y(:);
@@ -667,7 +715,8 @@ switch char(M)
                         im2 = im2(end:-1:1,:,:);
 %                         L=size(im1);
                         
-                        if e~=1 && strcmpi(M,'EDeform')
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                            
                             t1=tic;
                             keyboard
                             %translate pixel locations
@@ -795,7 +844,7 @@ switch char(M)
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        if e~=1 && strcmpi(M,'EDeform')
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
                             fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))                        
                         end
                         fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
@@ -861,7 +910,7 @@ switch char(M)
                     im2 = im2(end:-1:1,:,:);
 %                     L=size(im1);
 
-                    if e~=1 && strcmpi(M,'EDeform')
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                         t1=tic;
 
                         %translate pixel locations
@@ -995,7 +1044,7 @@ switch char(M)
                         end
                     end
                     corrtime=toc(t1);
-                    if e~=1 && strcmpi(M,'EDeform')
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
                         fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))
                     end
 %                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
@@ -1088,8 +1137,27 @@ switch char(M)
                 end
             end
             
+            % --- Iterative Deformation Check ---
+            if strcmpi(M,'EDeform')
+                if defloop == 1
+                    Ud = Uval; Vd = Vval;
+                else
+                    defconvU(e,defloop) = norm(Uval - Ud,2);
+                    defconvV(e,defloop) = norm(Vval - Vd,2);
+                    Ud = Uval; Vd = Vval;
+                end
+                if defloop == maxdefloop(e) || (defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
+                    if maxdefloop(e) ~= 1
+                        wbase{e,:} = sprintf([wbase{e,:} 'deform' num2str(defloop) '_']);
+                    end
+                    defloop = 1;
+                else
+                    defloop = defloop+1;
+                end
+            end
+
             %write output
-            if Writeswitch(e) 
+            if Writeswitch(e) && defloop == 1
                 t1=tic;
 
                 if Peakswitch(e)
@@ -1139,7 +1207,7 @@ switch char(M)
             end
             U=Uval; V=Vval;
         
-            if e~=P
+            if e~=P || defloop ~= 1 
                 t1=tic;
                 
                 %reshape from list of grid points to matrix
@@ -1161,33 +1229,15 @@ switch char(M)
                 fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime/60),floor(rem(interptime,60)),rem(interptime,60)-floor(rem(interptime,60)))
             end
             
-            eltime=toc(tf);
-            %output text
-            fprintf('total pass time...               %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-            frametime(e)=eltime;
-            comptime=mean(frametime)*(P-e);
-            fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
-            
-%             % Check for iterative convergence
-%             if ei ~=1
-%                 velconv = norm(sqrt((Upre(Evalval>=0)-Uval(Evalval>=0)).^2 + (Vpre(Evalval>=0)-Vval(Evalval>=0)).^2),2)/sqrt(length(Uval(Evalval>=0)));
-%                 if velconv <= iter_conv && ei > iter_min
-%                     whileiter = 1;
-%                     keyboard
-%                 end
-%             else
-%                 velconv = 0;
-%             end
-%             if iter_max ~= 1
-%                 fprintf('convergence for iter %2.0f on pass %2.0f = %0.2e\n\n',ei,e,velconv)
-%             end
-%             if ei == iter_max
-%                 whileiter = 1;
-%             end
-%             Upre = Uval(:,:,1);
-%             Vpre = Vval(:,:,1);
-%             ei = ei+1;
-%             end
+            if defloop == 1
+                eltime=toc(tf);
+                %output text
+                fprintf('total pass time...               %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                frametime(e)=eltime;
+                comptime=mean(frametime)*(P-e);
+                fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
+            end
+
         end
         
     case 'Multiframe'
@@ -1195,6 +1245,11 @@ switch char(M)
         I1_full=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
         time_full=str2double(Data.imfstart):(str2double(Data.imfend)+str2double(Data.imcstep));
 
+        corrtime=zeros(P,1);
+        valtime=zeros(P,1);
+        savetime=zeros(P,1);
+        interptime=zeros(P,1);
+        
         %single-pulsed
         if round(1/Freq*10^6)==round(dt)
             time_full(2,:)=time_full(1,:);
