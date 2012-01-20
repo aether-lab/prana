@@ -115,7 +115,13 @@ switch upper(tcorr)
             G = ifftn(P21,'symmetric');
             G = G(fftindy,fftindx);
             G = abs(G);
-            Gens(:,:,r) = G/std(region1(:))/std(region2(:))/length(region1(:));
+            region1_std = std(region1(:));
+            region2_std = std(region2(:));
+            if region1_std == 0 || region2_std == 0
+                Gens(:,:,r) = zeros(Ny,Nx);
+            else
+                Gens(:,:,r) = G/region1_std/region2_std/length(region1(:));
+            end
             
             %store correlation matrix
             end
@@ -172,7 +178,13 @@ switch upper(tcorr)
             G = ifftn(P21,'symmetric');
             G = G(fftindy,fftindx);
             G = abs(G);
-            G = G/std(region1(:))/std(region2(:))/length(region1(:));
+            region1_std = std(region1(:));
+            region2_std = std(region2(:));
+            if region1_std == 0 || region2_std == 0
+                G = zeros(Ny,Nx);
+            else
+                G = G/std(region1(:))/std(region2(:))/length(region1(:));
+            end
             
             %store correlation matrix
             CC(:,:,n) = G;

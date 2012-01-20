@@ -816,13 +816,6 @@ switch char(M)
 %                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         if e~=1 && strcmpi(M,'EDeform')
                             [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
-                            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                                Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
-                                Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
-                            else
-                                Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
-                                Vc = Vc + Vb(Eval>=0);
-                            end
                         else
                             [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         end
@@ -837,7 +830,8 @@ switch char(M)
 %                                 cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
                                 ave_pre = (CCmdist*length(I1)/(q-1));
                                 ave_cur = ((CCmdist*length(I1)+CC)/q);
-                                cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(abs(ave_cur),1),2));
+                                ave_cur(ave_cur==0)=nan;
+                                cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
                         elseif Corr(e)==2 %SPC processor
@@ -1010,13 +1004,6 @@ switch char(M)
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     if e~=1 && strcmpi(M,'EDeform')
                         [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
-                        if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                            Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
-                            Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
-                        else
-                            Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
-                            Vc = Vc + Vb(Eval>=0);
-                        end
                     else
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
@@ -1031,7 +1018,8 @@ switch char(M)
 %                             cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
                             ave_pre = (CCm*length(I1)/(q-1));
                             ave_cur = ((CCm*length(I1)+CC)/q);
-                            cnvg_est = mean(mean(mean(abs(ave_pre-ave_cur),1),2)./mean(mean(abs(ave_cur),1),2));
+                            ave_cur(ave_cur==0)=nan;
+                            cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     elseif Corr(e)==4 %SPC processor
@@ -1066,7 +1054,7 @@ switch char(M)
             else
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
-                
+
             if Corr(e)<4 %SCC or RPC processor
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
@@ -1190,7 +1178,7 @@ switch char(M)
                 end
 
                 %remove nans from data, replace with zeros
-                U(Eval<0)=0;V(Eval<0)=0;
+                U(Eval<0||isinf(U))=0;V(Eval<0||isinf(V))=0;
 
                 if str2double(Data.datout)
                     time=I1(1)/Freq;

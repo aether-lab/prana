@@ -69,7 +69,7 @@ if str2double(Data.par)
                     masknamedist=localPart(codistributed(maskname,codistributor('1d',2),'convert'));
                 end
                 
-                if str2double(Data.method)==5
+                if str2double(Data.method)==6
                     try
                         if labindex~=1
                             previous = labindex-1;
