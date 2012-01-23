@@ -37,7 +37,7 @@ for i=1:size(Data.exp_notes,1)
 end
 
 methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
-    'Multigrid - Ensemble (DWO)','Multigrid - Multiframe (DWO)'};
+    'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)'};
 velinterp={'Nearest Neighbor','Bilinear','Cubic'};
 iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
 expsummary = [expsummary sprintf('\n-----------------------PIV Processing------------------------\n')];
