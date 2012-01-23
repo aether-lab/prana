@@ -4115,16 +4115,24 @@ imageDir = get(handles.imagedirectory, 'String');
 
 % Exit save if the user selects 'cancel' in UIGET
 if workspacepath ~= 0;
-
-%     Read the names of jobs in the present workspace
+    
+    %     Read the names of jobs in the present workspace
     jobs = get(handles.joblist, 'String');
 
-%     Save each job to the directory specified by workspaceDir
-    for n = 1:length(jobs);
-                eval( ['Data = handles.' char(jobs(n)) ';'] );
-                save([workspacepath '/' char(jobs(n)) '.mat'], 'Data');
+    %     Save each job to the directory specified by workspaceDir
+    for n = 1:length(jobs(:,1));
+        endtest = 1;jobtemp=char(jobs(n,:));
+        while endtest
+            if strcmpi(jobtemp(end),' ')
+                jobtemp=jobtemp(1:end-1);
+            else
+                endtest = 0;
+            end
+        end
+        eval( ['Data = handles.' char(jobtemp) ';'] );
+        save([workspacepath '/' char(jobtemp) '.mat'], 'Data');
+        clear jobtemp
     end
-
 else
     
     return
