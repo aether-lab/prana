@@ -213,7 +213,8 @@ switch char(M)
             % Specify which color channel(s) to consider
             %channel = str2double(Data.channel);
 
-             if size(im1, 3) == 3
+             %if size(im1, 3) == 3
+             if size(im1, 3) >= 3 %to handle transparancy channels and other higher number images
                 %Extract only red channel
                  if channel == 1;
                     im1 = im1(:,:,1);
@@ -498,7 +499,8 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
                                             end
                                         end
 
@@ -510,7 +512,8 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
                                             end
                                         end
 
@@ -532,7 +535,8 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
                                             end
                                         end
 
@@ -545,7 +549,8 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
                                             end
                                         end
 

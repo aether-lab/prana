@@ -86,7 +86,7 @@ else
 end        
 
 for i=1:str2double(Data.passes)
-    corr={'SCC','RPC','GCC','FWC','SPC'};
+    corr={'SCC','RPC','GCC','FWC','SPC','qRPC'};
     peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
     y_n={'No','Yes'};
     A=eval(['Data.PIV' num2str(i)]);

@@ -352,11 +352,12 @@ switch upper(tcorr)
             end
         end
     %Quaternion Robust Phase Correlation
-    case {'qRPC'}
+    case {'QRPC'}
         
         %quaternion processing needs a 3 color matrix.
         %we could also throw an error, but this seems nicer
         if size(im1,3) ~=3
+            error('not a color image')
             im1 = repmat(im1,[1,1,3]);
             im2 = repmat(im2,[1,1,3]);
         end
@@ -500,6 +501,7 @@ switch upper(tcorr)
             
     otherwise
         %throw an error, we shouldn't be here (probably SPC?)
+        keyboard
         error('invalid correlation type')
         
 end
