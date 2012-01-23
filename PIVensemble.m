@@ -412,6 +412,11 @@ switch upper(tcorr)
             CC.V(:,:,n) = vm;
             CC.C(:,:,n) = Ctemp;
         end
+    case {'qRPC'}
+        error('Correlation type not supported')
+    otherwise
+        error('Correlation type not supported')
+        
 end
 
 end

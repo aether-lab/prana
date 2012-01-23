@@ -550,7 +550,7 @@ if isnumeric(f)==0
                     if ~isfield(Data.PIV0,'frac_filt')
                         for pass=0:str2double(Data.passes)
                             eval(['Data.PIV',num2str(pass),'.frac_filt=''1'';']);
-                            if str2double(eval(['Data.PIV' num2str(pass) '.corr'])) == 3
+                            if str2double(eval(['Data.PIV' num2str(pass) '.corr'])) == 3    %GCC (3) and FWC (4) were inserted between RPC (2) and SPC (5, formerly 3)
                             eval(['Data.PIV',num2str(pass),'.corr=''5'';']);
                             end
                         end
@@ -1992,7 +1992,7 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
     N=handles.data.cpass;
     A=eval(['handles.data.PIV' num2str(N)]);
-    if any(str2double(A.corr)== [1 3 5])
+    if any(str2double(A.corr)== [1 3]) %2 and 5 are RPC and SPC, both need rpcdiameter
         set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
     else
         set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
@@ -2015,7 +2015,7 @@ function rpcdiameter_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.RPCd = get(hObject,''String'');'])
     guidata(hObject,handles)
-    if get(handles.correlationtype,'Value')==2
+    if any(get(handles.correlationtype,'Value')==[2,5,6]) %need to check for RPC, SPC and qRPC too
         if str2double(get(hObject,'String'))<2
             if str2double(get(hObject,'String'))==0
                 set(hObject,'backgroundcolor','r');
@@ -3064,7 +3064,7 @@ else
     set(handles.gridres,'backgroundcolor',[1 1 1]);
     set(handles.winoverlap,'backgroundcolor',0.5*[1 1 1]);
 end
-if any(get(handles.correlationtype,'Value')==[2 4])
+if any(get(handles.correlationtype,'Value')==[2 5 6]) %check diameter if RPC, SPC or qRPC
     if str2double(get(handles.rpcdiameter,'String'))<2
         if str2double(get(handles.rpcdiameter,'String'))==0
             set(handles.rpcdiameter,'backgroundcolor','r');

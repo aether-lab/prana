@@ -80,7 +80,7 @@ Gres = zeros(P,2);
 
 % Not Sure
 Gbuf=zeros(P,2);
-Corr=zeros(P,1);
+Corr=zeros(P,1);            %correlation type on each pass
 D=zeros(P,1);
 Zeromean=zeros(P,1);
 Peaklocator=zeros(P,1);
@@ -144,7 +144,7 @@ for e=1:P
     Wsize(e,:) = [str2double(A.winsize(1:(strfind(A.winsize,',')-1))) str2double(A.winsize((strfind(A.winsize,',')+1):end))];
     Gres(e,:) = [str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
     Gbuf(e,:) = [str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
-    Corr(e) = str2double(A.corr)-1;
+    Corr(e) = str2double(A.corr)-1; %why do we subtract 1 from A.corr?  Just to make things more confusing? (SCC,RPC,GCC,FWC,SPC,qRPC)
     D(e) = str2double(A.RPCd);
     frac_filt(e) = str2double(A.frac_filt);
     Zeromean(e) = str2double(A.zeromean);
@@ -235,6 +235,7 @@ switch char(M)
                  elseif channel == 5;
                     im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
                     im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                %ensemble correlation of channels (or quaternion - need a better way to force this pass for qRPC) 
                  elseif channel == 6;
                      im1=im1(:,:,1:3);
                      im2=im2(:,:,1:3);
@@ -247,7 +248,7 @@ switch char(M)
              end
 
             %  Flip images
-            %flipud only works on 2D matices.
+            %flipud only works on 2D matices.  What about flipdim(im1,1) instead?
             im1 = im1(end:-1:1,:,:);%flipud(im1);
             im2 = im2(end:-1:1,:,:);%flipud(im2);
 
@@ -297,7 +298,8 @@ switch char(M)
 
                 %correlate image pair
                 if (e~=1 || defloop~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
-                    if Corr(e)<4
+                    %if Corr(e)<4
+                    if Corr(e)~=4 %SPC=4
                         [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
@@ -315,7 +317,8 @@ switch char(M)
                     end
                     
                 else                                    %either first pass, or not deform
-                    if Corr(e)<4
+                    %if Corr(e)<4
+                    if Corr(e)~=4 %SPC=4
                         [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -323,7 +326,8 @@ switch char(M)
                     end
                 end
                 
-                if Corr(e)<4
+                %if Corr(e)<4
+                if Corr(e)~=4 %SPC=4
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                         U=zeros(size(X,1),3);
                         V=zeros(size(X,1),3);
@@ -395,9 +399,10 @@ switch char(M)
                 %write output
                 if Writeswitch(e) && defloop == 1
                     t1=tic;
-                        
+                    
+                    %SPC only returns 1 peak right now?
                     if Peakswitch(e)
-                        if PeakVel(e) && Corr(e)<4
+                        if PeakVel(e) && (Corr(e)~=4)  %SPC=4
                             U=[Uval,U(:,1:PeakNum(e))];
                             V=[Vval,V(:,1:PeakNum(e))];
                         else
@@ -820,7 +825,7 @@ switch char(M)
                             [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         end
                     
-                        if Corr(e)<4 %SCC or RPC processor
+                        if Corr(e)~=4 %SPC=4
                             if q==1
                                 CCmdist=CC;
                                 cnvg_est = 0;
@@ -834,7 +839,7 @@ switch char(M)
                                 cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
-                        elseif Corr(e)==2 %SPC processor
+                        elseif Corr(e)==4 %SPC processor (this was 2, isn't SPC 4?), probably should be plain ELSE instead
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
@@ -1008,7 +1013,7 @@ switch char(M)
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
                     
-                    if Corr(e)<4 %SCC or RPC processor
+                    if Corr(e)~=4   %SPC=4 %SCC or RPC or qRPC processor
                         if q==1
                             CCm=CC/length(I1);
                             cnvg_est = 0;
@@ -1022,7 +1027,7 @@ switch char(M)
                             cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
-                    elseif Corr(e)==4 %SPC processor
+                    elseif Corr(e)==4 %SPC processor, should this be just ELSE?
                         if q==1
                             CCm=CC;
                         else
@@ -1055,7 +1060,7 @@ switch char(M)
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
 
-            if Corr(e)<4 %SCC or RPC processor
+            if Corr(e)~=4 %qRPC=6, SPC=4 %SCC or RPC processor
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
@@ -1149,7 +1154,7 @@ switch char(M)
                 t1=tic;
 
                 if Peakswitch(e)
-                    if PeakVel(e) && Corr(e)<4
+                    if PeakVel(e) && Corr(e)~=4
                         U=[Uval,U(:,1:PeakNum(e))];
                         V=[Vval,V(:,1:PeakNum(e))];
                         Eval=[Evalval,Eval(:,1:PeakNum(e))];
@@ -1312,7 +1317,7 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
                 Uc=[];Vc=[];Cc=[];Dc=[];
 
-                if Corr(e)<4
+                if Corr(e)~=4
                     U=zeros(size(X,1),3,N);
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
@@ -1409,7 +1414,7 @@ switch char(M)
                 if Writeswitch(e) 
                     t1=tic;
                     if Peakswitch(e)                    
-                        if PeakVel(e) && Corr(e)<4
+                        if PeakVel(e) && Corr(e)~=4
                             U=[Uval(:,1),U(:,1:PeakNum(e))];
                             V=[Vval(:,1),V(:,1:PeakNum(e))];
                             Eval=[Evalval(:,1),Eval(:,1:PeakNum(e))];
