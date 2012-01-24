@@ -1,4 +1,4 @@
-function [X,Y,U,V,C,Dia]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,fracval,X,Y,Uin,Vin)
+function [X,Y,U,V,C,Dia,Corrplanes]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,fracval,saveplane,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
 
 %convert input parameters
@@ -17,7 +17,7 @@ tcorr = char(ctype(corr+1));
 %preallocate velocity fields and grid format
 Nx = window(1);
 Ny = window(2);
-if nargin <=14
+if nargin <=15
     Uin = zeros(length(X),1);
     Vin = zeros(length(X),1);
 end
@@ -46,8 +46,8 @@ else
 end
 
 %window masking filter
-sfilt1 = windowmask([Nx Ny],[res(1, 1) res(1, 2)]);
-sfilt2 = windowmask([Nx Ny],[res(2, 1) res(2, 2)]);
+sfilt1 = windowmask([Sx Sy],[res(1, 1) res(1, 2)]);
+sfilt2 = windowmask([Sx Sy],[res(2, 1) res(2, 2)]);
 
 %correlation plane normalization function (always off)
 cnorm = ones(Ny,Nx);
@@ -59,6 +59,8 @@ spectral = fftshift(energyfilt(Sx,Sy,D,0));
 fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
 
+% This is a check for the fractionally weighted correlation.  We won't use
+% the spectral filter with FWC or GCC
 if strcmpi(tcorr,'FWC')
     frac = fracval;
     spectral = ones(size(spectral));
@@ -69,15 +71,20 @@ else
     frac = 1;
 end
 
+if saveplane
+    Corrplanes=zeros(Sy,Sx,length(X));
+else
+    Corrplanes = 0;
+end
+
 switch upper(tcorr)
     
     %Standard Cross Correlation
     case 'SCC'
         
         if size(im1,3) == 3
-            Gens=zeros(Ny,Nx,3);
+            Gens=zeros(Sy,Sx,3);
             for n=1:length(X)
-                
                 
                 %apply the second order discrete window offset
                 x1 = X(n) - floor(round(Uin(n))/2);
@@ -138,7 +145,9 @@ switch upper(tcorr)
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
                 end
-                
+                if saveplane
+                    Corrplanes(:,:,n) = G;
+                end
             end
             
         else
@@ -200,6 +209,9 @@ switch upper(tcorr)
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
                 end
+                if saveplane
+                    Corrplanes(:,:,n) = G;
+                end
             end
         end
 
@@ -260,7 +272,7 @@ switch upper(tcorr)
                     Wden = sqrt(P21.*conj(P21));
                     W(P21~=0) = Wden(P21~=0);
                     if frac ~= 1
-                        R = P21./(W.^frac);
+                        R = P21./(W.^frac); %Apply fractional weighting to the normalization
                     else
                         R = P21./W;
                     end
@@ -278,6 +290,9 @@ switch upper(tcorr)
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
                 end
+                if saveplane
+                    Corrplanes(:,:,n) = G;
+                end                
             end
             
         else
@@ -332,7 +347,7 @@ switch upper(tcorr)
                 Wden = sqrt(P21.*conj(P21));
                 W(P21~=0) = Wden(P21~=0);
                 if frac ~= 1
-                    R = P21./(W.^frac);
+                    R = P21./(W.^frac);%apply factional weighting to the normalization
                 else
                     R = P21./W;
                 end
@@ -347,6 +362,9 @@ switch upper(tcorr)
                 if Peakswitch
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
+                end
+                if saveplane
+                    Corrplanes(:,:,n) = G;
                 end
             end
         end
