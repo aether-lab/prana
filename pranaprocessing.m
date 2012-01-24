@@ -743,7 +743,6 @@ switch char(M)
                         if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                             
                             t1=tic;
-                            keyboard
                             %translate pixel locations
                             XD1 = XI+UI/2;
                             YD1 = YI+VI/2;
