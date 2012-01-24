@@ -404,14 +404,18 @@ switch upper(tcorr)
                 zone2 = w2;
             end
             
-            %Does this make sense? Does it work for 3 color images?
-            for r=1:3
-                if Zeromean==1
-                    zone1(:,:,r)=zone1(:,:,r)-mean(mean(zone1,1),2);
-                    zone2(:,:,r)=zone2(:,:,r)-mean(mean(zone2,1),2);
+            %subtract mean from each region
+            if Zeromean==1
+                meanC1 = mean(mean(zone1,1),2);
+                meanC2 = mean(mean(zone2,1),2);
+                for r=1:3
+                    zone1(:,:,r)=zone1(:,:,r)-meanC1(1,1,r);
+                    zone2(:,:,r)=zone2(:,:,r)-meanC2(1,1,r);
                 end
+            end
                 
-                %apply the image spatial filter
+            %apply the image spatial filter
+            for r=1:3
                 zone1(:,:,r) = (zone1(:,:,r)).*sfilt1;
                 zone2(:,:,r) = (zone2(:,:,r)).*sfilt2;
             end
@@ -443,7 +447,7 @@ switch upper(tcorr)
             % rather than splitting it equally between the forward and inverse) so we
             % have to make an adjustment for this:
             
-            MN  = prod(size(region1)); % This gives the number of pixels in each image, which
+            MN  = numel(region1); % This gives the number of pixels in each image, which
             % is the product MN in equations 2 and 3.
             
             %JJC: investigate optimizing qfft2 and iqfft2 using fftn
