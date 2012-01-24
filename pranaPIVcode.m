@@ -10,7 +10,7 @@ else
     
     % Make sure the job file has all the required variables.  This will make
     % sure that jobs created from older versions have the necessary variables.
-    [Data] = jobfile_compiler(Data);
+    [Data] = jobfile_validator(Data);
     
     % Write experimental summary for the given job.  This was previuosly in the
     % GUI but has been moved here so that it is always run even if prana is run
