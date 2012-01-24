@@ -528,7 +528,7 @@ if isnumeric(f)==0
                 vn=0;
                 while vn==0
                     
-                    [Data] = jobfile_compiler(Data);
+                    [Data] = jobfile_validator(Data);
                                         
                     if isfield(handles,Data.batchname)
                         Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));

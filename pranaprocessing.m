@@ -450,7 +450,9 @@ switch char(M)
                     % This saves the correlation planes if that selection
                     % has been made in the job file.
                     if saveplane(e) && Corr(e) < 4
-                        save(sprintf('%scorrplanes.mat',wbase{e,:}),'X','Y','Cp')
+                        Xloc = X(Eval>=0);Yloc=Y(Eval>=0);%#ok
+                        save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','Cp')
+                        clear Xloc Yloc
                     end
                     
                     X=Xval;Y=Yval;
@@ -1212,7 +1214,9 @@ switch char(M)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
                 end
                 if saveplane(e) && Corr(e) < 4
-                    save(sprintf('%scorrplanes.mat',wbase{e,:}),'X','Y','CCm')
+                    Xloc = X(Eval>=0);Yloc=Y(Eval>=0);%#ok
+                    save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','CCm')
+                    clear Xloc Yloc
                 end
                 X=Xval;Y=Yval;
 
