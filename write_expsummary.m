@@ -160,6 +160,7 @@ for i=1:str2double(Data.passes)
             expsummary = [expsummary sprintf(['Save Peak Magnitude:                          ',y_n{str2double(A.savepeakmag)+1},'\n'])];
             expsummary = [expsummary sprintf(['Save Resulting Vel.:                          ',y_n{str2double(A.savepeakvel)+1},'\n'])];
         end
+        expsummary = [expsummary sprintf(['Save Correlation Planes:                      ',y_n{str2double(A.savepeakinfo)+1},'\n'])];
     end
 end
 
