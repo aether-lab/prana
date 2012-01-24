@@ -144,6 +144,7 @@ catch
     defaultdata.PIV0.corrpeaknum='1';
     defaultdata.PIV0.savepeakmag='0';
     defaultdata.PIV0.savepeakvel='0';
+    defaultdata.PIV0.saveplane='0';
     defaultdata.PIV0.outbase='PIV_';
     defaultdata.PIV0.write='1';
 
@@ -526,70 +527,8 @@ if isnumeric(f)==0
             if exist('Data','var')~=0
                 vn=0;
                 while vn==0
-                    %Attempt to make backwards-compatible with older
-                    %versions of prana
-                    if ~isfield(Data,'version')
-                        if ~isfield(Data,'par')
-                            Data.par='0';
-                            Data.parprocessors='1';
-                            Data.version='1.5';
-                            
-                        else
-                            handles.data.version='1.9';
-                        end
-                    end
-                    if ~isfield(Data.PIV0,'zeromean')
-                        for pass=0:str2double(Data.passes)
-                            eval(['Data.PIV',num2str(pass),'.zeromean=''0'';']);
-                            eval(['Data.PIV',num2str(pass),'.peaklocator=''1'';']);
-                        end
-                    end
-                    if ~isfield(Data,'channel')
-                        Data.channel = 1;
-                    end
-                    if ~isfield(Data.PIV0,'frac_filt')
-                        for pass=0:str2double(Data.passes)
-                            eval(['Data.PIV',num2str(pass),'.frac_filt=''1'';']);
-                            if str2double(eval(['Data.PIV' num2str(pass) '.corr'])) == 3    %GCC (3) and FWC (4) were inserted between RPC (2) and SPC (5, formerly 3)
-                            eval(['Data.PIV',num2str(pass),'.corr=''5'';']);
-                            end
-                        end
-                    end
-                    if ~isfield(Data.PIV0,'deform_min')
-                        for pass=0:str2double(Data.passes)
-                            eval(['Data.PIV',num2str(pass),'.deform_min=''1'';']);
-                            eval(['Data.PIV',num2str(pass),'.deform_max=''1'';']);
-                            eval(['Data.PIV',num2str(pass),'.deform_conv=''0.1'';']);
-                        end
-                    end
                     
-                    % This performs a check to see if the job files
-                    % contains the field 'outputpassbase' if not then it
-                    % used the output name from the final pass.
-                    if ~isfield(Data,'outputpassbase')
-                        eval(['Data.outputpassbase = Data.PIV' Data.passes '.outbase;']);
-                    end
-
-                    if ~isfield(Data,'ID')
-                        Data.runPIV = '1';
-                        
-                        load defaultsettings.mat defaultdata
-                        Data.ID=defaultdata.ID;
-                        Data.Size=defaultdata.Size;
-                        Data.Track=defaultdata.Track;
-                        
-                        if ispc
-                            Data.ID.save_dir        = [Data.outdirec,'\ID\'];
-                            Data.Size.save_dir      = [Data.outdirec,'\Size\'];
-                            Data.Track.save_dir     = [Data.outdirec,'\Track\'];
-                            Data.Track.PIVprops.load_dir       = [Data.outdirec,'\'];
-                        else
-                            Data.ID.save_dir        = [Data.outdirec,'/ID/'];
-                            Data.Size.save_dir      = [Data.outdirec,'/Size/'];
-                            Data.Track.save_dir     = [Data.outdirec,'/Track/'];
-                            Data.Track.PIVprops.load_dir       = [Data.outdirec,'/'];
-                        end
-                    end
+                    [Data] = jobfile_compiler(Data);
                                         
                     if isfield(handles,Data.batchname)
                         Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));
@@ -2310,6 +2249,23 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 
+% --- Executes on button press in saveplane.
+function saveplane_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.saveplane = num2str(get(hObject,''Value''));'])
+    if get(hObject,'Value') == 1
+        splash=splashdlg_planes({...
+            'You have selected to save all of the correlation planes.' ...
+            '' ...
+            'Please note that this option is very memory intensive and can quickly fill the hard drive if not monitored properly.'...
+            '' ...
+            'Please use a mask with a limited number of vector locations and total number of frames.' ...
+            },...
+            'Saving Correlation Planes','Ok','Ok');
+    end
+    guidata(hObject,handles)
+end
+
 % --- Output Basename Text Box ---
 function outputbasename_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -2966,6 +2922,7 @@ set(handles.corrpeaknum,'value',str2double(A.corrpeaknum));
 set(handles.savepeakinfo,'value',str2double(A.savepeakinfo));
 set(handles.savepeakmag,'value',str2double(A.savepeakmag));
 set(handles.savepeakvel,'value',str2double(A.savepeakvel));
+set(handles.saveplane,'value',str2double(A.saveplane));
 set(handles.writeoutputcheckbox,'Value',str2double(A.write));
 set(handles.outputbasename,'string',A.outbase);
 handles.data.cpass=num2str(N);
@@ -3778,6 +3735,391 @@ if ishghandle(QuestFig)
 else
   ButtonName='';
 end
+
+function ButtonName=splashdlg_planes(Question,Title,Btn1,Btn2,Btn3,Default)
+%QUESTDLG Question dialog box.
+%  ButtonName = QUESTDLG(Question) creates a modal dialog box that
+%  automatically wraps the cell array or string (vector or matrix)
+%  Question to fit an appropriately sized window.  The name of the
+%  button that is pressed is returned in ButtonName.  The Title of
+%  the figure may be specified by adding a second string argument:
+%
+%    ButtonName = questdlg(Question, Title)
+%
+%  Question will be interpreted as a normal string.
+%
+%  QUESTDLG uses UIWAIT to suspend execution until the user responds.
+%
+%  The default set of buttons names for QUESTDLG are 'Yes','No' and
+%  'Cancel'.  The default answer for the above calling syntax is 'Yes'.
+%  This can be changed by adding a third argument which specifies the
+%  default Button:
+%
+%    ButtonName = questdlg(Question, Title, 'No')
+%
+%  Up to 3 custom button names may be specified by entering
+%  the button string name(s) as additional arguments to the function
+%  call.  If custom button names are entered, the default button
+%  must be specified by adding an extra argument, DEFAULT, and
+%  setting DEFAULT to the same string name as the button you want
+%  to use as the default button:
+%
+%    ButtonName = questdlg(Question, Title, Btn1, Btn2, DEFAULT);
+%
+%  where DEFAULT is set to Btn1.  This makes Btn1 the default answer.
+%  If the DEFAULT string does not match any of the button string names,
+%  a warning message is displayed.
+%
+%  To use TeX interpretation for the Question string, a data
+%  structure must be used for the last argument, i.e.
+%
+%    ButtonName = questdlg(Question, Title, Btn1, Btn2, OPTIONS);
+%
+%  The OPTIONS structure must include the fields Default and Interpreter.
+%  Interpreter may be 'none' or 'tex' and Default is the default button
+%  name to be used.
+%
+%  If the dialog is closed without a valid selection, the return value
+%  is empty.
+%
+%  Example:
+%
+%  ButtonName = questdlg('What is your favorite color?', ...
+%                        'Color Question', ...
+%                        'Red', 'Green', 'Blue', 'Green');
+%  switch ButtonName,
+%    case 'Red',
+%     disp('Your favorite color is Red');
+%    case 'Blue',
+%     disp('Your favorite color is Blue.')
+%     case 'Green',
+%      disp('Your favorite color is Green.');
+%  end % switch
+%
+%  See also DIALOG, ERRORDLG, HELPDLG, INPUTDLG, LISTDLG,
+%    MSGBOX, WARNDLG, FIGURE, TEXTWRAP, UIWAIT, UIRESUME.
+
+
+%  Copyright 1984-2007 The MathWorks, Inc.
+%  $Revision: 5.55.4.14 $
+
+
+if nargin<1
+  error('MATLAB:questdlg:TooFewArguments', 'Too few arguments for QUESTDLG');
+end
+
+Interpreter='none';
+if ~iscell(Question),Question=cellstr(Question);end
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% General Info. %%%
+%%%%%%%%%%%%%%%%%%%%%
+Orange     =[243     132       0     ]/255;
+Black      =[  0       0        0    ]/255;
+% LightGray  =[192     192      192    ]/255;
+% LightGray2 =[160     160      164    ]/255;
+% MediumGray =[128     128      128    ]/255;
+% White      =[255     255      255    ]/255;
+
+%%%%%%%%%%%%%%%%%%%%
+%%% Nargin Check %%%
+%%%%%%%%%%%%%%%%%%%%
+if nargout>1
+  error('MATLAB:questdlg:WrongNumberOutputs', 'Wrong number of output arguments for QUESTDLG');
+end
+if nargin==1, Title=' ';end
+if nargin<=2, Default='Yes';end
+if nargin==3, Default=Btn1 ;end
+if nargin<=3, Btn1='Yes'; Btn2='No'; Btn3='Cancel';NumButtons=3;end
+if nargin==4, Default=Btn2;Btn2=[];Btn3=[];NumButtons=1;end
+if nargin==5, Default=Btn3;Btn3=[];NumButtons=2;end
+if nargin==6, NumButtons=3;end
+if nargin>6
+  error('MATLAB:questdlg:TooManyInputs', 'Too many input arguments');NumButtons=3; %#ok
+end
+
+if isstruct(Default),
+  Interpreter=Default.Interpreter;
+  Default=Default.Default;
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%%% Create QuestFig %%%
+%%%%%%%%%%%%%%%%%%%%%%%
+FigPos    = get(0,'DefaultFigurePosition');
+FigPos(3) = 300;
+FigPos(4) =  90;
+FigPos    = getnicedialoglocation(FigPos, get(0,'DefaultFigureUnits'));
+
+QuestFig=dialog(                                    ...
+  'Visible'         ,'off'                      , ...
+  'Name'            ,Title                      , ...
+  'Pointer'         ,'arrow'                    , ...
+  'Position'        ,FigPos                     , ...
+  'KeyPressFcn'     ,@doFigureKeyPress          , ...
+  'IntegerHandle'   ,'off'                      , ...
+  'WindowStyle'     ,'normal'                   , ...
+  'HandleVisibility','callback'                 , ...
+  'CloseRequestFcn' ,@delete                  , ...
+  'Tag'             ,Title                      , ...
+  'Color'           ,Orange                      ...
+  );
+
+%%%%%%%%%%%%%%%%%%%%%
+%%% Set Positions %%%
+%%%%%%%%%%%%%%%%%%%%%
+DefOffset  =10;
+
+IconWidth  =0;
+IconHeight =150;
+IconXOffset=DefOffset;
+IconYOffset=FigPos(4)-DefOffset-IconHeight;  %#ok
+IconCMap=[Orange;get(QuestFig,'Color')];  %#ok
+
+DefBtnWidth =56;
+BtnHeight   =22;
+
+BtnYOffset=DefOffset;
+
+BtnWidth=DefBtnWidth;
+
+ExtControl=uicontrol(QuestFig   , ...
+  'Style'    ,'pushbutton', ...
+  'String'   ,' '          ...
+  );
+
+btnMargin=1.4;
+set(ExtControl,'String',Btn1);
+BtnExtent=get(ExtControl,'Extent');
+BtnWidth=max(BtnWidth,BtnExtent(3)+20);
+if NumButtons > 1
+  set(ExtControl,'String',Btn2);
+  BtnExtent=get(ExtControl,'Extent');
+  BtnWidth=max(BtnWidth,BtnExtent(3)+20);
+  if NumButtons > 2
+    set(ExtControl,'String',Btn3);
+    BtnExtent=get(ExtControl,'Extent');
+    BtnWidth=max(BtnWidth,BtnExtent(3)*btnMargin);
+  end
+end
+BtnHeight = max(BtnHeight,BtnExtent(4)*btnMargin);
+
+delete(ExtControl);
+
+MsgTxtXOffset=IconXOffset+IconWidth;
+
+FigPos(3)=max(FigPos(3),MsgTxtXOffset+NumButtons*(BtnWidth+2*DefOffset));
+set(QuestFig,'Position',FigPos);
+
+BtnXOffset=zeros(NumButtons,1);
+
+if NumButtons==1,
+  BtnXOffset=(FigPos(3)-BtnWidth)/2;
+elseif NumButtons==2,
+  BtnXOffset=[MsgTxtXOffset
+    FigPos(3)-DefOffset-BtnWidth];
+elseif NumButtons==3,
+  BtnXOffset=[MsgTxtXOffset
+    0
+    FigPos(3)-DefOffset-BtnWidth];
+  BtnXOffset(2)=(BtnXOffset(1)+BtnXOffset(3))/2;
+end
+
+MsgTxtYOffset=DefOffset+BtnYOffset+BtnHeight;
+MsgTxtWidth=FigPos(3)-DefOffset-MsgTxtXOffset-IconWidth;
+MsgTxtHeight=FigPos(4)-DefOffset-MsgTxtYOffset;
+MsgTxtForeClr=Black;
+MsgTxtBackClr=[1 1 1];%get(QuestFig,'Color');
+
+CBString='uiresume(gcbf)';
+DefaultValid = false;
+DefaultWasPressed = false;
+BtnHandle = [];
+DefaultButton = 0;
+
+for i = 1:NumButtons
+  switch i
+    case 1
+      ButtonString=Btn1;
+      ButtonTag='Btn1';
+      ButtonType='pushbutton';
+      if strcmp(ButtonString, Default)
+        DefaultValid = true;
+        DefaultButton = 1;
+      end
+
+    case 2
+      ButtonString=Btn2;
+      ButtonTag='Btn2';
+      ButtonType='checkbox';
+      if strcmp(ButtonString, Default)
+        DefaultValid = true;
+        DefaultButton = 2;
+      end
+  end
+
+  BtnHandle(end+1)=uicontrol(QuestFig            , ...
+    'Style'              ,ButtonType, ...
+    'Position'           ,[ BtnXOffset(1) BtnYOffset BtnWidth BtnHeight ]           , ...
+    'KeyPressFcn'        ,@doControlKeyPress , ...
+    'BackgroundColor'    ,[1 1 1]     , ...
+    'CallBack'           ,CBString    , ...
+    'String'             ,ButtonString, ...
+    'HorizontalAlignment','center'    , ...
+     'Tag'                ,ButtonTag     ...
+    );
+end
+
+if ~DefaultValid
+  warnstate = warning('backtrace','off');
+  warning('MATLAB:QUESTDLG:stringMismatch','Default string does not match any button string name.');
+  warning(warnstate);
+end
+
+MsgHandle=uicontrol(QuestFig            , ...
+  'Style'              ,'text'         , ...
+  'Position'           ,[MsgTxtXOffset MsgTxtYOffset .95*MsgTxtWidth MsgTxtHeight ]              , ...
+  'String'             ,{' '}          , ...
+  'Tag'                ,'Question'     , ...
+  'HorizontalAlignment','left'         , ...
+  'FontWeight'         ,'bold'         , ...
+  'BackgroundColor'    ,MsgTxtBackClr  , ...
+  'ForegroundColor'    ,MsgTxtForeClr    ...
+  );
+
+[WrapString,NewMsgTxtPos]=textwrap(MsgHandle,Question,75);
+
+% NumLines=size(WrapString,1);
+
+AxesHandle=axes('Parent',QuestFig,'Position',[0 0 1 1],'Visible','off');
+
+texthandle=text( ...  
+    'Parent'              ,AxesHandle                      , ...
+    'Units'               ,'pixels'                        , ...
+    'Color'               ,get(BtnHandle(1),'ForegroundColor')   , ...
+    'HorizontalAlignment' ,'left'                          , ...
+    'FontName'            ,get(BtnHandle(1),'FontName')    , ...
+    'FontSize'            ,14.0                            , ...
+    'FontWeight'          ,'normal'                          , ...
+    'VerticalAlignment'   ,'bottom'                        , ...
+    'String'              ,WrapString                      , ...
+    'Interpreter'         ,Interpreter                     , ...
+    'Tag'                 ,'Question'                        ...
+    );  %#ok
+
+textExtent = get(texthandle, 'extent');
+
+% (g357851)textExtent and extent from uicontrol are not the same. For window, extent from uicontrol is larger
+%than textExtent. But on Mac, it is reverse. Pick the max value.
+MsgTxtWidth=max([MsgTxtWidth NewMsgTxtPos(3)+2 textExtent(3)]);
+MsgTxtHeight=max([MsgTxtHeight NewMsgTxtPos(4)+2 textExtent(4)]);
+
+MsgTxtXOffset=IconXOffset+IconWidth+DefOffset;
+FigPos(3)=max(NumButtons*(BtnWidth+DefOffset)+DefOffset, ...
+  MsgTxtXOffset+MsgTxtWidth+DefOffset);
+
+
+% Center Vertically around icon
+if IconHeight>MsgTxtHeight,
+  IconYOffset=BtnYOffset+BtnHeight+DefOffset;
+  MsgTxtYOffset=IconYOffset+(IconHeight-MsgTxtHeight)/2;
+  FigPos(4)=IconYOffset+IconHeight+DefOffset;
+  % center around text
+else
+  MsgTxtYOffset=BtnYOffset+BtnHeight+DefOffset;
+  IconYOffset=MsgTxtYOffset+(MsgTxtHeight-IconHeight)/2;
+  FigPos(4)=MsgTxtYOffset+MsgTxtHeight+DefOffset;
+end
+
+if NumButtons==1,
+  BtnXOffset=(FigPos(3)-BtnWidth)/2;
+elseif NumButtons==2,
+  BtnXOffset=[(FigPos(3)-DefOffset)/2-BtnWidth
+    (FigPos(3)+DefOffset)/2
+    ];
+
+elseif NumButtons==3,
+  BtnXOffset(2)=(FigPos(3)-BtnWidth)/2;
+  BtnXOffset=[BtnXOffset(2)-DefOffset-BtnWidth
+    BtnXOffset(2)
+    BtnXOffset(2)+BtnWidth+DefOffset
+    ];
+end
+
+set(QuestFig ,'Position',getnicedialoglocation(FigPos, get(QuestFig,'Units')));
+
+BtnPos=get(BtnHandle,{'Position'});
+BtnPos=cat(1,BtnPos{:});
+BtnPos(:,1)=BtnXOffset;
+BtnPos=num2cell(BtnPos,2);
+set(BtnHandle,{'Position'},BtnPos);
+
+if DefaultValid
+  setdefaultbutton(QuestFig, BtnHandle(DefaultButton));
+end
+
+delete(MsgHandle);
+
+
+set(texthandle, 'Position',[MsgTxtXOffset MsgTxtYOffset 0]);
+
+
+% IconAxes=axes(                                      ...
+%   'Parent'      ,QuestFig              , ...
+%   'Units'       ,'Pixels'              , ...
+%   'Position'    ,[IconXOffset IconYOffset IconWidth IconHeight], ...
+%   'NextPlot'    ,'replace'             , ...
+%   'Tag'         ,'IconAxes'              ...
+%   );
+% 
+% set(QuestFig ,'NextPlot','add');
+% 
+% pranadir=which('prana');
+% try
+%     logo=imread(fullfile(pranadir(1:end-8),'documentation','logo.tif'),'tif');
+% catch
+%     logo=zeros(500,1000);
+% end
+% Img=image('Cdata',logo,'Parent',IconAxes);
+% 
+% set(IconAxes, ...
+%   'Visible','off'           , ...
+%   'YDir'   ,'reverse'       , ...
+%   'XLim'   ,get(Img,'XData'), ...
+%   'YLim'   ,get(Img,'YData')  ...
+%   );
+
+% make sure we are on screen
+movegui(QuestFig)
+
+
+set(QuestFig ,'WindowStyle','modal','Visible','on');
+drawnow;
+
+if DefaultButton ~= 0
+  uicontrol(BtnHandle(DefaultButton));
+end
+
+if ishghandle(QuestFig)
+  % Go into uiwait if the figure handle is still valid.
+  % This is mostly the case during regular use.
+  uiwait(QuestFig);
+end
+
+% Check handle validity again since we may be out of uiwait because the
+% figure was deleted.
+if ishghandle(QuestFig)
+  if DefaultWasPressed
+    ButtonName=Default;
+  else
+    ButtonName=get(get(QuestFig,'CurrentObject'),'String');
+  end
+    delete(QuestFig);
+else
+  ButtonName='';
+end
+
 
 function doFigureKeyPress(obj, evd)  %#ok
 switch(evd.Key)

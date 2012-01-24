@@ -44,6 +44,8 @@ spectral = fftshift(energyfilt(Sx,Sy,D,0));
 fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
 
+% This is a check for the fractionally weighted correlation.  We won't use
+% the spectral filter with FWC or GCC
 if strcmpi(tcorr,'FWC')
     frac = fracval;
     spectral = ones(size(spectral));
@@ -251,7 +253,7 @@ switch upper(tcorr)
             Wden = sqrt(P21.*conj(P21));
             W(P21~=0) = Wden(P21~=0);
             if frac ~=1
-                R = P21./(W.^frac);
+                R = P21./(W.^frac);%apply factional weighting to the normalization
             else
                 R = P21./W;
             end
@@ -318,7 +320,7 @@ switch upper(tcorr)
             Wden = sqrt(P21.*conj(P21));
             W(P21~=0) = Wden(P21~=0);
             if frac ~=1
-                R = P21./(W.^frac);
+                R = P21./(W.^frac);%apply factional weighting to the normalization
             else
                 R = P21./W;
             end

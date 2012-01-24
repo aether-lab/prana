@@ -105,9 +105,10 @@ PeakMag=zeros(P,1);
 PeakVel=zeros(P,1);
 wbase=cell(0);
 frac_filt=zeros(P,1);
-mindefloop=zeros(P,1);
+mindefloop=zeros(P,1);% variables for the deformation convergences
 maxdefloop=zeros(P,1);
 condefloop=zeros(P,1);
+saveplane=zeros(P,1);
 
 %read data info for each pass
 for e=1:P
@@ -188,12 +189,12 @@ for e=1:P
     PeakNum(e)=str2double(A.corrpeaknum);
     PeakMag(e)=str2double(A.savepeakmag);
     PeakVel(e)=str2double(A.savepeakvel);
+    saveplane(e) = str2double(A.saveplane);
     
     %output directory
     wbase(e,:)={A.outbase};
     
 end
-
 
 %% --- Evaluate Image Sequence ---
 switch char(M)
@@ -211,10 +212,10 @@ switch char(M)
             im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
             
             % Specify which color channel(s) to consider
-            %channel = str2double(Data.channel);
-
-             %if size(im1, 3) == 3
-             if size(im1, 3) >= 3 %to handle transparancy channels and other higher number images
+            % This was changed to greater then 2 because John had images
+            % that were 4 channel with the last channel being a
+            % transparency channel.
+            if size(im1, 3) > 2
                 %Extract only red channel
                  if channel == 1;
                     im1 = im1(:,:,1);
@@ -267,7 +268,8 @@ switch char(M)
 
             UI = BWO(1)*ones(size(XI));
             VI = BWO(2)*ones(size(YI));
-
+            
+            % Preallocating variables
             corrtime=zeros(P,max(maxdefloop));
             valtime=zeros(P,max(maxdefloop));
             savetime=zeros(P,1);
@@ -277,6 +279,9 @@ switch char(M)
             defconvV = zeros(P,max(maxdefloop));
             
             e = 0; defloop = 1;
+            % This while statment is used to interatively move through the
+            % deformations.  If the minimum number of loops hasn't been
+            % reach it will keep iterating otherwise it should stop.
             while (e<P && defloop == 1) || (e<=P && defloop~=1)%for e=1:P
                 if defloop == 1
                     e=e+1;
@@ -301,7 +306,7 @@ switch char(M)
                 if (e~=1 || defloop~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     %if Corr(e)<4
                     if Corr(e)~=4 %SPC=4
-                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -311,6 +316,8 @@ switch char(M)
                         end
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                        %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
+                        %[Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         Dc = zero(size(Cc));
  
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
@@ -320,7 +327,7 @@ switch char(M)
                 else                                    %either first pass, or not deform
                     %if Corr(e)<4
                     if Corr(e)~=4 %SPC=4
-                        [Xc,Yc,Uc,Vc,Cc,Dc]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         Dc = zeros(size(Cc));
@@ -341,6 +348,7 @@ switch char(M)
                         U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
                         U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     end
+                %elseif Corr(e)==5 %only do this for SPC (JJC: I think SPC is Corr=4, not 5.
                 else
                     U=zeros(size(X));V=zeros(size(X));
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
@@ -379,6 +387,8 @@ switch char(M)
                 
                 
                 % --- Iterative Deformation Check ---
+                % This block checks too see if the deformation has
+                % converged or reach is max number of iterations.
                 if strcmpi(M,'Deform')
                     if defloop == 1
                         Ud = Uval; Vd = Vval;
@@ -389,6 +399,9 @@ switch char(M)
                     end
                     if defloop == maxdefloop(e) || (defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
                         if maxdefloop(e) ~= 1
+                            % append the 'deform' and the pass number to
+                            % the end of the file once the final number of
+                            % iterations has been reached.
                             wbase{e,:} = sprintf([wbase{e,:} 'deform' num2str(defloop) '_']);
                         end
                         defloop = 1;
@@ -442,6 +455,12 @@ switch char(M)
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
                     end
+                    % This saves the correlation planes if that selection
+                    % has been made in the job file.
+                    if saveplane(e) && Corr(e) ~= 4
+                        save(sprintf('%scorrplanes.mat',wbase{e,:}),'X','Y','Cp')
+                    end
+                    
                     X=Xval;Y=Yval;
                     
                     savetime(e,defloop)=toc(t1);
@@ -636,6 +655,9 @@ switch char(M)
         defconvV = zeros(P,max(maxdefloop));
         
         e = 0; defloop = 1;
+        % This while statment is used to interatively move through the
+        % deformations.  If the minimum number of loops hasn't been
+        % reach it will keep iterating otherwise it should stop.
         while (e<P && defloop == 1) || (e<=P && defloop~=1)%for e=1:P
             if defloop == 1
                 e=e+1;
@@ -685,9 +707,7 @@ switch char(M)
                         %load image pair and flip coordinates
                         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
                         im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
-                        
-                        %if size(im1, 3) == 3
-                        if size(im1, 3) >= 3    %to handle transparancy channels and other higher number images
+                        if size(im1, 3) > 2
                             %Extract only red channel
                             if channel == 1;
                                 im1 = im1(:,:,1);
@@ -722,12 +742,15 @@ switch char(M)
                         
                         %  Flip images
                         %flipud only works on 2D matices.
-%                         im1=flipud(im1(:,:,1));
-%                         im2=flipud(im2(:,:,1));
+                        % im1=flipud(im1(:,:,1));
+                        % im2=flipud(im2(:,:,1));
                         im1 = im1(end:-1:1,:,:);
                         im2 = im2(end:-1:1,:,:);
-%                         L=size(im1);
+                        % L=size(im1);
                         
+                        % The deformation for ensemble must be done before
+                        % the correlation unlike in the instantanious
+                        % images where it is done after correlation
                         if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                             
                             t1=tic;
@@ -847,7 +870,7 @@ switch char(M)
 %                                 cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
                                 ave_pre = (CCmdist*length(I1)/(q-1));
                                 ave_cur = ((CCmdist*length(I1)+CC)/q);
-                                ave_cur(ave_cur==0)=nan;
+                                ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zeros
                                 cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
@@ -861,7 +884,7 @@ switch char(M)
                         fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
                     end
                 end
-%                 if Corr(e)<5 %SCC or RPC processor
+%                 if Corr(e)<4 %SCC or RPC processor
                     CCm=zeros(size(CCmdist{1}));
                     for i=1:length(CCmdist)
                         CCm=CCm+CCmdist{i}/length(I1);
@@ -881,9 +904,7 @@ switch char(M)
                     %load image pair and flip coordinates
                     im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
                     im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
-                    
-                    %if size(im1, 3) == 3
-                    if size(im1, 3) >= 3 %to handle transparancy channels and other higher number images
+                    if size(im1, 3) > 2
                         %Extract only red channel
                         if channel == 1;
                             im1 = im1(:,:,1);
@@ -1042,7 +1063,7 @@ switch char(M)
 %                             cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
                             ave_pre = (CCm*length(I1)/(q-1));
                             ave_cur = ((CCm*length(I1)+CC)/q);
-                            ave_cur(ave_cur==0)=nan;
+                            ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zero.
                             cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
@@ -1087,7 +1108,7 @@ switch char(M)
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
-            elseif Corr(e)==4 %SPC processor
+            elseif Corr(e)==4 %SPC processor, JJC: Sam changed to 5, but I think SPC is 4
                     %RPC filter for weighting function
                 cutoff=2/pi/D(e);
                 wt = energyfilt(Z(2),Z(1),D(e),0);
@@ -1211,6 +1232,9 @@ switch char(M)
                 end
                 if str2double(Data.multiplematout)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
+                end
+                if saveplane(e) && Corr(e) ~= 4
+                    save(sprintf('%scorrplanes.mat',wbase{e,:}),'X','Y','CCm')
                 end
                 X=Xval;Y=Yval;
 
