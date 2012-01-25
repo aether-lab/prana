@@ -520,8 +520,11 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
+                                                if channel ~= 6
+                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                else
+                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
+                                                end
                                             end
                                         end
 
@@ -533,8 +536,11 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
+                                                if channel ~= 6
+                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                else
+                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
+                                                end
                                             end
                                         end
 
@@ -556,8 +562,11 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
+                                                if channel ~= 6
+                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                else
+                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
+                                                end
                                             end
                                         end
 
@@ -570,8 +579,11 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
+                                                if channel ~= 6
+                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                else
+                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
+                                                end
                                             end
                                         end
 
@@ -689,7 +701,7 @@ switch char(M)
             else
                 U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
             end
-            
+
             if str2double(Data.par) && matlabpool('size')>1
 
                 spmd
@@ -777,8 +789,11 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
+                                                if channel ~=6 
+                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                else
+                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
+                                                end
                                             end
                                         end
                                         
@@ -790,14 +805,17 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
+                                                if channel ~= 6
+                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                else
+                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
+                                                end
                                             end
                                         end
                                         
                                     end
                                 end
-                                
+
                                 %cardinal function interpolation with Blackman filter
                             elseif Iminterp==2
                                 
@@ -813,8 +831,11 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
+                                                if channel ~= 6
+                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                else
+                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
+                                                end
                                             end
                                         end
                                         
@@ -827,8 +848,11 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
+                                                if channel ~= 6
+                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                else
+                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
+                                                end
                                             end
                                         end
                                         
@@ -964,8 +988,11 @@ switch char(M)
                                     for n=nmin:nmax
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                            %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                            im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
+                                            if channel ~= 6
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                            else
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
+                                            end
                                         end
                                     end
                                     
@@ -977,8 +1004,11 @@ switch char(M)
                                     for n=nmin:nmax
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                            %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                            im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
+                                            if channel ~= 6
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                            else
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
+                                            end
                                         end
                                     end
                                     
@@ -1000,8 +1030,11 @@ switch char(M)
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                             bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                            %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                            im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
+                                            if channel ~= 6
+                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                            else
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
+                                            end
                                         end
                                     end
                                     
@@ -1014,14 +1047,17 @@ switch char(M)
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                             bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                            %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                            im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
+                                            if channel ~= 6
+                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                            else
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
+                                            end
                                         end
                                     end
                                     
                                 end
                             end
-                            
+
                         end
                         
                         %clip lower values of deformed images
@@ -1030,7 +1066,7 @@ switch char(M)
                         
                         deformtime=toc(t1);
                     end
-                    
+
                     t1=tic;
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));

@@ -42,13 +42,13 @@ velinterp={'Nearest Neighbor','Bilinear','Cubic'};
 iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
 expsummary = [expsummary sprintf('\n-----------------------PIV Processing------------------------\n')];
     expsummary = [expsummary sprintf(['Algorithm:                     ',methods{str2double(Data.method)},'\n'])];
-if str2double(Data.method)~=1 && str2double(Data.method)~=5
+if str2double(Data.method)~=1 && str2double(Data.method)~=6
     expsummary = [expsummary sprintf(['Velocity Interp Function:      ',velinterp{str2double(Data.velinterp)},'\n'])];
 end
-if str2double(Data.method)==4
+if any(str2double(Data.method)==[3 5])
     expsummary = [expsummary sprintf(['Image Interpolation Function:  ',iminterp{str2double(Data.iminterp)},'\n'])];
 end
-if str2double(Data.method)>=5
+if str2double(Data.method)>=6
     expsummary = [expsummary sprintf(['PIV Error:                     ',Data.PIVerror,'\n'])];
     expsummary = [expsummary sprintf(['Maximum Framestep:             ',Data.framestep,'\n'])];
 end
