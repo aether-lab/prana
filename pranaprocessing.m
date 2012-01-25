@@ -437,7 +437,7 @@ switch char(M)
                     end
 
                     %remove nans from data, replace with zeros
-                    U(Eval<0)=0;V(Eval<0)=0;
+                    U(Eval<0|isinf(U))=0;V(Eval<0|isinf(V))=0;
                     
                     if str2double(Data.datout)
                         time=I1(q)/Freq;
@@ -663,13 +663,11 @@ switch char(M)
             
             [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
             S=size(X);X=X(:);Y=Y(:);
-            if e==1 || strcmpi(M,'Ensemble')
-                Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                Eval(Eval==0)=-1;
-                Eval(Eval>0)=0;
-            end
+            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+            Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+            Eval(Eval==0)=-1;
+            Eval(Eval>0)=0;
             
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                 U=zeros(size(X,1),3);
@@ -681,7 +679,7 @@ switch char(M)
             end
             
             if str2double(Data.par) && matlabpool('size')>1
-                
+
                 spmd
                     verstr=version('-release');
                     if str2double(verstr(1:4))>=2010
@@ -826,12 +824,6 @@ switch char(M)
                             im1d(im1d<0)=0; im1d(isnan(im1d))=0;
                             im2d(im2d<0)=0; im2d(isnan(im2d))=0;
                         
-                            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                            Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                            Eval(Eval==0)=-1;
-                            Eval(Eval>0)=0;
-            
                             deformtime=toc(t1);
                         end
                         
@@ -858,7 +850,7 @@ switch char(M)
                                 cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
-                        elseif Corr(e)==2 %SPC processor
+                        elseif Corr(e)==4 %SPC processor
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
@@ -1014,12 +1006,6 @@ switch char(M)
                         im1d(im1d<0)=0; im1d(isnan(im1d))=0;
                         im2d(im2d<0)=0; im2d(isnan(im2d))=0;
                         
-                        Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                        Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                        Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                        Eval(Eval==0)=-1;
-                        Eval(Eval>0)=0;
-            
                         deformtime=toc(t1);
                     end
                     
@@ -1066,7 +1052,7 @@ switch char(M)
 
             Z=[Wsize(e,2),Wsize(e,1),length(X(Eval>=0))];
             ZZ=ones(Z(1),Z(2));
-            
+
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                 Uc=zeros(Z(3),3);
                 Vc=zeros(Z(3),3);
@@ -1202,7 +1188,7 @@ switch char(M)
                 end
 
                 %remove nans from data, replace with zeros
-                U(Eval<0||isinf(U))=0;V(Eval<0||isinf(V))=0;
+                U(Eval<0 | isinf(U))=0;V(Eval<0 | isinf(V))=0;
 
                 if str2double(Data.datout)
                     time=I1(1)/Freq;
@@ -1469,7 +1455,7 @@ switch char(M)
                     end
 
                     %remove nans from data, replace with zeros
-                    U(Eval<0)=0;V(Eval<0)=0;
+                    U(Eval<0|isinf(U))=0;V(Eval<0|isinf(V))=0;
                     
                     if str2double(Data.datout)
 %                         q_full=find(I1_full==I1(q),1,'first');
