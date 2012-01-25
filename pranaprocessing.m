@@ -80,7 +80,7 @@ Gres = zeros(P,2);
 
 % Not Sure
 Gbuf=zeros(P,2);
-Corr=zeros(P,1);
+Corr=zeros(P,1);            %correlation type on each pass
 D=zeros(P,1);
 Zeromean=zeros(P,1);
 Peaklocator=zeros(P,1);
@@ -105,7 +105,7 @@ PeakMag=zeros(P,1);
 PeakVel=zeros(P,1);
 wbase=cell(0);
 frac_filt=zeros(P,1);
-mindefloop=zeros(P,1);% vriables for the defromation convergences
+mindefloop=zeros(P,1);% variables for the deformation convergences
 maxdefloop=zeros(P,1);
 condefloop=zeros(P,1);
 saveplane=zeros(P,1);
@@ -145,7 +145,7 @@ for e=1:P
     Wsize(e,:) = [str2double(A.winsize(1:(strfind(A.winsize,',')-1))) str2double(A.winsize((strfind(A.winsize,',')+1):end))];
     Gres(e,:) = [str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
     Gbuf(e,:) = [str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
-    Corr(e) = str2double(A.corr)-1;
+    Corr(e) = str2double(A.corr)-1; %why do we subtract 1 from A.corr?  Just to make things more confusing? (SCC,RPC,GCC,FWC,SPC)
     D(e) = str2double(A.RPCd);
     frac_filt(e) = str2double(A.frac_filt);
     Zeromean(e) = str2double(A.zeromean);
@@ -237,6 +237,7 @@ switch char(M)
                  elseif channel == 5;
                     im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
                     im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                %ensemble correlation of channels 
                  elseif channel == 6;
                      im1=im1(:,:,1:3);
                      im2=im2(:,:,1:3);
@@ -249,7 +250,7 @@ switch char(M)
              end
 
             %  Flip images
-            %flipud only works on 2D matices.
+            %flipud only works on 2D matices.  What about flipdim(im1,1) instead?
             im1 = im1(end:-1:1,:,:);%flipud(im1);
             im2 = im2(end:-1:1,:,:);%flipud(im2);
 
@@ -303,7 +304,8 @@ switch char(M)
 
                 %correlate image pair
                 if (e~=1 || defloop~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
-                    if Corr(e)<4
+                    %if Corr(e)<4
+                    if Corr(e)~=4 %SPC=4
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
@@ -313,15 +315,18 @@ switch char(M)
                             Vc = Vc + Vb(Eval>=0);
                         end
                     else
-                        [Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
-                        Dc = zero(size(Cc));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                        %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
+                        %[Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                        Dc = zeros(size(Cc));
  
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
                     end
                     
                 else                                    %either first pass, or not deform
-                    if Corr(e)<4
+                    %if Corr(e)<4
+                    if Corr(e)~=4 %SPC=4
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -329,7 +334,8 @@ switch char(M)
                     end
                 end
                 
-                if Corr(e)<4
+                %if Corr(e)<4
+                if Corr(e)~=4 %SPC=4
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                         U=zeros(size(X,1),3);
                         V=zeros(size(X,1),3);
@@ -342,7 +348,8 @@ switch char(M)
                         U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
                         U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     end
-                elseif Corr(e)==5 %only do this for SPC
+                %elseif Corr(e)==4 %only do this for SPC
+                else
                     U=zeros(size(X));V=zeros(size(X));
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     if Peakswitch(e)
@@ -406,9 +413,10 @@ switch char(M)
                 %write output
                 if Writeswitch(e) && defloop == 1
                     t1=tic;
-                        
+                    
+                    %SPC only returns 1 peak right now?
                     if Peakswitch(e)
-                        if PeakVel(e) && Corr(e)<4
+                        if PeakVel(e) && (Corr(e)~=4)  %SPC=4
                             U=[Uval,U(:,1:PeakNum(e))];
                             V=[Vval,V(:,1:PeakNum(e))];
                         else
@@ -449,7 +457,7 @@ switch char(M)
                     end
                     % This saves the correlation planes if that selection
                     % has been made in the job file.
-                    if saveplane(e) && Corr(e) < 4
+                    if saveplane(e) && Corr(e) ~= 4
                         Xloc = X(Eval>=0);Yloc=Y(Eval>=0);%#ok
                         save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','Cp')
                         clear Xloc Yloc
@@ -512,7 +520,8 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
                                             end
                                         end
 
@@ -524,7 +533,8 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
                                             end
                                         end
 
@@ -546,7 +556,8 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
                                             end
                                         end
 
@@ -559,7 +570,8 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
                                             end
                                         end
 
@@ -717,6 +729,7 @@ switch char(M)
                             elseif channel == 5;
                                 im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
                                 im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                                %ensemble correlation of channels
                             elseif channel == 6;
                                 im1=im1(:,:,1:3);
                                 im2=im2(:,:,1:3);
@@ -764,7 +777,8 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
                                             end
                                         end
                                         
@@ -776,7 +790,8 @@ switch char(M)
                                         for n=nmin:nmax
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
                                             end
                                         end
                                         
@@ -798,7 +813,8 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
                                             end
                                         end
                                         
@@ -811,7 +827,8 @@ switch char(M)
                                             for m=mmin:mmax
                                                 wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                                 bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
                                             end
                                         end
                                         
@@ -836,7 +853,7 @@ switch char(M)
                             [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         end
                     
-                        if Corr(e)<4 %SCC or RPC processor
+                        if Corr(e)~=4 %SPC=4
                             if q==1
                                 CCmdist=CC;
                                 cnvg_est = 0;
@@ -850,7 +867,7 @@ switch char(M)
                                 cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
-                        elseif Corr(e)==4 %SPC processor
+                        else %if Corr(e)==4 %SPC processor
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
@@ -902,6 +919,7 @@ switch char(M)
                         elseif channel == 5;
                             im1 = (im1(:,:,1) + im1(:,:,2) + im1(:,:,3))/3;
                             im2 = (im2(:,:,1) + im2(:,:,2) + im2(:,:,3))/3;
+                        %ensemble correlation of channels
                         elseif channel == 6;
                             im1=im1(:,:,1:3);
                             im2=im2(:,:,1:3);
@@ -946,7 +964,8 @@ switch char(M)
                                     for n=nmin:nmax
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                            im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                            %im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
+                                            im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
                                         end
                                     end
                                     
@@ -958,7 +977,8 @@ switch char(M)
                                     for n=nmin:nmax
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                            im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                            %im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
+                                            im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
                                         end
                                     end
                                     
@@ -980,7 +1000,8 @@ switch char(M)
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
                                             bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                            im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                            %im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
+                                            im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
                                         end
                                     end
                                     
@@ -993,7 +1014,8 @@ switch char(M)
                                         for m=mmin:mmax
                                             wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
                                             bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                            im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                            %im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
+                                            im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
                                         end
                                     end
                                     
@@ -1018,7 +1040,7 @@ switch char(M)
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
                     
-                    if Corr(e)<4 %SCC or RPC processor
+                    if Corr(e)~=4   %SPC=4 %SCC or RPC 
                         if q==1
                             CCm=CC/length(I1);
                             cnvg_est = 0;
@@ -1032,7 +1054,7 @@ switch char(M)
                             cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
-                    elseif Corr(e)==4 %SPC processor
+                    else %if Corr(e)==4 %SPC processor, should this be just ELSE?
                         if q==1
                             CCm=CC;
                         else
@@ -1065,7 +1087,7 @@ switch char(M)
                 Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
             end
 
-            if Corr(e)<4 %SCC or RPC processor
+            if Corr(e)~=4 %SPC=4 
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
@@ -1073,7 +1095,7 @@ switch char(M)
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
-            elseif Corr(e)==5 %SPC processor
+            elseif Corr(e)==4 %SPC processor
                     %RPC filter for weighting function
                 cutoff=2/pi/D(e);
                 wt = energyfilt(Z(2),Z(1),D(e),0);
@@ -1159,7 +1181,7 @@ switch char(M)
                 t1=tic;
 
                 if Peakswitch(e)
-                    if PeakVel(e) && Corr(e)<4
+                    if PeakVel(e) && Corr(e)~=4
                         U=[Uval,U(:,1:PeakNum(e))];
                         V=[Vval,V(:,1:PeakNum(e))];
                         Eval=[Evalval,Eval(:,1:PeakNum(e))];
@@ -1198,7 +1220,7 @@ switch char(M)
                 if str2double(Data.multiplematout)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
                 end
-                if saveplane(e) && Corr(e) < 4
+                if saveplane(e) && Corr(e) ~= 4
                     Xloc = X(Eval>=0);Yloc=Y(Eval>=0);%#ok
                     save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','CCm')
                     clear Xloc Yloc
@@ -1327,7 +1349,7 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
                 Uc=[];Vc=[];Cc=[];Dc=[];
 
-                if Corr(e)<4
+                if Corr(e)~=4
                     U=zeros(size(X,1),3,N);
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
@@ -1424,7 +1446,7 @@ switch char(M)
                 if Writeswitch(e) 
                     t1=tic;
                     if Peakswitch(e)                    
-                        if PeakVel(e) && Corr(e)<4
+                        if PeakVel(e) && Corr(e)~=4
                             U=[Uval(:,1),U(:,1:PeakNum(e))];
                             V=[Vval(:,1),V(:,1:PeakNum(e))];
                             Eval=[Evalval(:,1),Eval(:,1:PeakNum(e))];

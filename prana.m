@@ -1931,7 +1931,7 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
     N=handles.data.cpass;
     A=eval(['handles.data.PIV' num2str(N)]);
-    if any(str2double(A.corr)== [1 3 5])
+    if any(str2double(A.corr)== [1 3]) %2 and 5 are RPC and SPC, both need rpcdiameter
         set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
     else
         set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
@@ -1954,7 +1954,7 @@ function rpcdiameter_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.RPCd = get(hObject,''String'');'])
     guidata(hObject,handles)
-    if get(handles.correlationtype,'Value')==2
+    if any(get(handles.correlationtype,'Value')==[2,5]) %need to check for RPC, SPC
         if str2double(get(hObject,'String'))<2
             if str2double(get(hObject,'String'))==0
                 set(hObject,'backgroundcolor','r');
@@ -3021,7 +3021,7 @@ else
     set(handles.gridres,'backgroundcolor',[1 1 1]);
     set(handles.winoverlap,'backgroundcolor',0.5*[1 1 1]);
 end
-if any(get(handles.correlationtype,'Value')==[2 4])
+if any(get(handles.correlationtype,'Value')==[2 5]) %check diameter if RPC, SPC
     if str2double(get(handles.rpcdiameter,'String'))<2
         if str2double(get(handles.rpcdiameter,'String'))==0
             set(handles.rpcdiameter,'backgroundcolor','r');

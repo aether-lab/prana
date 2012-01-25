@@ -11,8 +11,8 @@ X=X(:);
 Y=Y(:);
 
 %correlation and window mask types
-ctype    = {'SCC','RPC','GCC','FWC'};
-tcorr = char(ctype(corr+1)); 
+ctype    = {'SCC','RPC','GCC','FWC','SPC'};
+tcorr = char(ctype(corr+1)); %and because corr = A.Corr-1, we have to fix it again here - why bother?
 
 %preallocate velocity fields and grid format
 Nx = window(1);
@@ -368,6 +368,11 @@ switch upper(tcorr)
                 end
             end
         end
+        
+    otherwise
+        %throw an error, we shouldn't be here
+        error('invalid correlation type')
+
 end
 
 %add DWO to estimation

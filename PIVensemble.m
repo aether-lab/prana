@@ -200,7 +200,7 @@ switch upper(tcorr)
         CC = zeros(Sy,Sx,length(X));
         
         if size(im1,3) == 3
-        Gens=zeros(Ny,Nx,3);        
+        Gens=zeros(Ny,Nx,3);     %matrix for storing each color correlation for color ensemble      
         for n=1:length(X)
 
             %apply the second order discrete window offset
@@ -414,6 +414,10 @@ switch upper(tcorr)
             CC.V(:,:,n) = vm;
             CC.C(:,:,n) = Ctemp;
         end
+        
+    otherwise
+        error('Correlation type not supported')
+
 end
 
 end
