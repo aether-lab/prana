@@ -53,7 +53,7 @@ else
                 maskname=nan(1,length(I1));
             end
             
-            if str2double(Data.method)==4
+            if any(str2double(Data.method)==[4 5])
                 fprintf('\n-------------- Processing Dataset ------------------\n')
                 pranaprocessing(Data)
                 fprintf('---------------- Job Completed ---------------------\n')
