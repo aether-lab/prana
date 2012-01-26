@@ -20,7 +20,7 @@ if ~isfield(Data.PIV0,'zeromean')
 end
 %does the job file have infromation about the color channels
 if ~isfield(Data,'channel')
-    Data.channel = 1;
+    Data.channel = '1';
 end
 %does the job file have a variable for fractionally weighted correlations
 if ~isfield(Data.PIV0,'frac_filt')

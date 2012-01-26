@@ -458,9 +458,9 @@ switch char(M)
                     % This saves the correlation planes if that selection
                     % has been made in the job file.
                     if saveplane(e) && Corr(e) ~= 4
-                        Xloc = X(Eval>=0);Yloc=Y(Eval>=0);%#ok
-                        save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','Cp')
-                        clear Xloc Yloc
+                        Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
+                        save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','C_planes')
+                        clear Xloc Yloc C_planes
                     end
                     
                     X=Xval;Y=Yval;
@@ -1263,7 +1263,7 @@ switch char(M)
                     save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
                 end
                 if saveplane(e) && Corr(e) ~= 4
-                    Xloc = X(Eval>=0);Yloc=Y(Eval>=0);%#ok
+                    Xloc = Xc;Yloc=Yc;%#ok
                     save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','CCm')
                     clear Xloc Yloc
                 end
@@ -1362,7 +1362,7 @@ switch char(M)
             else
                 N=Nmax+1;
             end
-            im1=zeros(size(mask,1),size(mask,2),N); im2=im1;
+            im1=zeros(size(mask,1),size(mask,2),N); im2=im1;Dt=zeros(N,1);
             for n=1:N
                 im1_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]));
                 im2_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
@@ -1389,17 +1389,17 @@ switch char(M)
                 t1=tic;
                 [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
-                Uc=[];Vc=[];Cc=[];Dc=[];
 
                 if Corr(e)~=4
                     U=zeros(size(X,1),3,N);
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
                     Di=zeros(size(X,1),3,N);
-                    Uc=zeros(size(im1,1),size(im1,2),N);
-                    Vc=zeros(size(im1,1),size(im1,2),N);
-                    Cc=zeros(size(im1,1),size(im1,2),N);
-                    Dc=zeros(size(im1,1),size(im1,2),N);
+                    Uc=zeros(size(X,1),3,N);
+                    Vc=zeros(size(X,1),3,N);
+                    Cc=zeros(size(X,1),3,N);
+                    Dc=zeros(size(X,1),3,N);
+                    Cp=zeros(Wsize(e,1),Wsize(e,2),size(X,1),N);
                     Uval=zeros(size(X,1),3);
                     Vval=zeros(size(X,1),3);
                     Cval=zeros(size(X,1),3);
@@ -1411,10 +1411,10 @@ switch char(M)
                     for t=1:N
                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
                         Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
-                        
+
                         %correlate image pair
 %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,frac_filt(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t),Cp(:,:,:,N)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,frac_filt(e),saveplane(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
@@ -1424,7 +1424,7 @@ switch char(M)
                     velmag=sqrt(U(:,1,:).^2+V(:,1,:).^2);
                     Qp=C(:,1,:)./C(:,2,:).*(1-ds./velmag);
 %                     Qp=1-2.*exp(-0.5)./velmag.*(C(:,1,:)./C(:,2,:)-1).^(-1);
-                    [Qmax,t_opt]=max(Qp,[],3);
+                    [Qmax,t_opt]=max(Qp,[],3);%#ok
                     for i=1:size(U,1)
                         Uval(i,:)=U(i,:,t_opt(i));
                         Vval(i,:)=V(i,:,t_opt(i));
@@ -1512,7 +1512,7 @@ switch char(M)
 
                     %convert to matrix if necessary
                     if size(X,2)==1
-                        [X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
+                        [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
                         if Peakswitch(e)
                             t_opt=reshape(t_opt,size(X,1),size(X,2));
                         end
@@ -1520,7 +1520,7 @@ switch char(M)
 
                     %remove nans from data, replace with zeros
                     U(Eval<0|isinf(U))=0;V(Eval<0|isinf(V))=0;
-                    
+                    keyboard
                     if str2double(Data.datout)
 %                         q_full=find(I1_full==I1(q),1,'first');
 %                         time=(q_full-1)/Freq;
@@ -1530,6 +1530,11 @@ switch char(M)
                     end
                     if str2double(Data.multiplematout)
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','t_opt')
+                    end
+                    if saveplane(e) && Corr(e) ~= 4
+                        Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
+                        save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','C_planes')
+                        clear Xloc Yloc C_planes
                     end
                     X=Xval;Y=Yval;
                     

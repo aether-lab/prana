@@ -1954,7 +1954,7 @@ function rpcdiameter_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.RPCd = get(hObject,''String'');'])
     guidata(hObject,handles)
-    if any(get(handles.correlationtype,'Value')==[2,5]) %need to check for RPC, SPC
+    if any(get(handles.correlationtype,'Value')==[2 5]) %need to check for RPC, SPC
         if str2double(get(hObject,'String'))<2
             if str2double(get(hObject,'String'))==0
                 set(hObject,'backgroundcolor','r');
@@ -1977,7 +1977,7 @@ end
 % --- Fractional Filter Text Box ---
 function frac_filter_weight_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.corr_frac_filt = get(hObject,''String'');'])
+    eval(['handles.data.PIV' handles.data.cpass '.frac_filt = get(hObject,''String'');'])
     guidata(hObject,handles)
     if get(handles.correlationtype,'Value')==4
         if str2double(get(hObject,'String'))==0
@@ -3031,12 +3031,13 @@ if any(get(handles.correlationtype,'Value')==[2 5]) %check diameter if RPC, SPC
     else
         set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
     end
+    set(handles.frac_filter_weight,'backgroundcolor',0.5.*[1 1 1]);
+else
     if get(handles.correlationtype,'Value')==4
         set(handles.frac_filter_weight,'backgroundcolor',[1 1 1]);
     else
         set(handles.frac_filter_weight,'backgroundcolor',0.5.*[1 1 1]);
     end
-else
     set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
 end
 % Grays out the smoothing filt size box when smoothing is not selected when
