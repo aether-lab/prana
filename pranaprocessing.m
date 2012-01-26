@@ -661,6 +661,7 @@ switch char(M)
         %initialize grid and evaluation matrix
         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
         L=size(im1);
+        L(3)=size(im1,3);
         [XI,YI]=IMgrid(L,[0 0]);
         UI = BWO(1)*ones(size(XI));
         VI = BWO(2)*ones(size(XI));
@@ -692,7 +693,7 @@ switch char(M)
             Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Eval(Eval==0)=-1;
             Eval(Eval>0)=0;
-            
+
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                 U=zeros(size(X,1),3);
                 V=zeros(size(X,1),3);
@@ -1165,8 +1166,13 @@ switch char(M)
                 end
             end
 
-            U(Eval>=0)=Uc(:)+round(Ub(Eval>=0));
-            V(Eval>=0)=Vc(:)+round(Vb(Eval>=0));
+            if strcmpi(M,'EDeform')
+                U(Eval>=0)=Uc(:)+Ub(Eval>=0);
+                V(Eval>=0)=Vc(:)+Vb(Eval>=0);
+            else
+                U(Eval>=0)=Uc(:)+round(Ub(Eval>=0));
+                V(Eval>=0)=Vc(:)+round(Vb(Eval>=0));
+            end
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))%~isempty(Cc)
                 C(Eval>=0)=Cc(:);
                 Di(Eval>=0)=Dc(:);

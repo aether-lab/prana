@@ -570,7 +570,7 @@ end
 function savejobbutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data = handles.data;
-    uisave('Data',[handles.data.imdirec handles.data.batchname '.mat']);
+    uisave('Data',fullfile(handles.data.outdirec,[handles.data.batchname '.mat']));
 end
 
 % --- Copy Job Button ---
@@ -1283,7 +1283,7 @@ function loadoutputdirectorybutton_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     D = handles.data.outdirec;
 
-    handles.data.outdirec = uigetdir(handles.data.imdirec,'Location for PIV Output');
+    handles.data.outdirec = uigetdir(D,'Location for PIV Output');
     if handles.data.outdirec==0
         handles.data.outdirec = D;
     end
@@ -4720,6 +4720,7 @@ if vn ~= -1 % If a valid name was input...
         Jlist = char(JlistStruct); % Convert job list structure to characters
         [handles.(newJobName)] = handles.(oldJobName); % Copy the old job data to the new job (this line uses dynamic fields)
         handles = rmfield(handles, oldJobName); % Remove the old job from the data structure
+        eval(['handles.' newJobName '.batchname = ''' newJobName ''';'])
 end
 
     set(handles.joblist, 'String', Jlist, 'Value', str2double(handles.Cjob)); % Update joblist text box
