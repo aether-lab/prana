@@ -60,13 +60,13 @@ Data.Track.valprops.MAD_V=MAD_V;
 if Data.ID.run
     for i= Data.imfstart:Data.imfstep:Data.imfend
         t0 = clock;
-
-        fprintf('processing image-%s%s%06d.tif',Data.slsh,Data.imbase,i);
+        loadname = sprintf('%%s%%s%%s%%0%0.0fd.%s',Data.imzeros);
+        fprintf(loadname,'processing image-',Data.slsh,Data.imbase,i,Data.imext);
 
         if strcmpi(Data.imext,'tif')
-            IM = imread(sprintf('%s%s%s%06d%s',Data.imdirec,Data.slsh,Data.imbase,i,'.tif'));
+            IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'tif'));
         elseif strcmpi(Data.imext,'mat')
-            IM = load(sprintf('%s%s%s%06d%s',Data.imdirec,Data.slsh,Data.imbase,i,'.mat'));
+            IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'mat'));
         else
             error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
         end
@@ -95,12 +95,13 @@ if Data.Size.run
     for i = Data.imfstart:Data.imfstep:Data.imfend
 
         t0 = clock;
-        fprintf(sprintf('Sizing Frame %%s%%0%0.0fd',Data.imzeros),Data.imbase,i)
+        loadname = sprintf('%%s%%s%%s%%0%0.0fd.%%s',Data.imzeros);
+        fprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,i,Data.imext)
 
         if strcmpi(Data.imext,'tif')
-            IM = imread(sprintf('%s%s%s%06d%s',Data.imdirec,Data.slsh,Data.imbase,i,'.tif'));
+            IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'tif'));
         elseif strcmpi(Data.imext,'mat')
-            IM = load(sprintf('%s%s%s%06d%s',Data.imdirec,Data.slsh,Data.imbase,i,'.mat'));
+            IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'mat'));
         else
             error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
         end
@@ -140,11 +141,11 @@ completed_tracks = cell(length(im_list),1);
 for k=1:length(im_list)-1
     t0 = clock;
 
-    fprintf('Tracking Frame %s %6.0f to %6.0f\t',Data.imbase,im_list(k),im_list(k+1))
+    fprintf('Tracking Frame %s %6.0f to %6.0f\t',Data.imbase,im_list(k),im_list(k)+Data.imcstep)
 
     sname = sprintf('%%s%%s%%0%0.0fd',Data.imzeros);
     SIZE1=load(sprintf(sname,Data.Size.save_dir,Data.Size.s_name,im_list(k),'.mat'));
-    SIZE2=load(sprintf(sname,Data.Size.save_dir,Data.Size.s_name,im_list(k+1),'.mat'));
+    SIZE2=load(sprintf(sname,Data.Size.save_dir,Data.Size.s_name,im_list(k)+Data.imcstep,'.mat'));
 
     %remove all NaNs from the particle arrays (indicated a failed
     %sizing method)
@@ -354,9 +355,13 @@ end
 %   'combined (256x256) - 11.30sec per image pair - 4490 particles (hmm...)
 
 if particleIDprops.save_dir~=0
-        sname = sprintf('%%s%%s%%0%0.0fd',particleIDprops.Data.imzeros);
-        save(sprintf(sname,particleIDprops.save_dir,particleIDprops.s_name,particleIDprops.s_num),...
-            'particleIDprops','p_matrix','peaks','num_p');
+    if ~exist(particleIDprops.save_dir,'dir')
+        fprintf('Making Save Directory %s \n',particleIDprops.save_dir)
+        mkdir(particleIDprops.save_dir)
+    end
+    sname = sprintf('%%s%%s%%0%0.0fd',particleIDprops.Data.imzeros);
+    save(sprintf(sname,particleIDprops.save_dir,particleIDprops.s_name,particleIDprops.s_num),...
+        'particleIDprops','p_matrix','peaks','num_p');
 end
 
 end
@@ -659,7 +664,6 @@ function [XYDiameter,mapsizeinfo,locxy] = particle_size_MAIN_V1(im,p_matrix,num_
 %       saving the IWC estimate whenever the user selected method fails)
 
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %identifies/locates all particles with (mapparticles)
 %(adjacent pixels of greater than 0 intensity)
@@ -761,13 +765,17 @@ elseif sizeprops.method==5 || sizeprops.method==6
             particleprops(i,:)=[x_c,y_c,max(D_l),max(I0_l),i,Meth+2];
         end
     end
-    
+    fprintf('\n\t%3.2f%% of particles sized with method %0.0f ',(sum(particleprops(:,6)==sizeprops.method)/num_p)*100,sizeprops.method)
 end
 
 XYDiameter=particleprops;
 
 %section for saving sized particle information
 if sizeprops.save_dir~=0
+    if ~exist(sizeprops.save_dir,'dir')
+        fprintf('Making Save Directory %s \n',sizeprops.save_dir)
+        mkdir(sizeprops.save_dir)
+    end
     sname = sprintf('%%s%%s%%0%0.0fd',sizeprops.Data.imzeros);
     save(sprintf(sname,sizeprops.save_dir,sizeprops.s_name,sizeprops.s_num),...
         'sizeprops','XYDiameter','mapsizeinfo','locxy');
@@ -1016,7 +1024,7 @@ end
 Meth = method;
 %Check to make sure intmap has at least four nonzero points
 if method == 1
-    if numel(find(intmap>0))<3
+    if nnz(intmap)<3
         x_c = 1;
         y_c = 1;
         D   = NaN;
@@ -1025,8 +1033,8 @@ if method == 1
         fprintf('Not Enough Points for a Three Point Gauss Fit\n')
         return
     end
-else
-    if numel(find(intmap>0))<4
+else 
+    if nnz(intmap)<4
         x_c = 1;
         y_c = 1;
         D   = NaN;
@@ -1747,8 +1755,8 @@ function [x_c,y_c,D,P,E,Meth] = Leastsqrfit(I_in,method_in,sigma_in)
 
 %Options for the lsqnonlin solver
 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',5e-6,'TolFun',5e-6,...
-    'LargeScale','off','Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
-    'LevenbergMarquardt','off');
+    'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
+    'LevenbergMarquardt','off');%,'LargeScale','off');
 
 % Find the center Max and all of the saturated points
 [locxy_in(:,1) locxy_in(:,2)] = find(I_in == max(I_in(:)));
@@ -1756,14 +1764,14 @@ max_locxy_in(1) = round(median(locxy_in(:,1)));
 max_locxy_in(2) = round(median(locxy_in(:,2)));
 
 % If there are not enough points don't use the method
-if numel(find(I_in > 0)) - numel(find(I_in == max(I_in(:)))) < 5
+if nnz(I_in) - numel(find(I_in == max(I_in(:)))) + 1 < 5
     x_c = 1;
     y_c = 1;
     D   = NaN;
     P   = NaN;
     E   = NaN;
     Meth = 0;
-    fprintf('Not Enough Points for Least Squres Fit\n')
+%     fprintf('Not Enough Points for Least Squres Fit\n')
     return
 end
 
@@ -1851,12 +1859,12 @@ I2(I_in<0) = 0;
                 i=i+1;
                 max_edge_left = left_locxy;
             else
-                stop_x=1;%#ok
+                stop_x=1;
             end
 
             %make sure there are data points to the left & right
-            extent_left=min(max_col)-i;%#ok
-            extent_right=max(max_col)+i;%#ok
+            extent_left=min(max_col)-i;
+            extent_right=max(max_col)+i;
         end
 
         %search in the y-dimension
@@ -1868,10 +1876,10 @@ I2(I_in<0) = 0;
             bottom_int   = I(bottom_locxy(1),bottom_locxy(2));
             %logical check to assure that the three pixels chosen are not equal
             if top_int==max_int || bottom_int==max_int
-                j=j+1;%#ok
+                j=j+1;
                 max_edge_top = top_locxy;
             else
-                stop_y=1;%#ok
+                stop_y=1;
             end
 
             %make sure there are data points to the top & bottom
@@ -2115,14 +2123,30 @@ I2(I_in<0) = 0;
                         end
                     end
                 else
+%                     [xloc yloc] = meshgrid(1:xmax_I,1:ymax_I);
+%                     points = I(top_locxy(1):bottom_locxy(1),left_locxy(2):right_locxy(2));
+%                     points = reshape(points,[numel(points) 1]);
+%                     xloc = xloc(top_locxy(1):bottom_locxy(1),left_locxy(2):right_locxy(2));
+%                     yloc = yloc(top_locxy(1):bottom_locxy(1),left_locxy(2):right_locxy(2));
+%                     points_locxy = [reshape(xloc,[numel(xloc) 1]), reshape(yloc,[numel(yloc) 1])];
                     [xloc yloc] = meshgrid(1:xmax_I,1:ymax_I);
-                    points = I(top_locxy(1):bottom_locxy(1),left_locxy(2):right_locxy(2));
-                    points = reshape(points,[numel(points) 1]);
-                    xloc = xloc(top_locxy(1):bottom_locxy(1),left_locxy(2):right_locxy(2));
-                    yloc = yloc(top_locxy(1):bottom_locxy(1),left_locxy(2):right_locxy(2));
+                    points = I(I~=0);
+                    xloc   = xloc(I~=0);
+                    yloc   = yloc(I~=0);
                     points_locxy = [reshape(xloc,[numel(xloc) 1]), reshape(yloc,[numel(yloc) 1])];
                 end
-
+                % Need to have atleast 4 points to solve the nonlinear
+                % leasquares problem.  Use the results from the 3pt Gauss
+                % when this fails.
+                if numel(points)<4
+                    x_c  = x_centroid;
+                    y_c  = y_centroid;
+                    D    = diameter;
+                    P    = I0;
+                    Meth = 0;
+                    return
+                end                
+                
                 %Run a nonlinear least squares regression on the window -
                 %method=3 will run the standard least squares equations, and
                 %method=4 will use the continuous least squares equations
@@ -2139,9 +2163,22 @@ I2(I_in<0) = 0;
                     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%                    
                     points=points(2:size(points,1)-1,2:size(points,2)-1);
                     points_locxy=points_locxy+1;
-                    xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points,points_locxy,method);
-                    x_c=xvars(3);
-                    y_c=xvars(4);
+                    % Need to have atleast 4 points to solve the nonlinear
+                    % leasquares problem.  Use the results from the 3pt Gauss
+                    % when this fails.
+                    if numel(points)>=4
+                        xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points,points_locxy,method);
+                        x_c=xvars(3);
+                        y_c=xvars(4);
+                    else
+                        
+                        x_c  = x_centroid;
+                        y_c  = y_centroid;
+                        D    = diameter;
+                        P    = I0;
+                        Meth = 0;
+                        return
+                    end
                 end
 
                 D=sqrt(sigma^2/(2*abs(xvars(2))));
@@ -2149,9 +2186,9 @@ I2(I_in<0) = 0;
             end
 
             %Return Nan's if there was an error
-        catch
-            errmes = lasterror;%#ok
-            %keyboard
+        catch errmess
+            fprintf(errmess.message)
+            keyboard
             x_c  = x_centroid;
             y_c  = y_centroid;
             D    = diameter;
@@ -2385,6 +2422,10 @@ end
 
 %section for saving sized particle information
 if estlocprops.save_dir~=0
+    if ~exist(estlocprops.save_dir,'dir')
+        fprintf('Making Save Directory %s \n',estlocprops.save_dir)
+        mkdir(estlocprops.save_dir)
+    end
     sname = sprintf('%%s%%s%%0%0.0fd',estlocprops.Data.imzeros);
     save(sprintf(sname,estlocprops.save_dir,estlocprops.s_name,estlocprops.s_num),...
         'estlocprops','X2_est','Y2_est','Z2_est');
@@ -2470,8 +2511,10 @@ else
                     data=zeros(nnz(check),4);
                     data(:,1)=dummy(check,1);  
                     data(:,2)=dummy(check,3);
-                    data(:,3)=dummy(check,2)-dummy(check,1);
-                    data(:,4)=dummy(check,4)-dummy(check,3);
+                    data(:,3)=dummy(check,5);
+                    data(:,4)=dummy(check,2)-dummy(check,1);
+                    data(:,5)=dummy(check,4)-dummy(check,3);
+                    data(:,6)=dummy(check,6)-dummy(check,5);
                     [U_est,V_est]=twoVar_spatial_weighting(...
                         PTVprops.r_weight,PTVprops.edgeval,loc,data);
                     X2_est(i,1)=X1(i,1)+U_est;  Y2_est(i,1)=Y1(i,1)+V_est;
@@ -2564,13 +2607,16 @@ if strcmpi(PIVprops.PIVprops.extension,'.plt')
     [X,Y,U,V]=read_pltmod_NC(PIVprops.Data.PIV.Data.outbase,PIVprops.Data.Track.PIVprops.load_dir,...
         PIVprops.PIVprops.frame1,PIVprops.PIVprops.frame1,PIVprops.Data.imzeros);
     PIV1={X,Y,flipud(U),-1.*flipud(V)};  clear X Y U V
+elseif strcmpi(PIVprops.PIVprops.extension,'.dat')
+    [X,Y,U,V]=read_pltmod_NC(PIVprops.Data.PIV.Data.outbase,PIVprops.Data.Track.PIVprops.load_dir,...
+        PIVprops.PIVprops.frame1,PIVprops.PIVprops.frame1,PIVprops.Data.imzeros);
+    PIV1={X,Y,flipud(U),-1.*flipud(V)};  clear X Y U V    
 elseif strcmpi(PIVprops.PIVprops.extension,'.mat')
-    keyboard
-    % Not working yet
     lname = sprintf('%%s%%s%%0%0.0fd',PIVprops.Data.imzeros);
-    PIV1t = load(sprintf(lname,PIVprops.load_dir,PIVprops.slsh,PIVprops.load_name,PIVprops.extension));
-    PIV1 = {PIV1t.flowvarunsteady(end:-1:1,:,1,1),PIV1t.flowvarunsteady(end:-1:1,:,1,2),...
-        PIV1t.flowvarunsteady(end:-1:1,:,1,3),PIV1t.flowvarunsteady(end:-1:1,:,1,4)};
+    PIV1t = load(sprintf(lname,PIVprops.Data.Track.PIVprops.load_dir,PIVprops.PIVprops.outbase,PIVprops.PIVprops.frame1,PIVprops.PIVprops.extension));
+%     PIV1 = {PIV1t.flowvarunsteady(end:-1:1,:,1,1),PIV1t.flowvarunsteady(end:-1:1,:,1,2),...
+%         PIV1t.flowvarunsteady(end:-1:1,:,1,3),PIV1t.flowvarunsteady(end:-1:1,:,1,4)};
+    PIV1 = {PIV1t.X(end:-1:1,:),PIV1t.Y(end:-1:1,:),PIV1t.U(end:-1:1,:),PIV1t.V(end:-1:1,:)};
 
 else
     error('Unknown PIV extension')
@@ -2647,9 +2693,9 @@ gaus_weight_z2 = exp(- ((data(:,3)-loc(3)).^2) / (2*std_dev^2));
 
 %predict the value of both variables at 'loc' (sum of the products over
 %the sum of the weights)
-var1_est=sum(gaus_weight_x2.*data(:,3))/sum(gaus_weight_x2);
-var2_est=sum(gaus_weight_y2.*data(:,4))/sum(gaus_weight_y2);
-var3_est=sum(gaus_weight_z2.*data(:,5))/sum(gaus_weight_z2);
+var1_est=sum(gaus_weight_x2.*data(:,4))/sum(gaus_weight_x2);
+var2_est=sum(gaus_weight_y2.*data(:,5))/sum(gaus_weight_y2);
+var3_est=sum(gaus_weight_z2.*data(:,6))/sum(gaus_weight_z2);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2724,7 +2770,7 @@ try
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 numframes=endframe-startframe+1;
 
-nameformat = sprintf('%%s%%0.%ui.plt',numzeros);
+nameformat = sprintf('%%s%%0.%ui.dat',numzeros);
 picfilename=sprintf(nameformat,testname,startframe);  
 fid = fopen([direc picfilename]);    
 
@@ -2952,40 +2998,40 @@ Z1=zeros(size(X1));        Z2=zeros(size(X2));
 
 %decision block - validate the measured tracks?
 if valprops.run==1
-    for i=1:valprops.numpass
-        %intialize temporary valprops array
-        valprops_i.method=valprops.method{i};
-        valprops_i.C_cutoff=valprops.C_cutoff(i);
-        valprops_i.s_radius=valprops.s_radius(i);
-        valprops_i.MAD_U=valprops.MAD_U(i);
-        valprops_i.MAD_V=valprops.MAD_V(i);
+for i=1:valprops.numpass
+    %intialize temporary valprops array
+    valprops_i.method=valprops.method{i};
+    valprops_i.C_cutoff=valprops.C_cutoff(i);
+    valprops_i.s_radius=valprops.s_radius(i);
+    valprops_i.MAD_U=valprops.MAD_U(i);
+    valprops_i.MAD_V=valprops.MAD_V(i);
+    
+    switch lower(valprops.method{i})
+        case {'none'}
+            %accepts the measured tracks with no post processing
 
-        switch lower(valprops.method{i})
-            case {'none'}
-                %accepts the measured tracks with no post processing
+        case {'coeff'}
+            %retain tracks below the coefficient threshold - discard those above
+            tracks=tracks((tracks(:,13) <= valprops_i.C_cutoff),:);
 
-            case {'coeff'}
-                %retain tracks below the coefficient threshold - discard those above
-                tracks=tracks((tracks(:,13) <= valprops_i.C_cutoff),:);
+        case {'mean','median'}
+            %call validation mean/median subfunction
+            [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops_i);
 
-            case {'mean','median'}
-                %call validation mean/median subfunction
-                [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops_i);
+            %refresh the location estimation with the validation results
+            X2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,6);
+            Y2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,7);
 
-                %refresh the location estimation with the validation results
-                X2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,6);
-                Y2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,7);
+            %rerun tracking with new estimated locations
+            [tracks]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,...
+                Z1,Z2,Z2_est,d1,d2,I1,I2,trackprops.weights,trackprops.s_radius);
 
-                %rerun tracking with new estimated locations
-                [tracks]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,...
-                    Z1,Z2,Z2_est,d1,d2,I1,I2,trackprops.weights,trackprops.s_radius);
+        case {'relaxation'}
+            %TO BE COMPLETED - see paper by Ohmi and Lee (2000) on the new
+            %relaxation method for more information
 
-            case {'relaxation'}
-                %TO BE COMPLETED - see paper by Ohmi and Lee (2000) on the new
-                %relaxation method for more information
-
-        end
     end
+end
 end
 
 
@@ -3054,11 +3100,21 @@ function [tracks]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,Z1,Z2,Z2
 %        between 0 and 1*
 %
 %(v6) N. Cardwell - 7.21.2009
+%(v7) S. Raben    - 4.2011
 
 %compute relevant parameters for each image
 num_p1=length(X1);  num_p2=length(X2);
 d_diff_max=max([d1;d2])-min([d1;d2]);
 I_diff_max=max([I1;I2])-min([I1;I2]);
+% If there is no difference between values (i.e. all the values are the
+% same) then set variable to inf so that they are removed from the
+% probablity calcuation.
+if d_diff_max == 0;
+    d_diff_max = inf;
+end
+if I_diff_max == 0
+    I_diff_max = inf;
+end
 
 %adjust the particle locations in image 1 to match the estimated locations
 %provided in X2_est, Y2_est, and Z2_est (save org. variables for later use)

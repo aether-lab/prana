@@ -159,7 +159,6 @@ catch
     defaultdata.PIVerror='0.1';
     defaultdata.channel = '1';
     
-    
     if ispc
 %         defaultdata.loaddirec=[pwd '\'];
         defaultdata.ID.save_dir        = [pwd,'\ID\'];
@@ -175,17 +174,20 @@ catch
     end
     
     defaultdata.splash='1';
+    
+    %JJC: shouldn't this be in the catch statement as well?
+    if ~isfield(defaultdata,'outputpassbasename')
+        defaultdata.outputpassbase = 'PIV_';
+        defaultdata.PIV0.outbase = [defaultdata.outputpassbase 'pass0_'];
+        defaultdata.PIV1.outbase = [defaultdata.outputpassbase 'pass1_'];
+        defaultdata.PIV2.outbase = [defaultdata.outputpassbase 'pass2_'];
+    end
+    
+    defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
+
 end
 
-%JJC: shouldn't this be in the catch statement as well?
-if ~isfield(defaultdata,'outputpassbasename')
-    defaultdata.outputpassbase = 'PIV_';
-    defaultdata.PIV0.outbase = [defaultdata.outputpassbase 'pass0_'];
-    defaultdata.PIV1.outbase = [defaultdata.outputpassbase 'pass1_'];
-    defaultdata.PIV2.outbase = [defaultdata.outputpassbase 'pass2_'];
-end
 
-defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
 
 if str2double(defaultdata.splash)==0 || str2double(defaultdata.clientversion)<2.0
     splash=splashdlg({...
@@ -215,7 +217,6 @@ end
 
 %JJC: for now, disable this save - running prana drops defaultsettings.mat files in whatever your current working directory is - ANNOYING!
 %save('defaultsettings.mat','defaultdata')
-
 
 handles.data=defaultdata;
 pranadir=which('prana');

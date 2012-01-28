@@ -1316,7 +1316,7 @@ switch char(M)
         valtime=zeros(P,1);
         savetime=zeros(P,1);
         interptime=zeros(P,1);
-        
+
         %single-pulsed
         if round(1/Freq*10^6)==round(dt)
             time_full(2,:)=time_full(1,:);
@@ -1520,7 +1520,7 @@ switch char(M)
 
                     %remove nans from data, replace with zeros
                     U(Eval<0|isinf(U))=0;V(Eval<0|isinf(V))=0;
-                    keyboard
+
                     if str2double(Data.datout)
 %                         q_full=find(I1_full==I1(q),1,'first');
 %                         time=(q_full-1)/Freq;
