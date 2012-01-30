@@ -1520,7 +1520,7 @@ switch char(M)
 
                     %remove nans from data, replace with zeros
                     U(Eval<0|isinf(U))=0;V(Eval<0|isinf(V))=0;
-                    keyboard
+%                     keyboard
                     if str2double(Data.datout)
 %                         q_full=find(I1_full==I1(q),1,'first');
 %                         time=(q_full-1)/Freq;
