@@ -158,7 +158,38 @@ catch
     defaultdata.framestep='3';
     defaultdata.PIVerror='0.1';
     defaultdata.channel = '1';
-    
+
+    % --- Tracking Default Values ---
+    % ID Default values
+    defaultdata.ID.runid        = '0';
+    defaultdata.ID.method       = '2';
+    defaultdata.ID.imthresh     = '10';
+    defaultdata.ID.savebase     = 'ID_';
+    % Sizing Default values
+    defaultdata.Size.runsize    = '0';
+    defaultdata.Size.method     = '1';
+    defaultdata.Size.std        = '4';
+    defaultdata.Size.savebase   = 'SIZE_';
+    % Tracking Default values
+    defaultdata.Track.runtrack  = '0';
+    defaultdata.Track.method    = '1';
+    defaultdata.Track.prediction= '1';
+    defaultdata.Track.PIVweight = '0.5';
+    defaultdata.Track.radius    = '15';
+    defaultdata.Track.disweight = '1.0';
+    defaultdata.Track.sizeweight= '0.5';
+    defaultdata.Track.intensityweight = '0.5';
+    defaultdata.Track.estradius = '15';
+    defaultdata.Track.estweight = '.1';
+    defaultdata.Track.savebase  = 'Track_';
+    defaultdata.Track.vectors   = '3';
+    defaultdata.Track.iterations= '3';    
+    % Tracking Validation Values
+    defaultdata.Track.valprops.run   = '1';
+    defaultdata.Track.valprops.valcoef = '0,0,0.2';
+    defaultdata.Track.valprops.valrad = '20,20,0';
+    defaultdata.Track.valprops.MAD_U = '1,0.75,0';
+    defaultdata.Track.valprops.MAD_V = '1,0.75,0';
     if ispc
 %         defaultdata.loaddirec=[pwd '\'];
         defaultdata.ID.save_dir        = [pwd,'\ID\'];
@@ -224,15 +255,7 @@ addpath([pranadir(1:end-7),'documentation']);
 
 if ispc
     handles.loaddirec=[pwd '\'];
-    handles.data.ID.save_dir        = [pwd,'\ID\'];
-    handles.data.Size.save_dir      = [pwd,'\Size\'];
-    handles.data.Track.save_dir     = [pwd,'\Track\'];
-    handles.data.Track.PIVprops.load_dir= [pwd,'\'];
 else
-    handles.data.ID.save_dir        = [pwd,'/ID/'];
-    handles.data.Size.save_dir      = [pwd,'/Size/'];
-    handles.data.Track.save_dir     = [pwd,'/Track/'];
-    handles.data.Track.PIVprops.load_dir= [pwd,'/'];
     handles.loaddirec=[pwd '/'];
 end
 
@@ -2691,6 +2714,32 @@ if str2double(handles.Njob) == 0
     set(handles.exp_NA,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_n,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.colorchannel_popupMenu,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    % --- Tracking ---
+    set(handles.idmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idimthresh,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.idsavebase,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.idsaveloc,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingstd,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingsavebase,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingsaveloc,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingprediction,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingPIVweight,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingradius,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingdistweight,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsizeweight,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingintensityweight,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingestradius,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingestweight,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvectors,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingiterations,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsavebase,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsaveloc,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalcoefficient,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalradius,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalUthresh,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalVthresh,'String','','backgroundcolor',0.5*[1 1 1]);
 else
     a=get(handles.joblist,'String');
     eval(['handles.data=handles.' char(a(str2double(handles.Cjob),:)) ';']);
@@ -2754,6 +2803,32 @@ else
     set(handles.exp_L,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_notesbox,'String','','backgroundcolor',[1 1 1]);
     set(handles.colorchannel_popupMenu,'Value',1,'backgroundcolor',[1 1 1]);
+    % --- Tracking ---
+    set(handles.idmethod,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.idimthresh,'String','','backgroundcolor',[1 1 1]);
+    set(handles.idsavebase,'String','','backgroundcolor',[1 1 1]);
+    set(handles.idsaveloc,'String','','backgroundcolor',[1 1 1]);
+    set(handles.sizingmethod,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.sizingstd,'String','','backgroundcolor',[1 1 1]);
+    set(handles.sizingsavebase,'String','','backgroundcolor',[1 1 1]);
+    set(handles.sizingsaveloc,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingmethod,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.trackingprediction,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.trackingPIVweight,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingradius,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingdistweight,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingsizeweight,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingintensityweight,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingestradius,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingestweight,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingvectors,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingiterations,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingsavebase,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingsaveloc,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingvalcoefficient,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingvalradius,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingvalUthresh,'String','','backgroundcolor',[1 1 1]);
+    set(handles.trackingvalVthresh,'String','','backgroundcolor',[1 1 1]);
 
     if str2double(handles.data.par)==1
         set(handles.parprocessors,'string','','backgroundcolor',[1 1 1])
@@ -3064,6 +3139,82 @@ else
     set(handles.writeoutputcheckbox,'backgroundcolor',handles.syscolor);
 end
 
+
+function [handles]=update_PTV(handles)
+if str2double(handles.data.ID.runid)
+    set(handles.runidcheckbox,'Value',str2double(handles.data.ID.runid));
+    set(handles.idmethod,'Value',str2double(handles.data.ID.method),'backgroundcolor',[1 1 1]);
+    set(handles.idimthresh,'String',handles.data.ID.imthresh,'backgroundcolor',[1 1 1]);
+    set(handles.idsavebase,'String',handles.data.ID.savebase,'backgroundcolor',[1 1 1]);
+    set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+else
+    set(handles.idmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idimthresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idsavebase,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idsaveloc,'backgroundcolor',0.5*[1 1 1]);
+end
+if str2double(handles.data.Size.runsize)
+    set(handles.runsizingcheckbox,'Value',str2double(handles.data.Size.runsize));
+    set(handles.sizingmethod,'Value',str2double(handles.data.Size.method),'backgroundcolor',[1 1 1]);
+    set(handles.sizingstd,'String',handles.data.Size.std,'backgroundcolor',[1 1 1]);
+    set(handles.sizingsavebase,'String',handles.data.Size.savebase,'backgroundcolor',[1 1 1]);
+    set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
+else
+    set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingstd,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingsavebase,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingsaveloc,'backgroundcolor',0.5*[1 1 1]);
+end
+if str2double(handles.data.Track.runtrack)
+    set(handles.runtrackingcheckbox,'Value',str2double(handles.data.Track.runtrack));
+    set(handles.trackingmethod,'Value',str2double(handles.data.Track.method),'backgroundcolor',[1 1 1]);
+    set(handles.trackingprediction,'Value',str2double(handles.data.Track.prediction),'backgroundcolor',[1 1 1]);
+    set(handles.trackingPIVweight,'String',handles.data.Track.PIVweight,'backgroundcolor',[1 1 1]);
+    set(handles.trackingradius,'String',handles.data.Track.radius,'backgroundcolor',[1 1 1]);
+    set(handles.trackingdistweight,'String',handles.data.Track.disweight,'backgroundcolor',[1 1 1]);
+    set(handles.trackingsizeweight,'String',handles.data.Track.sizeweight,'backgroundcolor',[1 1 1]);
+    set(handles.trackingintensityweight,'String',handles.data.Track.intensityweight,'backgroundcolor',[1 1 1]);
+    set(handles.trackingestradius,'String',handles.data.Track.estradius,'backgroundcolor',[1 1 1]);
+    set(handles.trackingestweight,'String',handles.data.Track.estweight,'backgroundcolor',[1 1 1]);
+    set(handles.trackingvectors,'String',handles.data.Track.vectors,'backgroundcolor',[1 1 1]);
+    set(handles.trackingiterations,'String',handles.data.Track.iterations,'backgroundcolor',[1 1 1]);
+    set(handles.trackingsavebase,'String',handles.data.Track.savebase,'backgroundcolor',[1 1 1]);
+    set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor',[1 1 1]);
+    if str2double(handles.data.Track.valprops.run)
+        set(handles.trackingvalcheckbox,'Value',str2double(handles.data.Track.valprops.run));
+        set(handles.trackingvalcoefficient,'String',handles.data.Track.valprops.valcoef,'backgroundcolor',[1 1 1]);
+        set(handles.trackingvalradius,'String',handles.data.Track.valprops.valrad,'backgroundcolor',[1 1 1]);
+        set(handles.trackingvalUthresh,'String',handles.data.Track.valprops.MAD_U,'backgroundcolor',[1 1 1]);
+        set(handles.trackingvalVthresh,'String',handles.data.Track.valprops.MAD_V,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1]);
+    end
+else
+    set(handles.trackingmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingprediction,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingPIVweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingradius,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingdistweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsizeweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingintensityweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingestradius,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingestweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvectors,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingiterations,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsavebase,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsaveloc,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1]);
+end
+
+
+
+
 % --- Load Extra Data ---
 function [handles]=load_data(handles)
 set(handles.parprocessors,'String',handles.data.parprocessors);
@@ -3354,6 +3505,13 @@ set(handles.exp_M,'String',handles.data.exp_M)
 set(handles.exp_ROI,'String',handles.data.exp_ROI)
 set(handles.exp_diffractiondiameter,'String',handles.data.exp_diffractiondiameter)
 set(handles.exp_depthoffocus,'String',handles.data.exp_depthoffocus)
+
+% --- Tracking ---
+update_PTV(handles);
+
+    
+
+
 
 function ButtonName=splashdlg(Question,Title,Btn1,Btn2,Btn3,Default)
 %QUESTDLG Question dialog box.
@@ -4237,113 +4395,381 @@ uistack(h1, 'bottom');
 
 
 % --------------------------------------------------------------------
-
-
-
-
-
+% --- ID ---
+% --------------------------------------------------------------------
 % --- Executes on button press in runidcheckbox.
 function runidcheckbox_Callback(hObject, eventdata, handles)
-
+if str2double(handles.Njob)>0
+    handles.data.ID.runid = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 
 % --- Executes on selection change in idmethod.
 function idmethod_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.ID.method = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+
 function idmethod_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
 function idimthresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.ID.imthresh = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+
 function idimthresh_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
-function idsaveloc_Callback(hObject, eventdata, handles)
-function idsaveloc_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in loadidsaveloc.
-function loadidsaveloc_Callback(hObject, eventdata, handles)
-
-
-
 function idsavebase_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.ID.savebase = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 function idsavebase_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+function idsaveloc_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.ID.save_dir = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function idsaveloc_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
+% --- Executes on button press in loadidsaveloc.
+function loadidsaveloc_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.ID.save_dir;
+    handles.data.ID.save_dir = uigetdir(handles.data.ID.save_dir);
+    if handles.data.ID.save_dir==0
+        handles.data.ID.save_dir = D;
+    end
+    set(handles.idsaveloc,'string',handles.data.ID.save_dir);
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+
+% --------------------------------------------------------------------
+% --- Sizing ---
+% --------------------------------------------------------------------
 % --- Executes on button press in runsizingcheckbox.
 function runsizingcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Size.runsize = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles);
+end
 
 % --- Executes on selection change in sizingmethod.
 function sizingmethod_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Size.method = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 function sizingmethod_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
 function sizingstd_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Size.std = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 function sizingstd_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-
-function sizingsaveloc_Callback(hObject, eventdata, handles)
-function sizingsaveloc_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in loadsizingsaveloc.
-function loadsizingsaveloc_Callback(hObject, eventdata, handles)
-
-
-
 function sizingsavebase_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Size.savebase = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 function sizingsavebase_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
-
-% --- Executes on button press in runtrackingcheckbox.
-function runtrackingcheckbox_Callback(hObject, eventdata, handles)
-
-
-% --- Executes on selection change in trackingmethod.
-function trackingmethod_Callback(hObject, eventdata, handles)
-function trackingmethod_CreateFcn(hObject, eventdata, handles)
+function sizingsaveloc_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Size.save_dir = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function sizingsaveloc_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Executes on button press in loadsizingsaveloc.
+function loadsizingsaveloc_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.Size.save_dir;
+    handles.data.Size.save_dir = uigetdir(handles.data.Size.save_dir);
+    if handles.data.Size.save_dir==0
+        handles.data.Size.save_dir = D;
+    end
+    set(handles.sizingsaveloc,'string',handles.data.Size.save_dir);
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 
+% --------------------------------------------------------------------
+% --- Tracking ---
+% --------------------------------------------------------------------
+% --- Executes on button press in runtrackingcheckbox.
+function runtrackingcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.runtrack = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles);
+end
+
+% --- Executes on selection change in trackingmethod.
+function trackingmethod_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.method = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingmethod_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+% --- Executes on selection change in trackingprediction.
+function trackingprediction_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.prediction = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingprediction_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 function trackingPIVweight_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.PIVweight = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 function trackingPIVweight_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+function trackingradius_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.radius = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingradius_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
+function trackingdistweight_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.disweight = get(hObject,'String');
+    if str2double(handles.data.Track.disweight)>1
+        handles.data.Track.disweight = '1';        
+    end
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingdistweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingsizeweight_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.sizeweight = get(hObject,'String');
+    if str2double(handles.data.Track.sizeweight)>1
+        handles.data.Track.sizeweight = '1';        
+    end
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingsizeweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingintensityweight_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.intensityweight = get(hObject,'String');
+    if str2double(handles.data.Track.intensityweight)>1
+        handles.data.Track.intensityweight = '1';        
+    end
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingintensityweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingestradius_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.estradius = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingestradius_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingestweight_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.estweight = get(hObject,'String');
+    if str2double(handles.data.Track.estweight)>1
+        handles.data.Track.estweight = '1';
+    elseif str2double(handles.data.Track.estweight)<0
+        handles.data.Track.estweight = '0';
+    end
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingestweight_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingvectors_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.vectors = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingvectors_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingiterations_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.iterations = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingiterations_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+function trackingsavebase_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.savebase = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingsavebase_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 function trackingsaveloc_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.save_dir = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
 function trackingsaveloc_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes on button press in loadtrackingsaveloc.
+function loadtrackingsaveloc_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.Track.save_dir;
+    handles.data.Track.save_dir = uigetdir(handles.data.Track.save_dir);
+    if handles.data.Track.save_dir==0
+        handles.data.Track.save_dir = D;
+    end
+    set(handles.trackingsaveloc,'string',handles.data.Track.save_dir);
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+%%
+
+% --- Tracking Validation ---
+% --- Tracking Validation Checkbox ---
+function trackingvalcheckbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.run=num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+
+% --- Tracking Validation Coefficient ---
+function trackingvalcoefficient_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.C_cutoff=get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingvalcoefficient_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Tracking Validation Radius ---
+function trackingvalradius_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.s_radius=get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingvalradius_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Tracking Validation U Threshold ---
+function trackingvalUthresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.MAD_U=get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingvalUthresh_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Tracking Validation V Threshold ---
+function trackingvalVthresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.valprops.MAD_V=get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+function trackingvalVthresh_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
@@ -4438,7 +4864,6 @@ wyMax = max(wy1, wy2);
 xROI = 2^(ceil(log(2*wxMax)/log(2)));
 yROI = 2^(ceil(log(2*wyMax)/log(2)));
 
-
 % --------------------------------------------------------------------
 function tools_menuItem_Callback(hObject, eventdata, handles)
 % hObject    handle to tools_menuItem (see GCBO)
@@ -4483,187 +4908,33 @@ else
     
 end
 
-
 % --------------------------------------------------------------------
-
-function trackingestweight_Callback(hObject, eventdata, handles)
-function trackingestweight_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-function trackingiterations_Callback(hObject, eventdata, handles)
-
-function trackingiterations_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Tracking Validation Checkbox ---
-function trackingvalcheckbox_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.Track.valprops.run=num2str(get(hObject,'Value'));
-    update_PTV(handles)
-    guidata(hObject,handles)
-end
-
-% --- Tracking Validation Coefficient ---
-function trackingvalcoefficient_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.Track.valprops.C_cutoff=get(hObject,'String');
-end
-function trackingvalcoefficient_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Tracking Validation Radius ---
-function trackingvalradius_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.Track.valprops.s_radius=get(hObject,'String');
-end
-function trackingvalradius_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Tracking Validation U Threshold ---
-function trackingvalUthresh_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.Track.valprops.MAD_U=get(hObject,'String');
-end
-function trackingvalUthresh_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Tracking Validation V Threshold ---
-function trackingvalVthresh_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
-    handles.data.Track.valprops.MAD_V=get(hObject,'String');
-end
-function trackingvalVthresh_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
 % --- Run PIV Checkbox ---
 function runPIVcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.runPIV=num2str(get(hObject,'Value'));
+    set_PIVcontrols(handles);
 end
-
-
-% --- Executes on button press in loadtrackingsaveloc.
-function loadtrackingsaveloc_Callback(hObject, eventdata, handles)
-
-
-
-function trackingsavebase_Callback(hObject, eventdata, handles)
-function trackingsavebase_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-function trackingradius_Callback(hObject, eventdata, handles)
-function trackingradius_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-function trackingdistweight_Callback(hObject, eventdata, handles)
-function trackingdistweight_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-function trackingsizeweight_Callback(hObject, eventdata, handles)
-function trackingsizeweight_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-function trackingintensityweight_Callback(hObject, eventdata, handles)
-function trackingintensityweight_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-function trackingestradius_Callback(hObject, eventdata, handles)
-function trackingestradius_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-function trackingvectors_Callback(hObject, eventdata, handles)
-function trackingvectors_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 
 % --- Executes on selection change in colorchannel_popupMenu.
 function colorchannel_popupMenu_Callback(hObject, eventdata, handles)
-% hObject    handle to colorchannel_popupMenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 if str2double(handles.Njob)>0
     handles.data.channel = num2str(get(hObject,'Value'));
     guidata(hObject,handles)
 end
 
-
 % --- Executes during object creation, after setting all properties.
 function colorchannel_popupMenu_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to colorchannel_popupMenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-
-
-% --- Executes on selection change in trackingprediction.
-function trackingprediction_Callback(hObject, eventdata, handles)
-function trackingprediction_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 
 function version_box_Callback(hObject, eventdata, handles)
-% hObject    handle to version_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of version_box as text
-%        str2double(get(hObject,'String')) returns contents of version_box as a double
-
 
 % --- Executes during object creation, after setting all properties.
 function version_box_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to version_box (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
 function outputpassbasename_Callback(hObject, eventdata, handles)
-% hObject    handle to outputpassbasename (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of outputpassbasename as text
-%        str2double(get(hObject,'String')) returns contents of outputpassbasename as a double
 if str2double(handles.Njob)>0
     N=str2double(handles.data.passes); % Number of passes
     passbase = get(handles.outputpassbasename,'String'); % Read text in outbasename textbox
@@ -4676,19 +4947,11 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 
-
 % --- Executes during object creation, after setting all properties.
 function outputpassbasename_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to outputpassbasename (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
 
 % --- Executes on button press in renamejob_pushButton.
 function renamejob_pushButton_Callback(hObject, eventdata, handles)

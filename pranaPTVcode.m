@@ -1,58 +1,113 @@
-function pranaPTVcode(Data)
+function pranaPTVcode(PTV_Data)
 
 if ispc
     Data.slsh='\';
 else
     Data.slsh='/';
 end
-Data.imzeros=str2double(Data.imzeros);
-Data.imcstep=str2double(Data.imcstep);
-Data.imfstep=str2double(Data.imfstep);
-Data.imfstart=str2double(Data.imfstart);
-Data.imfend=str2double(Data.imfend);
-Data.ID.run=str2double(Data.ID.run);
-Data.ID.v=str2double(Data.ID.v);
-Data.ID.contrast_ratio=str2double(Data.ID.contrast_ratio);
-Data.ID.s_num=str2double(Data.ID.s_num);
-Data.Size.run=str2double(Data.Size.run);
-Data.Size.thresh=str2double(Data.Size.thresh);
-Data.Size.method=str2double(Data.Size.method);
-Data.Size.p_area=str2double(Data.Size.p_area);
-Data.Size.sigma=str2double(Data.Size.sigma);
-Data.Size.errors=str2double(Data.Size.errors);
-Data.Track.run=str2double(Data.Track.run);
-Data.Track.PIV_PTV_weight=str2double(Data.Track.PIV_PTV_weight);
-Data.Track.plotfig=str2double(Data.Track.plotfig);
-Data.Track.r_weight=str2double(Data.Track.r_weight);
-Data.Track.edgeval=str2double(Data.track.edgeval);
-Data.Track.numvecs=str2double(Data.Track.numvecs);
-Data.Track.max_iterations=str2double(Data.Track.max_iterations);
-Data.Track.s_radius=str2double(Data.Track.s_radius);
-Data.Track.valprops.numpass=str2double(Data.Track.valprops.numpass);
+% --- Images ---
+Data.imdirec=PTV_Data.imdirec;
+Data.imbase=PTV_Data.imbase;
+Data.imext=PTV_Data.imext;
+Data.imzeros=str2double(PTV_Data.imzeros);
+Data.imcstep=str2double(PTV_Data.imcstep);
+Data.imfstep=str2double(PTV_Data.imfstep);
+Data.imfstart=str2double(PTV_Data.imfstart);
+Data.imfend=str2double(PTV_Data.imfend);
 
-weights_commas=strfind(Data.Track.weights,',');
-cutoff_commas=strfind(Data.Track.valprops.C_cutoff,',');
-radius_commas=strfind(Data.Track.valprops.s_radius,',');
-MAD_U_commas=strfind(Data.Track.valprops.MAD_U,',');
-MAD_V_commas=strfind(Data.Track.valprops.MAD_V,',');
+% --- ID ---
+IDmethod = {'blob','dynamic','combined'};
+Data.ID.method=IDmethod{str2double(PTV_Data.ID.method)};
+Data.ID.run=str2double(PTV_Data.ID.runid);
+Data.ID.v=str2double(PTV_Data.ID.imthresh);
+Data.ID.contrast_ratio=0;%str2double(Data.ID.contrast_ratio);
+Data.ID.s_num=0;%str2double(Data.ID.s_num);
+Data.ID.s_name=PTV_Data.ID.savebase;
+Data.ID.save_dir=PTV_Data.ID.save_dir;
 
-weights(1)=str2double(Data.Track.weights(2:weights_commas(1)-1));
-cutoff(1)=str2double(Data.Track.valprops.C_cutoff(2:cutoff_commas(1)-1));
-radius(1)=str2double(Data.Track.valprops.s_radius(2:radius_commas(1)-1));
-MAD_U(1)=str2double(Data.Track.valprops.MAD_U(2:MAD_U_commas(1)-1));
-MAD_V(1)=str2double(Data.Track.valprops.MAD_V(2:MAD_V_commas(1)-1));
-for i=2:3
-    weights(i)=str2double(Data.Track.weights(weights_commas(i-1)+1:weights_commas(i)-1));
-    cutoff(i)=str2double(Data.Track.valprops.C_cutoff(cutoff_commas(i-1)+1:cutoff_commas(i)-1));
-    radius(i)=str2double(Data.Track.valprops.s_radius(radius_commas(i-1)+1:radius_commas(i)-1));
-    MAD_U(i)=str2double(Data.Track.valprops.MAD_U(MAD_U_commas(i-1)+1:MAD_U_commas(i)-1));
-    MAD_V(i)=str2double(Data.Track.valprops.MAD_V(MAD_V_commas(i-1)+1:MAD_V_commas(i)-1));
+% --- Sizing ---
+Data.Size.run=str2double(PTV_Data.Size.runsize);
+Data.Size.thresh=str2double(PTV_Data.ID.imthresh);
+Data.Size.method=str2double(PTV_Data.Size.method);
+Data.Size.p_area=0;%str2double(Data.Size.p_area);
+Data.Size.sigma=str2double(PTV_Data.Size.std);
+Data.Size.errors=0;%str2double(Data.Size.errors);
+Data.Size.s_name=PTV_Data.Size.savebase;
+Data.Size.save_dir=PTV_Data.Size.save_dir;
+
+% --- PIV Info ---
+if str2double(PTV_Data.datout)
+     Data.Track.PIVprops.extension='.dat';
+elseif str2double(PTV_Data.multiplematout)
+    Data.Track.PIVprops.extension='.mat';
 end
-Data.Track.weights=weights;
+Data.Track.PIVprops.load_dir       = PTV_Data.outdirec;
+Data.PIV.Data=PTV_Data;
+eval(['Data.PIV.Data.outbase = PTV_Data.PIV' PTV_Data.passes '.outbase;'])
+
+% --- Tracking ---
+Data.Track.run=str2double(PTV_Data.Track.runtrack);
+PTVmethod = {'ptv','piv','piv-ptv'};
+Data.Track.method = PTVmethod{str2double(PTV_Data.Track.method)};
+Data.Track.PIV_PTV_weight=str2double(PTV_Data.Track.PIVweight);
+Data.Track.plotfig=0;%str2double(Data.Track.plotfig);
+Data.Track.s_radius=str2double(PTV_Data.Track.radius);
+Data.Track.r_weight=str2double(PTV_Data.Track.estradius);
+Data.Track.edgeval=str2double(PTV_Data.Track.estweight);
+Data.Track.numvecs=str2double(PTV_Data.Track.vectors);
+Data.Track.max_iterations=str2double(PTV_Data.Track.iterations);
+Data.Track.s_name=PTV_Data.Track.savebase;
+Data.Track.save_dir=PTV_Data.Track.save_dir;
+
+cutoff_commas=strfind(PTV_Data.Track.valprops.valcoef,',');
+radius_commas=strfind(PTV_Data.Track.valprops.valrad,',');
+MAD_U_commas=strfind(PTV_Data.Track.valprops.MAD_U,',');
+MAD_V_commas=strfind(PTV_Data.Track.valprops.MAD_V,',');
+
+cutoff = zeros(numel(cutoff_commas)+1,1);
+radius = zeros(numel(radius_commas)+1,1);
+MAD_U = zeros(numel(MAD_U_commas)+1,1);
+MAD_V = zeros(numel(MAD_V_commas)+1,1);
+
+Data.Track.valprops.numpass=numel(cutoff_commas)+1;
+
+cutoff(1)=str2double(PTV_Data.Track.valprops.valcoef(1:cutoff_commas(1)-1));
+radius(1)=str2double(PTV_Data.Track.valprops.valrad(1:radius_commas(1)-1));
+MAD_U(1)=str2double(PTV_Data.Track.valprops.MAD_U(1:MAD_U_commas(1)-1));
+MAD_V(1)=str2double(PTV_Data.Track.valprops.MAD_V(1:MAD_V_commas(1)-1));
+method=cell(Data.Track.valprops.numpass,1);
+if radius(1)~=0
+    method{1} = 'median';
+else
+    method{1} = 'coeff';
+end
+for i=2:Data.Track.valprops.numpass
+    if i ~= Data.Track.valprops.numpass
+        cutoff(i)=str2double(PTV_Data.Track.valprops.valcoef(cutoff_commas(i-1)+1:cutoff_commas(i)-1));
+        radius(i)=str2double(PTV_Data.Track.valprops.valrad(radius_commas(i-1)+1:radius_commas(i)-1));
+        MAD_U(i)=str2double(PTV_Data.Track.valprops.MAD_U(MAD_U_commas(i-1)+1:MAD_U_commas(i)-1));
+        MAD_V(i)=str2double(PTV_Data.Track.valprops.MAD_V(MAD_V_commas(i-1)+1:MAD_V_commas(i)-1));
+    else
+        cutoff(i)=str2double(PTV_Data.Track.valprops.valcoef(cutoff_commas(i-1)+1:end));
+        radius(i)=str2double(PTV_Data.Track.valprops.valrad(radius_commas(i-1)+1:end));
+        MAD_U(i)=str2double(PTV_Data.Track.valprops.MAD_U(MAD_U_commas(i-1)+1:end));
+        MAD_V(i)=str2double(PTV_Data.Track.valprops.MAD_V(MAD_V_commas(i-1)+1:end));
+    end
+    if radius(i)~=0
+        method{i} = 'median';
+    else
+        method{i} = 'coeff';
+    end
+end
+Data.Track.weights=[str2double(PTV_Data.Track.disweight),str2double(PTV_Data.Track.sizeweight),str2double(PTV_Data.Track.intensityweight)];
+
+Data.Track.valprops.run=str2double(PTV_Data.Track.valprops.run);
+Data.Track.valprops.method = method;
 Data.Track.valprops.C_cutoff=cutoff;
 Data.Track.valprops.s_radius=radius;
 Data.Track.valprops.MAD_U=MAD_U;
 Data.Track.valprops.MAD_V=MAD_V;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Particle ID Code
@@ -64,7 +119,7 @@ if Data.ID.run
         fprintf(loadname,'processing image-',Data.slsh,Data.imbase,i,Data.imext);
 
         if strcmpi(Data.imext,'tif')
-            IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'tif'));
+            IM = double(imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'tif')));
         elseif strcmpi(Data.imext,'mat')
             IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'mat'));
         else
@@ -110,9 +165,9 @@ if Data.Size.run
         im1(im1<=Data.Size.thresh) = 0;
 
         %load in the identified particles
-        sname = sprintf('%%s%%s%%0%0.0fd',Data.imzeros);
+        sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
 
-        ID_info = load(sprintf(sname,Data.ID.save_dir,Data.ID.s_name,i,'.mat'));
+        ID_info = load(fullfile(Data.ID.save_dir,sprintf(sname,Data.ID.s_name,i,'.mat')));
 
         %size the particles
         sizeprops       = Data.Size;
@@ -143,9 +198,9 @@ for k=1:length(im_list)-1
 
     fprintf('Tracking Frame %s %6.0f to %6.0f\t',Data.imbase,im_list(k),im_list(k)+Data.imcstep)
 
-    sname = sprintf('%%s%%s%%0%0.0fd',Data.imzeros);
-    SIZE1=load(sprintf(sname,Data.Size.save_dir,Data.Size.s_name,im_list(k),'.mat'));
-    SIZE2=load(sprintf(sname,Data.Size.save_dir,Data.Size.s_name,im_list(k)+Data.imcstep,'.mat'));
+    sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
+    SIZE1=load(fullfile(Data.Size.save_dir,sprintf(sname,Data.Size.s_name,im_list(k),'.mat')));
+    SIZE2=load(fullfile(Data.Size.save_dir,sprintf(sname,Data.Size.s_name,im_list(k)+Data.imcstep,'.mat')));
 
     %remove all NaNs from the particle arrays (indicated a failed
     %sizing method)
@@ -338,6 +393,7 @@ function [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(im,particleIDprops)
 % identify and segregate the particles %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %chose between different particle ID and segregation methods
+
 switch lower(particleIDprops.method)
     case {'blob'}
         [p_matrix,peaks,num_p]=blob_segmentation(im,particleIDprops.v);
@@ -348,22 +404,23 @@ switch lower(particleIDprops.method)
     
     case {'combined'}
         [p_matrix,peaks,num_p]=combined_partID(im,particleIDprops.v);
+    otherwise
+        error('Unknown ID segmentation method\n')
 end
 %NOTE - currently the speed of each method is as follows:
 %   'blob' (256x256) - 0.74sec per image pair - 1676 particles
 %   'dynamic (256x256) - 9.07sec per image pair - 3592 particles
 %   'combined (256x256) - 11.30sec per image pair - 4490 particles (hmm...)
 
-if particleIDprops.save_dir~=0
-    if ~exist(particleIDprops.save_dir,'dir')
-        fprintf('Making Save Directory %s \n',particleIDprops.save_dir)
+if ~isempty(particleIDprops.save_dir)
+    if exist(particleIDprops.save_dir,'dir')~=7
+        fprintf('Making Save Directory %s \t',particleIDprops.save_dir)
         mkdir(particleIDprops.save_dir)
     end
-    sname = sprintf('%%s%%s%%0%0.0fd',particleIDprops.Data.imzeros);
-    save(sprintf(sname,particleIDprops.save_dir,particleIDprops.s_name,particleIDprops.s_num),...
+    sname = sprintf('%%0%0.0fd',particleIDprops.Data.imzeros);
+    save(fullfile(particleIDprops.save_dir,[particleIDprops.s_name sprintf(sname,particleIDprops.s_num)]),...
         'particleIDprops','p_matrix','peaks','num_p');
 end
-
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -771,15 +828,25 @@ end
 XYDiameter=particleprops;
 
 %section for saving sized particle information
-if sizeprops.save_dir~=0
-    if ~exist(sizeprops.save_dir,'dir')
+if ~isempty(sizeprops.save_dir)
+    if exist(sizeprops.save_dir,'dir')~=7
         fprintf('Making Save Directory %s \n',sizeprops.save_dir)
         mkdir(sizeprops.save_dir)
     end
-    sname = sprintf('%%s%%s%%0%0.0fd',sizeprops.Data.imzeros);
-    save(sprintf(sname,sizeprops.save_dir,sizeprops.s_name,sizeprops.s_num),...
+    sname = sprintf('%%s%%0%0.0fd',sizeprops.Data.imzeros);
+    save(fullfile(sizeprops.save_dir,sprintf(sname,sizeprops.s_name,sizeprops.s_num)),...
         'sizeprops','XYDiameter','mapsizeinfo','locxy');
 end
+
+% if ~isempty(particleIDprops.save_dir)
+%     if exist(particleIDprops.save_dir,'dir')~=7
+%         fprintf('Making Save Directory %s \t',particleIDprops.save_dir)
+%         mkdir(particleIDprops.save_dir)
+%     end
+%     sname = sprintf('%%0%0.0fd',particleIDprops.Data.imzeros);
+%     save(fullfile(particleIDprops.save_dir,[particleIDprops.s_name sprintf(sname,particleIDprops.s_num)]),...
+%         'particleIDprops','p_matrix','peaks','num_p');
+% end
 
 end
 
@@ -2421,13 +2488,13 @@ switch lower(estlocprops.method)
 end
 
 %section for saving sized particle information
-if estlocprops.save_dir~=0
-    if ~exist(estlocprops.save_dir,'dir')
+if ~isempty(estlocprops.save_dir)
+    if exist(estlocprops.save_dir,'dir')~=7
         fprintf('Making Save Directory %s \n',estlocprops.save_dir)
         mkdir(estlocprops.save_dir)
     end
-    sname = sprintf('%%s%%s%%0%0.0fd',estlocprops.Data.imzeros);
-    save(sprintf(sname,estlocprops.save_dir,estlocprops.s_name,estlocprops.s_num),...
+    sname = sprintf('%%s%%0%0.0fd',estlocprops.Data.imzeros);
+    save(fullfile(estlocprops.save_dir,sprintf(sname,estlocprops.s_name,estlocprops.s_num)),...
         'estlocprops','X2_est','Y2_est','Z2_est');
 end
 
@@ -2602,15 +2669,10 @@ function [X2_est,Y2_est,Z2_est]=PIVestloc_V1(X1,Y1,Z1,PIVprops)
 
 %load in the PIV processed data for the image pair 
 %(rearrange coordiante system to match the output of the sizing program)
-
-if strcmpi(PIVprops.PIVprops.extension,'.plt')
+if any(strcmpi(PIVprops.PIVprops.extension,{'.plt' '.dat'}))
     [X,Y,U,V]=read_pltmod_NC(PIVprops.Data.PIV.Data.outbase,PIVprops.Data.Track.PIVprops.load_dir,...
         PIVprops.PIVprops.frame1,PIVprops.PIVprops.frame1,PIVprops.Data.imzeros);
     PIV1={X,Y,flipud(U),-1.*flipud(V)};  clear X Y U V
-elseif strcmpi(PIVprops.PIVprops.extension,'.dat')
-    [X,Y,U,V]=read_pltmod_NC(PIVprops.Data.PIV.Data.outbase,PIVprops.Data.Track.PIVprops.load_dir,...
-        PIVprops.PIVprops.frame1,PIVprops.PIVprops.frame1,PIVprops.Data.imzeros);
-    PIV1={X,Y,flipud(U),-1.*flipud(V)};  clear X Y U V    
 elseif strcmpi(PIVprops.PIVprops.extension,'.mat')
     lname = sprintf('%%s%%s%%0%0.0fd',PIVprops.Data.imzeros);
     PIV1t = load(sprintf(lname,PIVprops.Data.Track.PIVprops.load_dir,PIVprops.PIVprops.outbase,PIVprops.PIVprops.frame1,PIVprops.PIVprops.extension));
@@ -2771,8 +2833,14 @@ try
 numframes=endframe-startframe+1;
 
 nameformat = sprintf('%%s%%0.%ui.dat',numzeros);
-picfilename=sprintf(nameformat,testname,startframe);  
-fid = fopen([direc picfilename]);    
+picfilename=sprintf(nameformat,testname,startframe);
+fid = fopen(fullfile(direc,picfilename));
+if fid == -1
+    nameformat = sprintf('%%s%%0.%ui.plt',numzeros);
+    picfilename=sprintf(nameformat,testname,startframe);
+    fid = fopen(fullfile(direc,picfilename));
+end
+
 
 temp=fgetl(fid);%#ok                %TITLE="DPIV Data File"
 temp=fgetl(fid);                    %VARIABLES="X" "Y" ....
@@ -2855,8 +2923,8 @@ count=0;
 for j=startframe:framestep:endframe
     count=count+1;
 
-    picfilename=sprintf(nameformat,testname,j);  
-    fid = fopen([direc picfilename]);    
+    picfilename=sprintf(nameformat,testname,j);
+    fid = fopen(fullfile(direc,picfilename));
     
     temp=fgetl(fid);%#ok                    %TITLE="DPIV Data File"
     temp=fgetl(fid);%#ok                    %VARIABLES="X" "Y" ....
@@ -3040,9 +3108,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %save tracking results and relevant info if called for by the user
-if trackprops.save_dir~=0
-    sname = sprintf('%%s%%s%%0%0.0fd.mat',trackprops.Data.imzeros);
-    save(sprintf(sname,trackprops.save_dir,trackprops.s_name,trackprops.s_num),...
+if ~isempty(trackprops.save_dir)
+    if exist(trackprops.save_dir,'dir')~=7
+        fprintf('Making Save Directory %s \n',trackprops.save_dir)
+        mkdir(trackprops.save_dir)
+    end
+    sname = sprintf('%%s%%0%0.0fd.mat',trackprops.Data.imzeros);
+    save(fullfile(trackprops.save_dir,sprintf(sname,trackprops.s_name,trackprops.s_num)),...
         'tracks','trackprops','valprops');
 end
 
