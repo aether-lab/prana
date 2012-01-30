@@ -3,6 +3,7 @@ function expsummary = write_expsummary(Data)
 expsummary = [];
 
 expsummary = [expsummary sprintf(['Summary for PIV Job: ',Data.batchname,'\n'])];
+expsummary = [expsummary sprintf(['PIV Code Version: ',Data.version,'\n'])];
 expsummary = [expsummary sprintf('\n--------------------Experiment Parameters--------------------\n')];
 expsummary = [expsummary sprintf(['Date of Experiment:            ',Data.exp_date,'\n'])];
 expsummary = [expsummary sprintf(['Laser Wavelength (um):         ',Data.exp_wavelength,'\n'])];
@@ -110,6 +111,8 @@ for i=1:str2double(Data.passes)
     expsummary = [expsummary sprintf(['Correlation:                                  ',corr{str2double(A.corr)},'\n'])];
     if strcmpi(corr{str2double(A.corr)},'RPC')
         expsummary = [expsummary sprintf(['   RPC Diameter:                              ',A.RPCd,'\n'])];
+    elseif strcmpi(corr{str2double(A.corr)},'FWC')
+        expsummary = [expsummary sprintf(['   FWC Weight:                                ',A.frac_filt,'\n'])];
     end
     expsummary = [expsummary sprintf(['Zero-Mean Image Windows:                      ',y_n{str2double(A.zeromean)+1},'\n'])];
     expsummary = [expsummary sprintf(['Subpixel Peak Location Method:                ',peak{str2double(A.peaklocator)},'\n'])];

@@ -45,8 +45,8 @@ while tol > 0 && ktol <= kmax+1
         for k = 1:n(2)
             if sum(isnan(U(j,k,:))) == 0
                 try              
-                    [H.U,HX.U] = hist(U(j,k,:),iter/2);
-                    [H.V,HX.V] = hist(V(j,k,:),iter/2);
+                    [H.U,HX.U] = hist(squeeze(U(j,k,:)),iter/2);
+                    [H.V,HX.V] = hist(squeeze(V(j,k,:)),iter/2);
 
                     modeU = HX.U(H.U==max(H.U));
                     modeV = HX.V(H.V==max(H.V));
@@ -62,7 +62,7 @@ while tol > 0 && ktol <= kmax+1
                 catch%#ok
                     Ems=lasterror;%#ok
                     fprintf('\n\n')
-                    fprintf(Ems.message)
+                    fprintf(Ems.message);
                 end
             end
         end
@@ -70,6 +70,5 @@ while tol > 0 && ktol <= kmax+1
     ktol = ktol + 1;
     tol = tol-(tol/(kmax-1))*(ktol-1);
 end
-
 
 end

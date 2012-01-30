@@ -195,6 +195,7 @@ for e=1:P
     wbase(e,:)={A.outbase};
     
 end
+wbase_org=wbase;
 
 %% --- Evaluate Image Sequence ---
 switch char(M)
@@ -402,7 +403,7 @@ switch char(M)
                             % append the 'deform' and the pass number to
                             % the end of the file once the final number of
                             % iterations has been reached.
-                            wbase{e,:} = sprintf([wbase{e,:} 'deform' num2str(defloop) '_']);
+                            wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
                         end
                         defloop = 1;
                     else
@@ -884,10 +885,10 @@ switch char(M)
                                 cnvg_est = 0;
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             else
-                                CCmdist=CCmdist+CC;
 %                                 cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
-                                ave_pre = (CCmdist*length(I1)/(q-1));
-                                ave_cur = ((CCmdist*length(I1)+CC)/q);
+                                ave_pre = (CCmdist/(q-1));
+                                CCmdist=CCmdist+CC;% Now includes the current frame
+                                ave_cur = ((CCmdist)/q);
                                 ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zeros
                                 cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
@@ -1083,10 +1084,10 @@ switch char(M)
                             cnvg_est = 0;
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         else
-                            CCm=CCm+CC/length(I1);
 %                             cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
                             ave_pre = (CCm*length(I1)/(q-1));
-                            ave_cur = ((CCm*length(I1)+CC)/q);
+                            CCm=CCm+CC/length(I1);% Now adding the current pass
+                            ave_cur = ((CCm*length(I1))/q);
                             ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zero.
                             cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
@@ -1210,7 +1211,7 @@ switch char(M)
                 end
                 if defloop == maxdefloop(e) || (defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
                     if maxdefloop(e) ~= 1
-                        wbase{e,:} = sprintf([wbase{e,:} 'deform' num2str(defloop) '_']);
+                        wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
                     end
                     defloop = 1;
                 else
@@ -1316,7 +1317,7 @@ switch char(M)
         valtime=zeros(P,1);
         savetime=zeros(P,1);
         interptime=zeros(P,1);
-        
+
         %single-pulsed
         if round(1/Freq*10^6)==round(dt)
             time_full(2,:)=time_full(1,:);
@@ -1520,7 +1521,7 @@ switch char(M)
 
                     %remove nans from data, replace with zeros
                     U(Eval<0|isinf(U))=0;V(Eval<0|isinf(V))=0;
-%                     keyboard
+
                     if str2double(Data.datout)
 %                         q_full=find(I1_full==I1(q),1,'first');
 %                         time=(q_full-1)/Freq;
