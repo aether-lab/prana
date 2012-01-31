@@ -163,7 +163,7 @@ for i=1:str2double(Data.passes)
             expsummary = [expsummary sprintf(['Save Peak Magnitude:                          ',y_n{str2double(A.savepeakmag)+1},'\n'])];
             expsummary = [expsummary sprintf(['Save Resulting Vel.:                          ',y_n{str2double(A.savepeakvel)+1},'\n'])];
         end
-        expsummary = [expsummary sprintf(['Save Correlation Planes:                      ',y_n{str2double(A.savepeakinfo)+1},'\n'])];
+        expsummary = [expsummary sprintf(['Save Correlation Planes:                      ',y_n{str2double(A.saveplane)+1},'\n'])];
     end
 end
 
@@ -171,30 +171,29 @@ end
 % appends it to the end of the expsummary.  This way when the jobs
 % internals are changed but not the batch name a different text file will
 % be created and not over written.
-dateinfo = datestr(now);
-dateinfo(12) = '-';
-dateinfo([15 18]) = '.';
-if ispc
-    fname=[Data.outdirec,'\ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
-else
-    fname=[Data.outdirec,'/ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
-end
-fid=fopen(fname,'w');
-if fid==-1
-    try
-        mkdir(Data.outdirec)
-        fid=fopen(fname,'w');
-        if fid==-1
-            error(['error writing experiment summary ',fname])
-        end
-    catch ME
-        error('Error writing experiment summary %s\n\n%s\n',fname,ME(1).message)
+if nargout == 0 %Only write file if there is no output requested from the function.
+    dateinfo = datestr(now);
+    dateinfo(12) = '-';
+    dateinfo([15 18]) = '.';
+    if ispc
+        fname=[Data.outdirec,'\ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
+    else
+        fname=[Data.outdirec,'/ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
     end
+    fid=fopen(fname,'w');
+    if fid==-1
+        try
+            mkdir(Data.outdirec)
+            fid=fopen(fname,'w');
+            if fid==-1
+                error(['error writing experiment summary ',fname])
+            end
+        catch ME
+            error('Error writing experiment summary %s\n\n%s\n',fname,ME(1).message)
+        end
+    end
+    
+    fprintf(fid,expsummary);
+    
+    fclose(fid);
 end
-
-fprintf(fid,expsummary);
-
-fclose(fid);
-
-fprintf(expsummary)
-

@@ -660,6 +660,7 @@ if str2double(handles.Njob)>0
     E = handles.data.imext;
     S = handles.data.imfstart;
     F = handles.data.imfend;
+    C = handles.data.imcstep;
     [imname,handles.data.imdirec] = uigetfile('*.*','Select an image file',handles.data.imdirec);
     if handles.data.imdirec==0
         handles.data.imdirec = D;
@@ -671,23 +672,17 @@ if str2double(handles.Njob)>0
     else
         i=strfind(imname,'.');
         handles.data.imext=imname((i(end)+1):end);
-        j=strfind(imname(1:i(end)-1),'.');
-        if isempty(j)
-            j=0;test = nan;
-            while isnan(test)
-                j = j+1;
-                test=str2double(imname(j(end):i(end)-1));
-            end
-            zeros=i(end)-1-(j(end)-1);
-        else
-            zeros=i(end)-1-j(end);
-        end
+        % This finds everything that is not a number
+        j = regexp(imname(1:i(end)-1),'\D');
+        % Now looking at the first thing that is not a number excluding the
+        % extension to determine the number of zeros.
+        zeros=i(end)-1-j(end);
         handles.data.imbase=imname(1:(i(end)-1-zeros));
         handles.data.imzeros=num2str(zeros);
         fstart=str2double(imname((i(end)-zeros):(i(end)-1)));
         handles.data.imfstart=num2str(fstart);
         dirinfo = dir([handles.data.imdirec handles.data.imbase '*.' handles.data.imext]);
-        handles.data.imfend=num2str(str2double(dirinfo(end).name(i(end)-zeros:i(end)-1))-1);
+        handles.data.imfend=num2str(str2double(dirinfo(end).name(i(end)-zeros:i(end)-1))-str2double(C));
     end
     set(handles.imagedirectory,'string',handles.data.imdirec);
     set(handles.imagebasename,'string',handles.data.imbase);
@@ -2281,9 +2276,11 @@ if str2double(handles.Njob)>0
         splash=splashdlg_planes({...
             'You have selected to save all of the correlation planes.' ...
             '' ...
-            'Please note that this option is very memory intensive and can quickly fill the hard drive if not monitored properly.'...
-            '' ...
-            'Please use a mask with a limited number of vector locations and total number of frames.' ...
+            'CAUTION: This option is extremely memory and storage intensive.'...
+            'Selecting this option can freeze your computer and/or fill your hard drive'...
+            ''...
+            'If you use this option, it is advised that you select only a '...
+            'small number of points and frames to limit the number of correlation planes that will be exported'
             },...
             'Saving Correlation Planes','Ok','Ok');
     end
@@ -4992,4 +4989,13 @@ end
     handles=update_data(handles); % Update handles
     guidata(hObject,handles)
     
+end
+
+
+% --- Executes on button press in disp_exp_summary.
+function disp_exp_summary_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob) > 0
+    expsummary = write_expsummary(handles.data);
+    fprintf(expsummary);
+    fprintf('\n\n');
 end
