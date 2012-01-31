@@ -54,25 +54,53 @@ end
 if ~isfield(Data,'outputpassbase')
     eval(['Data.outputpassbase = Data.PIV' Data.passes '.outbase;']);
 end
+
 %does the job file have tracking infromation.
-if ~isfield(Data,'ID')
+if ~isfield(Data.ID,'runid')
     Data.runPIV = '1';
     
-    load defaultsettings.mat defaultdata
-    Data.ID=defaultdata.ID;
-    Data.Size=defaultdata.Size;
-    Data.Track=defaultdata.Track;
+    Data.ID.runid        = '0';
+    Data.ID.method       = '2';
+    Data.ID.imthresh     = '10';
+    Data.ID.savebase     = 'ID_';
+    % Sizing Default values
+    Data.Size.runsize    = '0';
+    Data.Size.method     = '1';
+    Data.Size.std        = '4';
+    Data.Size.savebase   = 'SIZE_';
+    % Tracking Default values
+    Data.Track.runtrack  = '0';
+    Data.Track.method    = '1';
+    Data.Track.prediction= '1';
+    Data.Track.PIVweight = '0.5';
+    Data.Track.radius    = '15';
+    Data.Track.disweight = '1.0';
+    Data.Track.sizeweight= '0.5';
+    Data.Track.intensityweight = '0.5';
+    Data.Track.estradius = '15';
+    Data.Track.estweight = '.1';
+    Data.Track.savebase  = 'Track_';
+    Data.Track.vectors   = '3';
+    Data.Track.iterations= '3';    
+    % Tracking Validation Values
+    Data.Track.valprops.run   = '1';
+    Data.Track.valprops.valcoef = '0,0,0.2';
+    Data.Track.valprops.valrad = '20,20,0';
+    Data.Track.valprops.MAD_U = '1,0.75,0';
+    Data.Track.valprops.MAD_V = '1,0.75,0';
     
     if ispc
-        Data.ID.save_dir        = [Data.outdirec,'\ID\'];
-        Data.Size.save_dir      = [Data.outdirec,'\Size\'];
-        Data.Track.save_dir     = [Data.outdirec,'\Track\'];
-        Data.Track.PIVprops.load_dir       = [Data.outdirec,'\'];
+%         Data.loaddirec=[pwd '\'];
+        Data.ID.save_dir        = [pwd,'\ID\'];
+        Data.Size.save_dir      = [pwd,'\Size\'];
+        Data.Track.save_dir     = [pwd,'\Track\'];
+        Data.Track.PIVprops.load_dir= [pwd,'\'];
     else
-        Data.ID.save_dir        = [Data.outdirec,'/ID/'];
-        Data.Size.save_dir      = [Data.outdirec,'/Size/'];
-        Data.Track.save_dir     = [Data.outdirec,'/Track/'];
-        Data.Track.PIVprops.load_dir       = [Data.outdirec,'/'];
+%         Data.loaddirec=[pwd '/'];
+        Data.ID.save_dir        = [pwd,'/ID/'];
+        Data.Size.save_dir      = [pwd,'/Size/'];
+        Data.Track.save_dir     = [pwd,'/Track/'];
+        Data.Track.PIVprops.load_dir= [pwd,'/'];
     end
 end
 end
