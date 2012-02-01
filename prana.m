@@ -154,7 +154,7 @@ catch
     defaultdata.passes='2';
     defaultdata.method='1';
     defaultdata.velinterp='3';
-    defaultdata.iminterp='1';
+    defaultdata.iminterp='2';
     defaultdata.framestep='3';
     defaultdata.PIVerror='0.1';
     defaultdata.channel = '1';
@@ -1454,6 +1454,10 @@ end
 function deform_min_iter_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.deform_min=get(hObject,''String'');']);
+    if str2double(get(handles.deform_max_iter,'String'))>1 && eval(['str2double(handles.data.PIV' handles.data.cpass '.deform_min) == 1'])
+        eval(['handles.data.PIV' handles.data.cpass '.deform_min = ''2'';'])
+        set(handles.deform_min_iter,'String','2')
+    end
     guidata(hObject,handles)
 end
 function deform_min_iter_CreateFcn(hObject, eventdata, handles)
@@ -1465,6 +1469,10 @@ end
 function deform_max_iter_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     eval(['handles.data.PIV' handles.data.cpass '.deform_max=get(hObject,''String'');']);
+    if str2double(get(hObject,'String'))>1 && eval(['str2double(handles.data.PIV' handles.data.cpass '.deform_min) == 1'])
+        eval(['handles.data.PIV' handles.data.cpass '.deform_min = ''2'';'])
+        set(handles.deform_min_iter,'String','2')
+    end
     guidata(hObject,handles)
 end
 function deform_max_iter_CreateFcn(hObject, eventdata, handles)

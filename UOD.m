@@ -9,7 +9,7 @@ S=size(U);
 %outlier searching
 for k=1:pass
     
-    q = (t(k,:)-1)/2;
+    q = floor((t(k,:)-1)/2);
     
     for i=1:S(1)
         for j=1:S(2)

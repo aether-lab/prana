@@ -122,6 +122,12 @@ for i=1:str2double(Data.passes)
             expsummary = [expsummary sprintf(['Smoothing Size:                               ',A.velsmoothfilt,'\n'])];
         end
     end
+    if any(str2double(Data.method)==[3 5])
+        expsummary = [expsummary sprintf(['Deformation Infromation:\n'])];
+        expsummary = [expsummary sprintf(['   Minimum Number of Iterations:              ',A.deform_min,'\n'])];
+        expsummary = [expsummary sprintf(['   Maximum Number of Iterations:              ',A.deform_max,'\n'])];
+        expsummary = [expsummary sprintf(['   Convergence Error:                         ',A.deform_conv,'\n'])];
+    end
     expsummary = [expsummary sprintf('Validation Type(s):                           ')];
     if str2double(A.val)
         if str2double(A.thresh)

@@ -248,6 +248,7 @@ switch char(M)
             %	Take only red channel
                 im1 =im1(:,:,1);
                 im2 =im2(:,:,1);
+                channel = 1;
              end
 
             %  Flip images
@@ -398,7 +399,7 @@ switch char(M)
                         defconvV(e,defloop) = norm(Vval - Vd,2);
                         Ud = Uval; Vd = Vval;
                     end
-                    if defloop == maxdefloop(e) || (defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
+                    if defloop == maxdefloop(e) || (defloop ~= 1 && defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
                         if maxdefloop(e) ~= 1
                             % append the 'deform' and the pass number to
                             % the end of the file once the final number of
@@ -658,7 +659,7 @@ switch char(M)
     case {'Ensemble','EDeform'}
         %% --- Ensemble and Ensemble Deform --- 
         frametime=zeros(P,1);
-        
+
         %initialize grid and evaluation matrix
         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
         L=size(im1);
@@ -752,6 +753,7 @@ switch char(M)
                             %Take only red channel
                             im1 =im1(:,:,1);
                             im2 =im2(:,:,1);
+                            channel = 1;
                         end
                         
                         %  Flip images
@@ -813,6 +815,7 @@ switch char(M)
                                                     im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
                                                 end
                                             end
+                                            
                                         end
                                         
                                     end
@@ -873,7 +876,7 @@ switch char(M)
                         t1=tic;
                         %correlate image pair and average correlations
 %                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        if e~=1 && strcmpi(M,'EDeform')
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                             [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         else
                             [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -954,6 +957,7 @@ switch char(M)
                         %Take only red channel
                         im1 =im1(:,:,1);
                         im2 =im2(:,:,1);
+                        channel = 1;
                     end
 
                         %  Flip images
@@ -972,7 +976,7 @@ switch char(M)
                         YD1 = YI+VI/2;
                         XD2 = XI-UI/2;
                         YD2 = YI-VI/2;
-                        
+
                         %preallocate deformed images
                         im1d = zeros(L);
                         im2d = zeros(L);
@@ -1061,7 +1065,7 @@ switch char(M)
                             end
 
                         end
-                        
+
                         %clip lower values of deformed images
                         im1d(im1d<0)=0; im1d(isnan(im1d))=0;
                         im2d(im2d<0)=0; im2d(isnan(im2d))=0;
@@ -1072,7 +1076,7 @@ switch char(M)
                     t1=tic;
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    if e~=1 && strcmpi(M,'EDeform')
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                         [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                     else
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -1167,7 +1171,7 @@ switch char(M)
                 end
             end
 
-            if strcmpi(M,'EDeform')
+            if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                 U(Eval>=0)=Uc(:)+Ub(Eval>=0);
                 V(Eval>=0)=Vc(:)+Vb(Eval>=0);
             else
@@ -1209,7 +1213,7 @@ switch char(M)
                     defconvV(e,defloop) = norm(Vval - Vd,2);
                     Ud = Uval; Vd = Vval;
                 end
-                if defloop == maxdefloop(e) || (defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
+                if defloop == maxdefloop(e) || (defloop ~= 1 && defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
                     if maxdefloop(e) ~= 1
                         wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
                     end
@@ -1275,7 +1279,7 @@ switch char(M)
             end
             U=Uval; V=Vval;
         
-            if e~=P || defloop ~= 1 
+            if e~=P || defloop ~= 1 %Not the last pass or not finished converging the final pass
                 t1=tic;
                 
                 %reshape from list of grid points to matrix

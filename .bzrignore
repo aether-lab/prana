@@ -4,5 +4,5 @@
 *.tif
 *.dat
 *.phy
-defaultsettings.mat
+*.mat
 ExpSummary*
