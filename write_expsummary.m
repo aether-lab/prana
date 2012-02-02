@@ -37,23 +37,6 @@ for i=1:size(Data.exp_notes,1)
     expsummary = [expsummary sprintf([Data.exp_notes{i},'\n'])];
 end
 
-methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
-    'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)'};
-velinterp={'Nearest Neighbor','Bilinear','Cubic'};
-iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
-expsummary = [expsummary sprintf('\n-----------------------PIV Processing------------------------\n')];
-    expsummary = [expsummary sprintf(['Algorithm:                     ',methods{str2double(Data.method)},'\n'])];
-if str2double(Data.method)~=1 && str2double(Data.method)~=6
-    expsummary = [expsummary sprintf(['Velocity Interp Function:      ',velinterp{str2double(Data.velinterp)},'\n'])];
-end
-if any(str2double(Data.method)==[3 5])
-    expsummary = [expsummary sprintf(['Image Interpolation Function:  ',iminterp{str2double(Data.iminterp)},'\n'])];
-end
-if str2double(Data.method)>=6
-    expsummary = [expsummary sprintf(['PIV Error:                     ',Data.PIVerror,'\n'])];
-    expsummary = [expsummary sprintf(['Maximum Framestep:             ',Data.framestep,'\n'])];
-end
-
 channel = {'Red (Grey Scale)','Green','Blue','Weighted Average','Mean','Color Ensemble'};
 expsummary = [expsummary sprintf('\n----------------------Images and Masking---------------------\n')];
 expsummary = [expsummary sprintf(['Image Directory:               ',Data.imdirec,'\n'])];
@@ -84,95 +67,163 @@ elseif strcmp(Data.masktype,'dynamic')
     expsummary = [expsummary sprintf(['Mask Frame Step:              ',Data.maskfstep,'\n'])];
 else
     expsummary = [expsummary sprintf('None\n')];
-end        
+end
 
-for i=1:str2double(Data.passes)
-    corr={'SCC','RPC','GCC','FWC','SPC'};
-    peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
-    y_n={'No','Yes'};
-    A=eval(['Data.PIV' num2str(i)]);
-    expsummary = [expsummary sprintf(['\n------------------------Pass ',num2str(i),' Setup-------------------------\n'])];
-    if isfield(A,'winres1')
-    expsummary = [expsummary sprintf(['Window Resolution (first image) (pix):        ',A.winres1,'\n'])];
-    expsummary = [expsummary sprintf(['Window Resolution (second image) (pix):       ',A.winres2,'\n'])];
-    else
-    expsummary = [expsummary sprintf(['Window Resolution (first image) (pix):        ',A.winres,'\n'])];
-    expsummary = [expsummary sprintf(['Window Resolution (second image) (pix):       ',A.winres,'\n'])];
-    end        
-    expsummary = [expsummary sprintf(['Window Size (pix):                            ',A.winsize,'\n'])];
-    expsummary = [expsummary sprintf(['Grid Resolution (pix):                        ',A.gridres,'\n'])];
-    expsummary = [expsummary sprintf(['Window Overlap Percentage:                    ',A.winoverlap,'\n'])];
-    expsummary = [expsummary sprintf(['Grid Buffer (pix):                            ',A.gridbuf,'\n'])];
-    if i==1
-    expsummary = [expsummary sprintf(['Bulk Window Offset (pix):                     ',A.BWO,'\n'])];
-    else
-        expsummary = [expsummary sprintf(['Bulk Window Offset (pix):                     ','0,0','\n'])];
-    end
-    expsummary = [expsummary sprintf(['Correlation:                                  ',corr{str2double(A.corr)},'\n'])];
-    if strcmpi(corr{str2double(A.corr)},'RPC')
-        expsummary = [expsummary sprintf(['   RPC Diameter:                              ',A.RPCd,'\n'])];
-    elseif strcmpi(corr{str2double(A.corr)},'FWC')
-        expsummary = [expsummary sprintf(['   FWC Weight:                                ',A.frac_filt,'\n'])];
-    end
-    expsummary = [expsummary sprintf(['Zero-Mean Image Windows:                      ',y_n{str2double(A.zeromean)+1},'\n'])];
-    expsummary = [expsummary sprintf(['Subpixel Peak Location Method:                ',peak{str2double(A.peaklocator)},'\n'])];
-    if str2double(Data.method)~=1 && str2double(Data.method)~=5
-        expsummary = [expsummary sprintf(['Smoothing:                                    ',y_n{str2double(A.velsmooth)+1},'\n'])];
-        if str2double(A.velsmooth)
-            expsummary = [expsummary sprintf(['Smoothing Size:                               ',A.velsmoothfilt,'\n'])];
-        end
+% This section is for displaying all of the settings pretaining to PIV.
+if str2double(Data.runPIV)
+    methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
+        'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)'};
+    velinterp={'Nearest Neighbor','Bilinear','Cubic'};
+    iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
+    expsummary = [expsummary sprintf('\n-----------------------PIV Processing------------------------\n')];
+    expsummary = [expsummary sprintf(['Algorithm:                     ',methods{str2double(Data.method)},'\n'])];
+    if str2double(Data.method)~=1 && str2double(Data.method)~=6
+        expsummary = [expsummary sprintf(['Velocity Interp Function:      ',velinterp{str2double(Data.velinterp)},'\n'])];
     end
     if any(str2double(Data.method)==[3 5])
-        expsummary = [expsummary sprintf(['Deformation Infromation:\n'])];
-        expsummary = [expsummary sprintf(['   Minimum Number of Iterations:              ',A.deform_min,'\n'])];
-        expsummary = [expsummary sprintf(['   Maximum Number of Iterations:              ',A.deform_max,'\n'])];
-        expsummary = [expsummary sprintf(['   Convergence Error:                         ',A.deform_conv,'\n'])];
+        expsummary = [expsummary sprintf(['Image Interpolation Function:  ',iminterp{str2double(Data.iminterp)},'\n'])];
     end
-    expsummary = [expsummary sprintf('Validation Type(s):                           ')];
-    if str2double(A.val)
-        if str2double(A.thresh)
-            expsummary = [expsummary sprintf('Thresholding ')];
-        end
-        if str2double(A.uod)
-            expsummary = [expsummary sprintf('UOD ')];
-        end
-        if str2double(A.bootstrap)
-            expsummary = [expsummary sprintf('Bootstrapping')];
-        end
-        expsummary = [expsummary sprintf('\n')];
-        if str2double(A.thresh)
-            expsummary = [expsummary sprintf(['Umin, Umax (pix):                             ',A.valuthresh,'\n'])];
-            expsummary = [expsummary sprintf(['Vmin, Vmax (pix):                             ',A.valvthresh,'\n'])];
-        end
-        if str2double(A.uod)
-            uod_type={'Mean','Median'};
-            expsummary = [expsummary sprintf(['UOD Type:                                     ',uod_type{str2double(A.uod_type)},'\n'])];
-            expsummary = [expsummary sprintf(['UOD Window Sizes:                             ',A.uod_window,'\n'])];
-            expsummary = [expsummary sprintf(['UOD Thresholds:                               ',A.uod_thresh,'\n'])];
-        end
-        if str2double(A.bootstrap)
-            expsummary = [expsummary sprintf(['Bootstrap Percent Sampled:                    ',A.bootstrap_percentsampled,'\n'])];
-            expsummary = [expsummary sprintf(['Bootstrap Iterations:                         ',A.bootstrap_iterations,'\n'])];
-            expsummary = [expsummary sprintf(['Bootstrap Passes:                             ',A.bootstrap_passes,'\n'])];
-        end
-        expsummary = [expsummary sprintf(['Try Additional Peaks:                         ',y_n{str2double(A.valextrapeaks)+1},'\n'])];
-    else
-        expsummary = [expsummary sprintf('None\n')];
+    if str2double(Data.method)>=6
+        expsummary = [expsummary sprintf(['PIV Error:                     ',Data.PIVerror,'\n'])];
+        expsummary = [expsummary sprintf(['Maximum Framestep:             ',Data.framestep,'\n'])];
     end
-    expsummary = [expsummary sprintf(['Write Output:                                 ',y_n{str2double(A.write)+1},'\n'])];
-    if str2double(A.write)
-        expsummary = [expsummary sprintf(['Output Basename:                              ',A.outbase,'\n'])];
-        expsummary = [expsummary sprintf(['Save Add. Peak Info:                          ',y_n{str2double(A.savepeakinfo)+1},'\n'])];
-        if str2double(A.savepeakinfo)
-            peaks={'1','1,2','1,2,3'};
-            expsummary = [expsummary sprintf(['Save Data for Peaks:                          ',peaks{str2double(A.corrpeaknum)},'\n'])];
-            expsummary = [expsummary sprintf(['Save Peak Magnitude:                          ',y_n{str2double(A.savepeakmag)+1},'\n'])];
-            expsummary = [expsummary sprintf(['Save Resulting Vel.:                          ',y_n{str2double(A.savepeakvel)+1},'\n'])];
+    
+    for i=1:str2double(Data.passes)
+        corr={'SCC','RPC','GCC','FWC','SPC'};
+        peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
+        y_n={'No','Yes'};
+        A=eval(['Data.PIV' num2str(i)]);
+        expsummary = [expsummary sprintf(['\n------------------------Pass ',num2str(i),' Setup-------------------------\n'])];
+        if isfield(A,'winres1')
+            expsummary = [expsummary sprintf(['Window Resolution (first image) (pix):        ',A.winres1,'\n'])];
+            expsummary = [expsummary sprintf(['Window Resolution (second image) (pix):       ',A.winres2,'\n'])];
+        else
+            expsummary = [expsummary sprintf(['Window Resolution (first image) (pix):        ',A.winres,'\n'])];
+            expsummary = [expsummary sprintf(['Window Resolution (second image) (pix):       ',A.winres,'\n'])];
         end
-        expsummary = [expsummary sprintf(['Save Correlation Planes:                      ',y_n{str2double(A.saveplane)+1},'\n'])];
+        expsummary = [expsummary sprintf(['Window Size (pix):                            ',A.winsize,'\n'])];
+        expsummary = [expsummary sprintf(['Grid Resolution (pix):                        ',A.gridres,'\n'])];
+        expsummary = [expsummary sprintf(['Window Overlap Percentage:                    ',A.winoverlap,'\n'])];
+        expsummary = [expsummary sprintf(['Grid Buffer (pix):                            ',A.gridbuf,'\n'])];
+        if i==1
+            expsummary = [expsummary sprintf(['Bulk Window Offset (pix):                     ',A.BWO,'\n'])];
+        else
+            expsummary = [expsummary sprintf(['Bulk Window Offset (pix):                     ','0,0','\n'])];
+        end
+        expsummary = [expsummary sprintf(['Correlation:                                  ',corr{str2double(A.corr)},'\n'])];
+        if strcmpi(corr{str2double(A.corr)},'RPC')
+            expsummary = [expsummary sprintf(['   RPC Diameter:                              ',A.RPCd,'\n'])];
+        elseif strcmpi(corr{str2double(A.corr)},'FWC')
+            expsummary = [expsummary sprintf(['   FWC Weight:                                ',A.frac_filt,'\n'])];
+        end
+        expsummary = [expsummary sprintf(['Zero-Mean Image Windows:                      ',y_n{str2double(A.zeromean)+1},'\n'])];
+        expsummary = [expsummary sprintf(['Subpixel Peak Location Method:                ',peak{str2double(A.peaklocator)},'\n'])];
+        if str2double(Data.method)~=1 && str2double(Data.method)~=5
+            expsummary = [expsummary sprintf(['Smoothing:                                    ',y_n{str2double(A.velsmooth)+1},'\n'])];
+            if str2double(A.velsmooth)
+                expsummary = [expsummary sprintf(['Smoothing Size:                               ',A.velsmoothfilt,'\n'])];
+            end
+        end
+        if any(str2double(Data.method)==[3 5])
+            expsummary = [expsummary sprintf(['Deformation Infromation:\n'])];
+            expsummary = [expsummary sprintf(['   Minimum Number of Iterations:              ',A.deform_min,'\n'])];
+            expsummary = [expsummary sprintf(['   Maximum Number of Iterations:              ',A.deform_max,'\n'])];
+            expsummary = [expsummary sprintf(['   Convergence Error:                         ',A.deform_conv,'\n'])];
+        end
+        expsummary = [expsummary sprintf('Validation Type(s):                           ')];
+        if str2double(A.val)
+            if str2double(A.thresh)
+                expsummary = [expsummary sprintf('Thresholding ')];
+            end
+            if str2double(A.uod)
+                expsummary = [expsummary sprintf('UOD ')];
+            end
+            if str2double(A.bootstrap)
+                expsummary = [expsummary sprintf('Bootstrapping')];
+            end
+            expsummary = [expsummary sprintf('\n')];
+            if str2double(A.thresh)
+                expsummary = [expsummary sprintf(['Umin, Umax (pix):                             ',A.valuthresh,'\n'])];
+                expsummary = [expsummary sprintf(['Vmin, Vmax (pix):                             ',A.valvthresh,'\n'])];
+            end
+            if str2double(A.uod)
+                uod_type={'Mean','Median'};
+                expsummary = [expsummary sprintf(['UOD Type:                                     ',uod_type{str2double(A.uod_type)},'\n'])];
+                expsummary = [expsummary sprintf(['UOD Window Sizes:                             ',A.uod_window,'\n'])];
+                expsummary = [expsummary sprintf(['UOD Thresholds:                               ',A.uod_thresh,'\n'])];
+            end
+            if str2double(A.bootstrap)
+                expsummary = [expsummary sprintf(['Bootstrap Percent Sampled:                    ',A.bootstrap_percentsampled,'\n'])];
+                expsummary = [expsummary sprintf(['Bootstrap Iterations:                         ',A.bootstrap_iterations,'\n'])];
+                expsummary = [expsummary sprintf(['Bootstrap Passes:                             ',A.bootstrap_passes,'\n'])];
+            end
+            expsummary = [expsummary sprintf(['Try Additional Peaks:                         ',y_n{str2double(A.valextrapeaks)+1},'\n'])];
+        else
+            expsummary = [expsummary sprintf('None\n')];
+        end
+        expsummary = [expsummary sprintf(['Write Output:                                 ',y_n{str2double(A.write)+1},'\n'])];
+        if str2double(A.write)
+            expsummary = [expsummary sprintf(['Output Basename:                              ',A.outbase,'\n'])];
+            expsummary = [expsummary sprintf(['Save Add. Peak Info:                          ',y_n{str2double(A.savepeakinfo)+1},'\n'])];
+            if str2double(A.savepeakinfo)
+                peaks={'1','1,2','1,2,3'};
+                expsummary = [expsummary sprintf(['Save Data for Peaks:                          ',peaks{str2double(A.corrpeaknum)},'\n'])];
+                expsummary = [expsummary sprintf(['Save Peak Magnitude:                          ',y_n{str2double(A.savepeakmag)+1},'\n'])];
+                expsummary = [expsummary sprintf(['Save Resulting Vel.:                          ',y_n{str2double(A.savepeakvel)+1},'\n'])];
+            end
+            expsummary = [expsummary sprintf(['Save Correlation Planes:                      ',y_n{str2double(A.saveplane)+1},'\n'])];
+        end
     end
 end
 
+if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.Track.runtrack)])
+    expsummary = [expsummary sprintf('\n--------------------ID, Size, & Tracking---------------------')];
+    if str2double(Data.ID.runid)
+        expsummary = [expsummary sprintf('\n-----------------------------ID------------------------------\n')];
+        s_d = {'Static','Dynamic'};
+        expsummary = [expsummary sprintf(['Identification Method:                        ',s_d{str2double(Data.ID.method)},'\n'])];
+        expsummary = [expsummary sprintf(['Image Threshold:                              ',Data.ID.imthresh,'\n'])];
+        expsummary = [expsummary sprintf(['ID Output Basename:                           ',Data.ID.savebase,'\n'])];
+        expsummary = [expsummary sprintf(['ID Ouput Location:                            ',Data.ID.save_dir,'\n'])];
+    end
+    if str2double(Data.ID.runid)
+        expsummary = [expsummary sprintf('\n---------------------------Sizing----------------------------\n')];
+        sizing_meth = {'Intensity_Weighted Centroid','Three Point Gaussian','Four Point Gaussian',...
+            'Continuous Four Point Gaussian','Least Sqaures Gaussian','Continuous Least Squares Gaussian'};
+        expsummary = [expsummary sprintf(['Sizing Method:                                ',sizing_meth{str2double(Data.Size.method)},'\n'])];
+        expsummary = [expsummary sprintf(['Standard Deviation:                           ',Data.Size.std,'\n'])];
+        expsummary = [expsummary sprintf(['Sizing Output Basename:                       ',Data.Size.savebase,'\n'])];
+        expsummary = [expsummary sprintf(['Sizing Output Location:                        ',Data.Size.save_dir,'\n'])];
+    end
+    if str2double(Data.ID.runid)
+        expsummary = [expsummary sprintf('\n--------------------------Tracking---------------------------\n')];
+        PIV_PTV = {'PTV','PIV','PIV-PTV'};
+        s_d = {'Static','Dynamic'};
+        expsummary = [expsummary sprintf(['Tracking Method:                              ',PIV_PTV{str2double(Data.Track.method)},'\n'])];
+        expsummary = [expsummary sprintf(['Prediction Method:                            ',s_d{str2double(Data.Track.prediction)},'\n'])];
+        if str2double(Data.Track.method) == 3
+            expsummary = [expsummary sprintf(['PIV-PTV Weight:                               ',Data.Track.PIVweight,'\n'])];
+        end
+        expsummary = [expsummary sprintf(['Search Radius (pix):                          ',Data.Track.radius,'\n'])];
+        expsummary = [expsummary sprintf(['Inter-Particle Distance Weight:               ',Data.Track.disweight,'\n'])];
+        expsummary = [expsummary sprintf(['Sizing Weight:                                ',Data.Track.sizeweight,'\n'])];
+        expsummary = [expsummary sprintf(['Maximum Intensity Weight:                     ',Data.Track.intensityweight,'\n'])];
+        expsummary = [expsummary sprintf(['Estimation Radius:                            ',Data.Track.estradius,'\n'])];
+        expsummary = [expsummary sprintf(['Estimation Weight:                            ',Data.Track.estweight,'\n'])];
+        expsummary = [expsummary sprintf(['Estimation Min Number of Vectors:             ',Data.Track.vectors,'\n'])];
+        expsummary = [expsummary sprintf(['Estimation Max Iteractions:                   ',Data.Track.iterations,'\n'])];
+        if str2double(Data.Track.valprops.run)
+            expsummary = [expsummary sprintf('\n-------------------------Validation--------------------------\n')];
+            expsummary = [expsummary sprintf(['Coefficent Threshold:                         ',Data.Track.valprops.valcoef,'\n'])];
+            expsummary = [expsummary sprintf(['Validation Radious (vectors):                 ',Data.Track.valprops.valrad,'\n'])];
+            expsummary = [expsummary sprintf(['Validation Threshold U:                       ',Data.Track.valprops.MAD_U,'\n'])];
+            expsummary = [expsummary sprintf(['Validation Threshold V:                       ',Data.Track.valprops.MAD_V,'\n'])];
+        end
+        expsummary = [expsummary sprintf(['Tracking Output Basename:                     ',Data.Track.savebase,'\n'])];
+        expsummary = [expsummary sprintf(['Tracking Output Location:                     ',Data.Track.save_dir,'\n'])];
+        
+    end
+end
 % This string contains the date and time this function was called and
 % appends it to the end of the expsummary.  This way when the jobs
 % internals are changed but not the batch name a different text file will
@@ -181,10 +232,14 @@ if nargout == 0 %Only write file if there is no output requested from the functi
     dateinfo = datestr(now);
     dateinfo(12) = '-';
     dateinfo([15 18]) = '.';
-    if ispc
-        fname=[Data.outdirec,'\ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
-    else
-        fname=[Data.outdirec,'/ExpSummary_',Data.batchname,'_',dateinfo,'.txt'];
+    if str2double(Data.runPIV)
+        fname=fullfile(Data.outdirec, ['ExpSummary_',Data.batchname,'_',dateinfo,'.txt']);
+    elseif str2double(Data.ID.runid)
+        fname=fullfile(Data.ID.save_dir, ['ExpSummary_',Data.batchname,'_',dateinfo,'.txt']);
+    elseif str2double(Data.Size.runsize)
+        fname=fullfile(Data.Size.save_dir, ['ExpSummary_',Data.batchname,'_',dateinfo,'.txt']);
+    elseif str2double(Data.Track.runtrack)
+        fname=fullfile(Data.Track.save_dir, ['ExpSummary_',Data.batchname,'_',dateinfo,'.txt']);
     end
     fid=fopen(fname,'w');
     if fid==-1

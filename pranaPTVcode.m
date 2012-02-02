@@ -113,7 +113,11 @@ Data.Track.valprops.MAD_V=MAD_V;
 %% Particle ID Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if Data.ID.run
+    % Write the Experimental Summary
+    write_expsummary(PTV_Data);
+    PTV_Data.ID.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
     for i= Data.imfstart:Data.imfstep:Data.imfend
+        
         t0 = clock;
         loadname = sprintf('%%s%%s%%s%%0%0.0fd.%s',Data.imzeros);
         fprintf(loadname,'processing image-',Data.slsh,Data.imbase,i,Data.imext);
@@ -147,8 +151,11 @@ end
 %% Particle Size Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if Data.Size.run
+    % Write the Experimental Summary
+    write_expsummary(PTV_Data);
+    PTV_Data.Size.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
     for i = Data.imfstart:Data.imfstep:Data.imfend
-
+        
         t0 = clock;
         loadname = sprintf('%%s%%s%%s%%0%0.0fd.%%s',Data.imzeros);
         fprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,i,Data.imext)
@@ -193,6 +200,9 @@ if Data.Track.run
 im_list = Data.imfstart:Data.imcstep:Data.imfend;
 completed_tracks = cell(length(im_list),1);
 
+% Write the Experimental Summary
+write_expsummary(PTV_Data);
+        
 for k=1:length(im_list)-1
     t0 = clock;
 

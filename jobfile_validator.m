@@ -41,6 +41,9 @@ if ~isfield(Data.PIV0,'deform_min')
         eval(['Data.PIV',num2str(pass),'.deform_conv=''0.1'';']);
     end
 end
+if ~isfield(Data,'runPIV')
+    Data.runPIV = '1';
+end
 %does the job file have the ability to save correlation planes
 if ~isfield(Data.PIV0,'saveplane')
     for pass=0:str2double(Data.passes)
@@ -56,7 +59,7 @@ if ~isfield(Data,'outputpassbase')
 end
 
 %does the job file have tracking infromation.
-if ~isfield(Data.ID,'runid')
+if ~isfield(Data,'ID')
     Data.runPIV = '1';
     
     Data.ID.runid        = '0';

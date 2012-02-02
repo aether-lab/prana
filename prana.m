@@ -106,7 +106,9 @@ catch
     defaultdata.maskext='tif';
     defaultdata.maskfstep='1';
     defaultdata.maskfstart='1';
-
+    
+    defaultdata.runPIV='1';
+    
     defaultdata.PIV0.winres='32,32; 32,32';
     defaultdata.PIV0.winres1='32,32';
     defaultdata.PIV0.winres2='32,32';
@@ -462,10 +464,10 @@ end
 function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     Data=handles.data;
-    if get(handles.runPIVcheckbox,'value')
+    if str2double(Data.runPIV)
         pranaPIVcode(Data);
     end
-    if get(handles.runidcheckbox,'value') || get(handles.runsizingcheckbox,'value') || get(handles.runtrackingcheckbox,'value')
+    if str2double(Data.ID.runid) || str2double(Data.Size.runsize) || str2double(Data.Track.runtrack)
         pranaPTVcode(Data)
     end
 end
@@ -551,9 +553,9 @@ if isnumeric(f)==0
             if exist('Data','var')~=0
                 vn=0;
                 while vn==0
-                    
+
                     [Data] = jobfile_validator(Data);
-                                        
+
                     if isfield(handles,Data.batchname)
                         Data.batchname=char(inputdlg('Job already exists, rename?','LOAD JOB',1,{Data.batchname}));
                         if isempty(Data.batchname)
@@ -3300,6 +3302,8 @@ else
     set(handles.exp_lensfnum,'backgroundcolor',[1 1 1]);
 end
 
+set(handles.runPIVcheckbox,'Value',str2double(handles.data.runPIV));
+
 set(handles.passtype,'Value',str2double(handles.data.method));
 set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
 set(handles.imageinterptype,'Value',str2double(handles.data.iminterp));
@@ -4919,6 +4923,7 @@ function runPIVcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.runPIV=num2str(get(hObject,'Value'));
     set_PIVcontrols(handles);
+    guidata(hObject,handles)
 end
 
 % --- Executes on selection change in colorchannel_popupMenu.
