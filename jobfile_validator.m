@@ -60,6 +60,23 @@ end
 
 %does the job file have tracking infromation.
 if ~isfield(Data,'ID')
+    if ispc
+%         Data.loaddirec=[pwd '\'];
+        Data.ID.save_dir        = [pwd,'\ID\'];
+        Data.Size.save_dir      = [pwd,'\Size\'];
+        Data.Track.save_dir     = [pwd,'\Track\'];
+        Data.Track.PIVprops.load_dir= [pwd,'\'];
+    else
+%         Data.loaddirec=[pwd '/'];
+        Data.ID.save_dir        = [pwd,'/ID/'];
+        Data.Size.save_dir      = [pwd,'/Size/'];
+        Data.Track.save_dir     = [pwd,'/Track/'];
+        Data.Track.PIVprops.load_dir= [pwd,'/'];
+    end
+end
+
+if ~isfield(Data.ID,'runid')
+    
     Data.runPIV = '1';
     
     Data.ID.runid        = '0';
@@ -84,26 +101,12 @@ if ~isfield(Data,'ID')
     Data.Track.estweight = '.1';
     Data.Track.savebase  = 'Track_';
     Data.Track.vectors   = '3';
-    Data.Track.iterations= '3';    
+    Data.Track.iterations= '3';
     % Tracking Validation Values
     Data.Track.valprops.run   = '1';
     Data.Track.valprops.valcoef = '0,0,0.2';
     Data.Track.valprops.valrad = '20,20,0';
     Data.Track.valprops.MAD_U = '1,0.75,0';
     Data.Track.valprops.MAD_V = '1,0.75,0';
-    
-    if ispc
-%         Data.loaddirec=[pwd '\'];
-        Data.ID.save_dir        = [pwd,'\ID\'];
-        Data.Size.save_dir      = [pwd,'\Size\'];
-        Data.Track.save_dir     = [pwd,'\Track\'];
-        Data.Track.PIVprops.load_dir= [pwd,'\'];
-    else
-%         Data.loaddirec=[pwd '/'];
-        Data.ID.save_dir        = [pwd,'/ID/'];
-        Data.Size.save_dir      = [pwd,'/Size/'];
-        Data.Track.save_dir     = [pwd,'/Track/'];
-        Data.Track.PIVprops.load_dir= [pwd,'/'];
-    end
 end
 end
