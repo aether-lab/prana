@@ -2,7 +2,7 @@ function varargout=pranaPIVcode(Data)
 
 if ischar(Data)
     if strcmpi(Data,'version')
-        varargout{1} = '2.0.beta.r2012.01.31';
+        varargout{1} = '2.0.beta.r2012.02.02';
     else
         error('Error: String request must be ''version''.')
     end
@@ -54,11 +54,11 @@ else
             end
             
             if any(str2double(Data.method)==[4 5])
-                fprintf('\n-------------- Processing Dataset ------------------\n')
+                fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
                 pranaprocessing(Data)
-                fprintf('---------------- Job Completed ---------------------\n')
+                fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
             else
-                fprintf('\n--------------- Processing Dataset -------------------\n')
+                fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
                 spmd
                     verstr=version('-release');
                     if str2double(verstr(1:4))>=2010
