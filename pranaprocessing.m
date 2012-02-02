@@ -1400,10 +1400,6 @@ switch char(M)
                     V=zeros(size(X,1),3,N);
                     C=zeros(size(X,1),3,N);
                     Di=zeros(size(X,1),3,N);
-                    Uc=zeros(size(X,1),3,N);
-                    Vc=zeros(size(X,1),3,N);
-                    Cc=zeros(size(X,1),3,N);
-                    Dc=zeros(size(X,1),3,N);
                     Cp=zeros(Wsize(e,1),Wsize(e,2),size(X,1),N);
                     Uval=zeros(size(X,1),3);
                     Vval=zeros(size(X,1),3);
@@ -1412,6 +1408,10 @@ switch char(M)
                     Eval=repmat(reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1),[1 3]);
                     Eval(Eval==0)=-1;
                     Eval(Eval>0)=0;
+                    Uc=zeros(sum(Eval(:,1)>=0),3,N);
+                    Vc=zeros(sum(Eval(:,1)>=0),3,N);
+                    Cc=zeros(sum(Eval(:,1)>=0),3,N);
+                    Dc=zeros(sum(Eval(:,1)>=0),3,N);
                     
                     for t=1:N
                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
@@ -1419,7 +1419,7 @@ switch char(M)
 
                         %correlate image pair
 %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t),Cp(:,:,:,N)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,frac_filt(e),saveplane(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t),Cp(:,:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,frac_filt(e),saveplane(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
