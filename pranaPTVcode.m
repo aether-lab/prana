@@ -110,38 +110,102 @@ Data.Track.valprops.MAD_V=MAD_V;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Parallel Processing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if str2double(PTV_Data.par)
+    if length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)) < str2double(PTV_Data.parprocessors)
+        PTV_Data.parprocessors=num2str(length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)));
+    end
+    fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
+    try
+        matlabpool('open','local',PTV_Data.parprocessors);
+    catch
+        try
+            matlabpool close
+            matlabpool('open','local',PTV_Data.parprocessors);
+        catch
+            beep
+            disp('Error Running Job in Parallel - Defaulting to Single Processor')
+            poolopen=0;
+        end
+    end
+    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+else
+    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Particle ID Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if Data.ID.run
     % Write the Experimental Summary
     write_expsummary(PTV_Data);
     PTV_Data.ID.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
-    for i= Data.imfstart:Data.imfstep:Data.imfend
-        
-        t0 = clock;
-        loadname = sprintf('%%s%%s%%s%%0%0.0fd.%s',Data.imzeros);
-        fprintf(loadname,'processing image-',Data.slsh,Data.imbase,i,Data.imext);
-
-        if strcmpi(Data.imext,'tif')
-            IM = double(imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'tif')));
-        elseif strcmpi(Data.imext,'mat')
-            IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'mat'));
-        else
-            error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
+    
+    I1 = Data.imfstart:Data.imfstep:Data.imfend;
+    
+    if str2double(PTV_Data.par) && matlabpool('size')>1
+        spmd
+            verstr=version('-release');
+            if str2double(verstr(1:4))>=2010
+                I1dist=getLocalPart(codistributed(I1,codistributor('1d',2)));
+            else
+                I1dist=localPart(codistributed(I1,codistributor('1d',2),'convert'));
+            end
+            for i= 1:length(I1dist)
+                
+                t0 = clock;
+                loadname = sprintf('%%s%%s%%s%%0%0.0fd.%s',Data.imzeros);
+                
+                if strcmpi(Data.imext,'tif')
+                    IM = double(imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1dist(i),'tif')));
+                elseif strcmpi(Data.imext,'mat')
+                    IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1dist(i),'mat'));
+                else
+                    error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
+                end
+                
+                particleIDprops       = Data.ID;
+                particleIDprops.Data  = Data;
+                
+                particleIDprops.s_num = I1dist(i);
+                
+                [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops);
+                %          figure; imagesc(p_matrix,[0 num_p]);  set(gca,'DataAspectRatio',[1 1 1])
+                
+                eltime=etime(clock,t0);
+                fprintf('%s...done!\t Time: %0.2i:%0.2i.%0.0f\n',sprintf(loadname,'processing image-',Data.slsh,Data.imbase,I1dist(i),Data.imext)...
+                    ,floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            end
         end
-
-        particleIDprops       = Data.ID;
-        particleIDprops.Data  = Data;
-
-        particleIDprops.s_num = i;
-
-        [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops);
-%          figure; imagesc(p_matrix,[0 num_p]);  set(gca,'DataAspectRatio',[1 1 1])
-
-        fprintf('...done!\t');
-        eltime=etime(clock,t0);
-        fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-
+    else
+        for i= 1:length(I1)
+            
+            t0 = clock;
+            loadname = sprintf('%%s%%s%%s%%0%0.0fd.%s',Data.imzeros);
+            fprintf(loadname,'processing image-',Data.slsh,Data.imbase,I1(i),Data.imext);
+            
+            if strcmpi(Data.imext,'tif')
+                IM = double(imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'tif')));
+            elseif strcmpi(Data.imext,'mat')
+                IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'mat'));
+            else
+                error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
+            end
+            
+            particleIDprops       = Data.ID;
+            particleIDprops.Data  = Data;
+            
+            particleIDprops.s_num = I1(i);
+            
+            [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops);
+            %          figure; imagesc(p_matrix,[0 num_p]);  set(gca,'DataAspectRatio',[1 1 1])
+            
+            fprintf('...done!\t');
+            eltime=etime(clock,t0);
+            fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            
+        end
     end
 
     save(sprintf('%s%s%s',Data.ID.save_dir,'particle_ID_parameters.mat'));
@@ -154,16 +218,62 @@ if Data.Size.run
     % Write the Experimental Summary
     write_expsummary(PTV_Data);
     PTV_Data.Size.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
-    for i = Data.imfstart:Data.imfstep:Data.imfend
+    
+    I1 = Data.imfstart:Data.imfstep:Data.imfend;
+    
+    if str2double(PTV_Data.par) && matlabpool('size')>1
+        spmd
+            verstr=version('-release');
+            if str2double(verstr(1:4))>=2010
+                I1dist=getLocalPart(codistributed(I1,codistributor('1d',2)));
+            else
+                I1dist=localPart(codistributed(I1,codistributor('1d',2),'convert'));
+            end
+            for i= 1:length(I1dist)
+                t0 = clock;
+                loadname = sprintf('%%s%%s%%s%%0%0.0fd.%%s',Data.imzeros);
+                
+                if strcmpi(Data.imext,'tif')
+                    IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1dist(i),'tif'));
+                elseif strcmpi(Data.imext,'mat')
+                    IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1dist(i),'mat'));
+                else
+                    error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
+                end
+                
+                im1=IM(:,:);
+                im1(im1<=Data.Size.thresh) = 0;
+                
+                %load in the identified particles
+                sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
+                
+                ID_info = load(fullfile(Data.ID.save_dir,sprintf(sname,Data.ID.s_name,I1dist(i),'.mat')));
+                
+                %size the particles
+                sizeprops       = Data.Size;
+                sizeprops.Data  = Data;
+                sizeprops.s_num =I1dist(i);
+                
+                [SIZE1.XYDiameter,SIZE1.mapsizeinfo,SIZE1.locxy]=particle_size_MAIN_V1(im1,ID_info.p_matrix,...
+                    ID_info.num_p,sizeprops);
+                
+                eltime=etime(clock,t0);
+                fprintf('%s...done!\t Time: %0.2i:%0.2i.%0.0f\n',sprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,I1dist(i),Data.imext),...
+                    floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                
+            end
+        end
+	else
+    for i = 1:length(I1)
         
         t0 = clock;
         loadname = sprintf('%%s%%s%%s%%0%0.0fd.%%s',Data.imzeros);
-        fprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,i,Data.imext)
+        fprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,I1(i),Data.imext)
 
         if strcmpi(Data.imext,'tif')
-            IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'tif'));
+            IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'tif'));
         elseif strcmpi(Data.imext,'mat')
-            IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,i,'mat'));
+            IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'mat'));
         else
             error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
         end
@@ -174,12 +284,12 @@ if Data.Size.run
         %load in the identified particles
         sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
 
-        ID_info = load(fullfile(Data.ID.save_dir,sprintf(sname,Data.ID.s_name,i,'.mat')));
+        ID_info = load(fullfile(Data.ID.save_dir,sprintf(sname,Data.ID.s_name,I1(i),'.mat')));
 
         %size the particles
         sizeprops       = Data.Size;
         sizeprops.Data  = Data;
-        sizeprops.s_num =i;
+        sizeprops.s_num =I1(i);
         
         [SIZE1.XYDiameter,SIZE1.mapsizeinfo,SIZE1.locxy]=particle_size_MAIN_V1(im1,ID_info.p_matrix,...
             ID_info.num_p,sizeprops);
@@ -189,125 +299,130 @@ if Data.Size.run
         fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
 
     end
+    end
 
-    save(sprintf('%s%s%s',sizeprops.save_dir,'particle_SIZE_parameters.mat'));
+    save(sprintf('%s%s%s',Data.Size.save_dir,'particle_SIZE_parameters.mat'));
 end
 
+
+if str2double(PTV_Data.par)
+    matlabpool close
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Particle Tracking Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if Data.Track.run
-im_list = Data.imfstart:Data.imcstep:Data.imfend;
-completed_tracks = cell(length(im_list),1);
-
-% Write the Experimental Summary
-write_expsummary(PTV_Data);
-        
-for k=1:length(im_list)-1
-    t0 = clock;
-
-    fprintf('Tracking Frame %s %6.0f to %6.0f\t',Data.imbase,im_list(k),im_list(k)+Data.imcstep)
-
-    sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
-    SIZE1=load(fullfile(Data.Size.save_dir,sprintf(sname,Data.Size.s_name,im_list(k),'.mat')));
-    SIZE2=load(fullfile(Data.Size.save_dir,sprintf(sname,Data.Size.s_name,im_list(k)+Data.imcstep,'.mat')));
-
-    %remove all NaNs from the particle arrays (indicated a failed
-    %sizing method)
-    check1=isnan(SIZE1.XYDiameter(:,3))==0;
-    check2=isnan(SIZE2.XYDiameter(:,3))==0;
-    SIZE1.XYDiameter=SIZE1.XYDiameter(check1,:);
-    SIZE2.XYDiameter=SIZE2.XYDiameter(check2,:);
+    im_list = Data.imfstart:Data.imcstep:Data.imfend;
+    completed_tracks = cell(length(im_list),1);
     
-    estlocprops      = Data.Track;
-    estlocprops.Data = Data;
-
-    %compute location prediction for the particles in im1
-    if nnz( strcmpi(Data.Track.method,{'piv' 'piv-ptv'}) )
-        estlocprops.PIVprops.frame1 = im_list(k);
-        if (k==1 && strcmpi(Data.Track.method,{'piv-ptv'}))
-            org_weight = Data.Track.PIV_PTV_weight;
-            estlocprops.PIV_PTV_weight=1;
-        elseif (k>1 && strcmpi(Data.Track.method,{'piv-ptv'}))
-            estlocprops.PIV_PTV_weight=org_weight;
+    % Write the Experimental Summary
+    write_expsummary(PTV_Data);
+    
+    for k=1:length(im_list)-1
+        t0 = clock;
+        
+        fprintf('Tracking Frame %s %6.0f to %6.0f\t',Data.imbase,im_list(k),im_list(k)+Data.imcstep)
+        
+        sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
+        SIZE1=load(fullfile(Data.Size.save_dir,sprintf(sname,Data.Size.s_name,im_list(k),'.mat')));
+        SIZE2=load(fullfile(Data.Size.save_dir,sprintf(sname,Data.Size.s_name,im_list(k)+Data.imcstep,'.mat')));
+        
+        %remove all NaNs from the particle arrays (indicated a failed
+        %sizing method)
+        check1=isnan(SIZE1.XYDiameter(:,3))==0;
+        check2=isnan(SIZE2.XYDiameter(:,3))==0;
+        SIZE1.XYDiameter=SIZE1.XYDiameter(check1,:);
+        SIZE2.XYDiameter=SIZE2.XYDiameter(check2,:);
+        
+        estlocprops      = Data.Track;
+        estlocprops.Data = Data;
+        
+        %compute location prediction for the particles in im1
+        if nnz( strcmpi(Data.Track.method,{'piv' 'piv-ptv'}) )
+            estlocprops.PIVprops.frame1 = im_list(k);
+            if (k==1 && strcmpi(Data.Track.method,{'piv-ptv'}))
+                org_weight = Data.Track.PIV_PTV_weight;
+                estlocprops.PIV_PTV_weight=1;
+            elseif (k>1 && strcmpi(Data.Track.method,{'piv-ptv'}))
+                estlocprops.PIV_PTV_weight=org_weight;
+            end
+            
+        elseif nnz( k==1 && strcmpi(estlocprops.method,{'ptv'})  )
+            %THIS SECTION OF CODE PROVIDES INTIALIZATION FOR THE PTV LOCATION
+            %ESTIMATION - USER SHOULD SUPPLY THIS IF POSSIBLE TO INCREASE
+            %TRACKING RELIABILITY
         end
-
-    elseif nnz( k==1 && strcmpi(estlocprops.method,{'ptv'})  )
-        %THIS SECTION OF CODE PROVIDES INTIALIZATION FOR THE PTV LOCATION
-        %ESTIMATION - USER SHOULD SUPPLY THIS IF POSSIBLE TO INCREASE
-        %TRACKING RELIABILITY
+        
+        estlocprops.s_num=im_list(k);
+        %     [X2_est,Y2_est,Z2_est]=particle_estloc_MAIN_V1(completed_tracks{k},SIZE1,estlocprops);
+        [X2_est,Y2_est,Z2_est]=particle_estloc_MAIN_V2(completed_tracks{k},SIZE1,estlocprops);
+        
+        %track images (run for all four pair-matching methods)
+        Data.Track.s_num = im_list(k);
+        Data.Track.Data  = Data;
+        [new_tracks]=particle_track_MAIN_V1(X2_est,Y2_est,Z2_est,SIZE1,SIZE2,Data.Track,estlocprops.valprops);
+        
+        
+%         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         %% Plot the tracking results as a connected scatter plot of particle
+%         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%         if k == 1%length(im_list)-1
+%             % %     figure(1)
+%             % %     quiver(SIZE1.XYDiameter(:,1),SIZE1.XYDiameter(:,2),...
+%             % %         X2_est-SIZE1.XYDiameter(:,1),Y2_est-SIZE1.XYDiameter(:,2),0,'Color','BLACK');
+%             % %     axis image
+%             %
+%             %positions in IM1 and IM2
+%             figure(2);
+%             scatter(new_tracks(:,1),new_tracks(:,3),'ob','sizedata',10);
+%             hold on
+%             scatter(new_tracks(:,2),new_tracks(:,4),'+r','sizedata',10);  hold on
+%             scatter(X2_est,Y2_est,'.BLACK');  hold on
+%             axis tight
+%             for j=1:size(new_tracks,1)
+%                 line([new_tracks(j,1);new_tracks(j,2)],[new_tracks(j,3);new_tracks(j,4)]);
+%                 hold on
+%             end
+%             axis image
+%             legend({'image1','image2'},'Location','SouthOutside','Orientation','horizontal')
+%             title(sprintf('Track frame %0.0f to %0.0f',im_list(k),im_list(k+1)))
+%             saveas(gcf,sprintf('%s%sTrack_Image_Lag_Tracks_%06d.tif',save_dir,slsh,k))
+%             
+%             close(figure(3))
+%             figure(3);
+%             X=new_tracks(:,1); Y=new_tracks(:,3);
+%             U=new_tracks(:,2)-new_tracks(:,1); V=new_tracks(:,4)-new_tracks(:,3);
+%             quiver(X,Y,U,V,1.5);
+%             if k > im_list(1)
+%                 temp = cell2mat(completed_tracks{k});
+%                 X=temp(:,1); Y=temp(:,3);
+%                 U=temp(:,2)-temp(:,1); V=temp(:,4)-temp(:,3);
+%                 hold on
+%                 quiver(X,Y,U,V,1.5,'RED');
+%             end
+%             axis image
+%             title(sprintf('Track frame %0.0f to %0.0f',im_list(k),im_list(k+1)))
+%             saveas(gcf,sprintf('%s%sTrack_Image_Vec_Refine_%06d.tif',save_dir,slsh,k))
+%             drawnow
+%             keyboard
+%         end
+%         %%
+%         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        %restructure and reassign new_tracks to completed_tracks
+        new_tracks=num2cell(new_tracks,2);
+        completed_tracks{k+1}=new_tracks;
+        
+        fprintf('...done!\t');
+        eltime=etime(clock,t0);
+        fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+        
     end
-
-    estlocprops.s_num=im_list(k);
-%     [X2_est,Y2_est,Z2_est]=particle_estloc_MAIN_V1(completed_tracks{k},SIZE1,estlocprops);
-    [X2_est,Y2_est,Z2_est]=particle_estloc_MAIN_V2(completed_tracks{k},SIZE1,estlocprops);
-
-    %track images (run for all four pair-matching methods)
-    Data.Track.s_num = im_list(k);
-    Data.Track.Data  = Data;
-    [new_tracks]=particle_track_MAIN_V1(X2_est,Y2_est,Z2_est,SIZE1,SIZE2,Data.Track,estlocprops.valprops);
-
-
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     %% Plot the tracking results as a connected scatter plot of particle
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     if k == 1%length(im_list)-1
-%         % %     figure(1)
-%         % %     quiver(SIZE1.XYDiameter(:,1),SIZE1.XYDiameter(:,2),...
-%         % %         X2_est-SIZE1.XYDiameter(:,1),Y2_est-SIZE1.XYDiameter(:,2),0,'Color','BLACK');
-%         % %     axis image
-%         %
-%         %positions in IM1 and IM2
-%         figure(2);
-%         scatter(new_tracks(:,1),new_tracks(:,3),'ob','sizedata',10);
-%         hold on
-%         scatter(new_tracks(:,2),new_tracks(:,4),'+r','sizedata',10);  hold on
-%         scatter(X2_est,Y2_est,'.BLACK');  hold on
-%         axis tight
-%         for j=1:size(new_tracks,1)
-%             line([new_tracks(j,1);new_tracks(j,2)],[new_tracks(j,3);new_tracks(j,4)]);
-%             hold on
-%         end
-%         axis image
-%         legend({'image1','image2'},'Location','SouthOutside','Orientation','horizontal')
-%         title(sprintf('Track frame %0.0f to %0.0f',im_list(k),im_list(k+1)))
-%         saveas(gcf,sprintf('%s%sTrack_Image_Lag_Tracks_%06d.tif',save_dir,slsh,k))
-% 
-%         close(figure(3))
-%         figure(3);
-%         X=new_tracks(:,1); Y=new_tracks(:,3);
-%         U=new_tracks(:,2)-new_tracks(:,1); V=new_tracks(:,4)-new_tracks(:,3);
-%         quiver(X,Y,U,V,1.5);
-%         if k > im_list(1)
-%             temp = cell2mat(completed_tracks{k});
-%             X=temp(:,1); Y=temp(:,3);
-%             U=temp(:,2)-temp(:,1); V=temp(:,4)-temp(:,3);
-%             hold on
-%             quiver(X,Y,U,V,1.5,'RED');
-%         end
-%         axis image
-%         title(sprintf('Track frame %0.0f to %0.0f',im_list(k),im_list(k+1)))
-%         saveas(gcf,sprintf('%s%sTrack_Image_Vec_Refine_%06d.tif',save_dir,slsh,k))
-%         drawnow
-%         keyboard
-%     end
-%     %%
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-    %restructure and reassign new_tracks to completed_tracks
-    new_tracks=num2cell(new_tracks,2);
-    completed_tracks{k+1}=new_tracks;
-
-    fprintf('...done!\t');
-    eltime=etime(clock,t0);
-    fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-
+    
+    %save processing parameters
+    save(sprintf('%s%s%s',Data.Track.save_dir,'particle_TRACK_Val_PIV_parameters.mat'));
 end
-end
-%save processing parameters
-
-
-save(sprintf('%s%s%s',Data.Track.save_dir,'particle_TRACK_Val_PIV_parameters.mat'));
+fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
 end
 
 
