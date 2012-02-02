@@ -143,7 +143,9 @@ if Data.ID.run
     PTV_Data.ID.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
     
     I1 = Data.imfstart:Data.imfstep:Data.imfend;
-    
+    particleIDprops       = Data.ID;
+    particleIDprops.Data  = Data;
+
     if str2double(PTV_Data.par) && matlabpool('size')>1
         spmd
             verstr=version('-release');
@@ -165,12 +167,9 @@ if Data.ID.run
                     error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
                 end
                 
-                particleIDprops       = Data.ID;
-                particleIDprops.Data  = Data;
+                s_num = I1dist(i);
                 
-                particleIDprops.s_num = I1dist(i);
-                
-                [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops);
+                [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops,s_num);
                 %          figure; imagesc(p_matrix,[0 num_p]);  set(gca,'DataAspectRatio',[1 1 1])
                 
                 eltime=etime(clock,t0);
@@ -193,12 +192,9 @@ if Data.ID.run
                 error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
             end
             
-            particleIDprops       = Data.ID;
-            particleIDprops.Data  = Data;
+            s_num = I1(i);
             
-            particleIDprops.s_num = I1(i);
-            
-            [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops);
+            [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops,s_num);
             %          figure; imagesc(p_matrix,[0 num_p]);  set(gca,'DataAspectRatio',[1 1 1])
             
             fprintf('...done!\t');
@@ -477,7 +473,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% ID Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(im,particleIDprops)
+function [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(im,particleIDprops,s_num)
 %
 % [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(im,particleIDprops);
 %
@@ -543,7 +539,7 @@ if ~isempty(particleIDprops.save_dir)
         mkdir(particleIDprops.save_dir)
     end
     sname = sprintf('%%0%0.0fd',particleIDprops.Data.imzeros);
-    save(fullfile(particleIDprops.save_dir,[particleIDprops.s_name sprintf(sname,particleIDprops.s_num)]),...
+    save(fullfile(particleIDprops.save_dir,[particleIDprops.s_name sprintf(sname,s_num)]),...
         'particleIDprops','p_matrix','peaks','num_p');
 end
 end
