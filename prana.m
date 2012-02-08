@@ -4738,7 +4738,7 @@ end
 % --- Tracking Validation Coefficient ---
 function trackingvalcoefficient_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.Track.valprops.C_cutoff=get(hObject,'String');
+    handles.data.Track.valprops.valcoef=get(hObject,'String');
     update_PTV(handles);
     guidata(hObject,handles)
 end
@@ -4750,7 +4750,7 @@ end
 % --- Tracking Validation Radius ---
 function trackingvalradius_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.Track.valprops.s_radius=get(hObject,'String');
+    handles.data.Track.valprops.valrad=get(hObject,'String');
     update_PTV(handles);
     guidata(hObject,handles)
 end
@@ -4993,6 +4993,7 @@ if vn ~= -1 % If a valid name was input...
         oldJobName = JlistStruct{selectedJob}; % Determine the old name of the job
         JlistStruct{selectedJob} = newJobName; % Change the job name in the GUI list box (but not in the data structure)
         Jlist = char(JlistStruct); % Convert job list structure to characters
+        handles.(oldJobName) = handles.data; %pulls in all the changes that have been made to this job in the GUI
         [handles.(newJobName)] = handles.(oldJobName); % Copy the old job data to the new job (this line uses dynamic fields)
         handles = rmfield(handles, oldJobName); % Remove the old job from the data structure
         eval(['handles.' newJobName '.batchname = ''' newJobName ''';'])

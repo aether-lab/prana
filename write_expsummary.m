@@ -186,16 +186,16 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
         expsummary = [expsummary sprintf(['ID Output Basename:                           ',Data.ID.savebase,'\n'])];
         expsummary = [expsummary sprintf(['ID Ouput Location:                            ',Data.ID.save_dir,'\n'])];
     end
-    if str2double(Data.ID.runid)
+    if str2double(Data.Size.runsize)
         expsummary = [expsummary sprintf('\n---------------------------Sizing----------------------------\n')];
         sizing_meth = {'Intensity_Weighted Centroid','Three Point Gaussian','Four Point Gaussian',...
             'Continuous Four Point Gaussian','Least Sqaures Gaussian','Continuous Least Squares Gaussian'};
         expsummary = [expsummary sprintf(['Sizing Method:                                ',sizing_meth{str2double(Data.Size.method)},'\n'])];
         expsummary = [expsummary sprintf(['Standard Deviation:                           ',Data.Size.std,'\n'])];
         expsummary = [expsummary sprintf(['Sizing Output Basename:                       ',Data.Size.savebase,'\n'])];
-        expsummary = [expsummary sprintf(['Sizing Output Location:                        ',Data.Size.save_dir,'\n'])];
+        expsummary = [expsummary sprintf(['Sizing Output Location:                       ',Data.Size.save_dir,'\n'])];
     end
-    if str2double(Data.ID.runid)
+    if str2double(Data.Track.runtrack)
         expsummary = [expsummary sprintf('\n--------------------------Tracking---------------------------\n')];
         PIV_PTV = {'PTV','PIV','PIV-PTV'};
         s_d = {'Static','Dynamic'};
