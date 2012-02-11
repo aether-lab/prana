@@ -29,7 +29,7 @@ Data.ID.save_dir=PTV_Data.ID.save_dir;
 Data.Size.run=str2double(PTV_Data.Size.runsize);
 Data.Size.thresh=str2double(PTV_Data.ID.imthresh);
 Data.Size.method=str2double(PTV_Data.Size.method);
-Data.Size.p_area=0;%str2double(Data.Size.p_area);
+Data.Size.p_area=str2double(Data.Size.p_area);
 Data.Size.sigma=str2double(PTV_Data.Size.std);
 Data.Size.errors=0;%str2double(Data.Size.errors);
 Data.Size.s_name=PTV_Data.Size.savebase;
@@ -48,7 +48,9 @@ eval(['Data.PIV.Data.outbase = PTV_Data.PIV' PTV_Data.passes '.outbase;'])
 % --- Tracking ---
 Data.Track.run=str2double(PTV_Data.Track.runtrack);
 PTVmethod = {'ptv','piv','piv-ptv'};
+PTVpredict = {'static','dynamic'};
 Data.Track.method = PTVmethod{str2double(PTV_Data.Track.method)};
+Data.Track.predict_mode = PTVpredict{str2double(PTV_Data.Track.prediction)};
 Data.Track.PIV_PTV_weight=str2double(PTV_Data.Track.PIVweight);
 Data.Track.plotfig=0;%str2double(Data.Track.plotfig);
 Data.Track.s_radius=str2double(PTV_Data.Track.radius);
@@ -308,7 +310,7 @@ end
 %% Particle Tracking Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if Data.Track.run
-    im_list = Data.imfstart:Data.imcstep:Data.imfend;
+    im_list = Data.imfstart:Data.imfstep:Data.imfend;
     completed_tracks = cell(length(im_list),1);
     
     % Write the Experimental Summary
@@ -865,13 +867,13 @@ particleprops=zeros(num_p,6);
 c = 1;
 if sizeprops.method<7
     for i=1:num_p
-            [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
-                centroidfit(mapint{i},locxy(i,:));
-            particleprops(c,1)=particleprops(c,1) - 1;
-            particleprops(c,2)=particleprops(c,2) - 1;
-            particleprops(c,5)=i;
-            particleprops(c,6)=1;
-            c=c+1;      
+        [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
+            centroidfit(mapint{i},locxy(i,:));
+        particleprops(c,1)=particleprops(c,1) - 1;
+        particleprops(c,2)=particleprops(c,2) - 1;
+        particleprops(c,5)=i;
+        particleprops(c,6)=1;
+        c=c+1;
     end
 end
 
@@ -1006,23 +1008,23 @@ num_p=single(num_p);  p_area=single(p_area);
 
 %check each particle to assure that its area is >= 'p_area'; remove if this
 %condition is violated and reset the particle index number
-if p_area < 0
-    fprintf('WARNING!  Minimum particle identification area is < 0\n');
-elseif p_area > 0
-    STATS=regionprops(p_matrix,'Area');
-    idx=find([STATS.Area] >= p_area);
-    dummy=zeros(size(p_matrix));
-    for i=1:length(idx)
-        dummy=dummy+(p_matrix==idx(i)).*i;
-        imagesc(dummy,[0 44]);  set(gca,'DataAspectRatio',[1 1 1]);
-        pause(0.05);
-    end
-    num_p=length(idx);  p_matrix=dummy;
-    clear dummy idx STATS
-end
+% if p_area < 0
+%     fprintf('\nWARNING!  Minimum particle identification area is < 0\n');
+% elseif p_area > 0
+%     STATS=regionprops(p_matrix,'Area');
+%     idx=find([STATS.Area] >= p_area);
+%     dummy=zeros(size(p_matrix));
+%     for i=1:length(idx)
+%         dummy=dummy+(p_matrix==idx(i)).*i;
+%         %imagesc(dummy,[0 44]);  set(gca,'DataAspectRatio',[1 1 1]);
+%         %pause(0.05);
+%     end
+%     num_p=length(idx);  p_matrix=dummy;
+%     clear dummy idx STATS
+% end
 
 %determine the bounding box and location for each identified particle
-STATS=regionprops(p_matrix,im,'BoundingBox','PixelIdxList','PixelList');
+STATS=regionprops(p_matrix,im,'BoundingBox','PixelIdxList','PixelList','Area');
 
 %populate locxy (upper-left pixel of the bounding box)
 locxy=zeros(length(STATS),4);
@@ -1030,19 +1032,27 @@ for i=1:length(STATS);  locxy(i,:)=STATS(i,1).BoundingBox(1:4);  end
 locxy=ceil(locxy);
 
 %populate mapint (particle confined by the bounding box)
-mapint=cell(1,length(STATS));
+% mapint=cell(1,length(STATS)); 
+mapint=cell(1,1); keep=zeros(1,1); c=1;
 for i=1:length(STATS)
-    mapint{1,i}=zeros(locxy(i,4),locxy(i,3));
-    for j=1:length(STATS(i,1).PixelIdxList)
-        pix_loc_row=STATS(i,1).PixelList(j,2)-locxy(i,2)+1;
-        pix_loc_col=STATS(i,1).PixelList(j,1)-locxy(i,1)+1;
-        mapint{1,i}(pix_loc_row,pix_loc_col)=im(STATS(i,1).PixelIdxList(j,1));
+    %check each particle to assure that its area is >= 'p_area'; remove if this
+    %condition is violated and reset the particle index number; Also remove
+    %particles that are the size of only 1 pixel.
+    if length(STATS(i,1).PixelIdxList)>1 && STATS(i,1).Area >=p_area
+        mapint{1,c}=zeros(locxy(i,4),locxy(i,3));
+        for j=1:length(STATS(i,1).PixelIdxList)
+            pix_loc_row=STATS(i,1).PixelList(j,2)-locxy(i,2)+1;
+            pix_loc_col=STATS(i,1).PixelList(j,1)-locxy(i,1)+1;
+            mapint{1,c}(pix_loc_row,pix_loc_col)=im(STATS(i,1).PixelIdxList(j,1));
+        end
+        keep(c) = i;
+        c=c+1;
     end
 end
 
 %populate mapsize (size of each array in mapint) and also trim locxy
-mapsize=[locxy(:,4),locxy(:,3)];  locxy=locxy(:,1:2);
-
+mapsize=[locxy(keep,4),locxy(keep,3)];  locxy=locxy(keep,1:2);
+num_p = length(keep);
 %code for plotting the results of this function 
 %COMMENT OUT FOR NORMAL OPERATION
 % figure
@@ -1122,14 +1132,22 @@ bw_mapint_i=bwlabel(mapint_i);
 
 %populate the distance array
 try
-%This loop will not run if size(mapint_i_info,1)>1 (ie - more than one
-%particle in mapint_i)
-for k=1:nnz(mapint_i);
-    dist_cent(k,2)=mapint_i_info(1,1).PixelList(k,1)+(locxy_i(1,1)+0.5);%+1.5
-    dist_cent(k,3)=mapint_i_info(1,1).PixelList(k,2)+(locxy_i(1,2)+0.5);%+1.5
-    dist_cent(k,1)=(dist_cent(k,2)-x_centroid)^2+(dist_cent(k,3)-y_centroid)^2;
-    dist_cent(k,4)=mapint_i_info(1,1).PixelIdxList(k);
-end
+    % Check to see if mapint_i is all zeros
+    if nnz(mapint_i) == 0
+        diameter=NaN;
+        I0=NaN;
+        %keyboard
+        return
+    else
+        %This loop will not run if size(mapint_i_info,1)>1 (ie - more than one
+        %particle in mapint_i)
+        for k=1:nnz(mapint_i);
+            dist_cent(k,2)=mapint_i_info(1,1).PixelList(k,1)+(locxy_i(1,1)+0.5);%+1.5
+            dist_cent(k,3)=mapint_i_info(1,1).PixelList(k,2)+(locxy_i(1,2)+0.5);%+1.5
+            dist_cent(k,1)=(dist_cent(k,2)-x_centroid)^2+(dist_cent(k,3)-y_centroid)^2;
+            dist_cent(k,4)=mapint_i_info(1,1).PixelIdxList(k);
+        end
+    end
 catch
     %Return NaN's for the diameter and intensity and return to 'detectandsize'
     %    x_centroid=locxy_i(1);
@@ -1943,8 +1961,7 @@ function [x_c,y_c,D,P,E,Meth] = Leastsqrfit(I_in,method_in,sigma_in)
 
 %Options for the lsqnonlin solver
 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',5e-6,'TolFun',5e-6,...
-    'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
-    'LevenbergMarquardt','off');%,'LargeScale','off');
+    'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1);%,'LevenbergMarquardt','off');%,'LargeScale','off');
 
 % Find the center Max and all of the saturated points
 [locxy_in(:,1) locxy_in(:,2)] = find(I_in == max(I_in(:)));
@@ -1964,10 +1981,10 @@ if nnz(I_in) - numel(find(I_in == max(I_in(:)))) + 1 < 5
 end
 
 %Removes negitive values and puts in zeros
-I2 = I_in;
-I2(I_in<0) = 0;
+Ils = I_in;
+Ils(I_in<0) = 0;
 
-[x_c,y_c,D,P,E,Meth] = Leastsqrmethods(I2,method_in,sigma_in,options,locxy_in,max_locxy_in);
+[x_c,y_c,D,P,E,Meth] = Leastsqrmethods(Ils,method_in,sigma_in,options,locxy_in,max_locxy_in);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Sub Functions
@@ -2400,9 +2417,9 @@ I2(I_in<0) = 0;
             %Adapted from M. Brady's 'leastsquaresgaussfit' and 'mapintensity'
             %B.Drew - 7.18.2008
 
-            I0=x(1);
+            Io=x(1);
             betas=x(2);
-            x_centroid=x(3);
+            x_cent=x(3);
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %Just like in the continuous four-point method, lsqnonlin tries negative
@@ -2411,7 +2428,7 @@ I2(I_in<0) = 0;
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             %num1=pi/4;
-            num1=0.5*I0*sqrt(pi);            
+            num1=0.5*Io*sqrt(pi);            
             num2=sqrt(abs(betas));
             S = size(mapint_i);
 
@@ -2422,7 +2439,7 @@ I2(I_in<0) = 0;
                 for ii = 1:length(mapint_i)
                     xp(ii) = locxy_i(ii);
                     % map an intensity profile of a gaussian function:
-                    gauss_int(ii)=I0*exp(-abs(betas)*((xp(ii))-x_centroid)^2);
+                    gauss_int(ii)=Io*exp(-abs(betas)*((xp(ii))-x_cent)^2);
                 end
 
             elseif method==2
@@ -2433,8 +2450,8 @@ I2(I_in<0) = 0;
                 erfx2 = zeros(S);
                 for ii = 1:length(mapint_i)
                     xp1(ii) = locxy_i(ii)-0.5;
-                    erfx1(ii) = erf(num2*(xp1(ii)-x_centroid));
-                    erfx2(ii) = erf(num2*(xp1(ii)+1-x_centroid));
+                    erfx1(ii) = erf(num2*(xp1(ii)-x_cent));
+                    erfx2(ii) = erf(num2*(xp1(ii)+1-x_cent));
                     % map an intensity profile of a gaussian function:
                     gauss_int(ii)=(num1/num2)*(erfx2(ii)-erfx1(ii));
                     mapint_mod(ii)=mapint_i(ii);
@@ -2458,10 +2475,10 @@ I2(I_in<0) = 0;
             %Adapted from M. Brady's 'leastsquaresgaussfit' and 'mapintensity'
             %B.Drew - 7.18.2008
 
-            I0=x(1);
+            Io=x(1);
             betas=x(2);
-            x_centroid=x(3);
-            y_centroid=x(4);
+            x_cent=x(3);
+            y_cent=x(4);
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %Just like in the continuous four-point method, lsqnonlin tries negative
@@ -2469,7 +2486,7 @@ I2(I_in<0) = 0;
             %used in front of all the x(2)'s.
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            num1=(I0*pi)/4;
+            num1=(Io*pi)/4;
             num2=sqrt(abs(betas));
 
             if method==3
@@ -2484,8 +2501,8 @@ I2(I_in<0) = 0;
 
                 % map an intensity profile of a gaussian function:
                 for rr = 1:length(xp)
-                    gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
-                        ((yp(rr))-y_centroid)^2));
+                    gauss_int(rr)=Io*exp(-abs(betas)*(((xp(rr))-x_cent)^2 + ...
+                        ((yp(rr))-y_cent)^2));
                     mapint_mod(rr)=mapint_i(rr);
                 end
 
@@ -2498,10 +2515,10 @@ I2(I_in<0) = 0;
                 for ii = 1:length(mapint_i)
                     xp(ii) = locxy_i(ii,1)-0.5;
                     yp(ii) = locxy_i(ii,2)-0.5;
-                    erfx1 = erf(num2*(xp(ii)-x_centroid));
-                    erfy1 = erf(num2*(yp(ii)-y_centroid));
-                    erfx2 = erf(num2*(xp(ii)+1-x_centroid));
-                    erfy2 = erf(num2*(yp(ii)+1-y_centroid));
+                    erfx1 = erf(num2*(xp(ii)-x_cent));
+                    erfy1 = erf(num2*(yp(ii)-y_cent));
+                    erfx2 = erf(num2*(xp(ii)+1-x_cent));
+                    erfy2 = erf(num2*(yp(ii)+1-y_cent));
                     % map an intensity profile of a gaussian function:
                     gauss_int(ii)=(num1/abs(betas))*(erfx1*(erfy1-erfy2)+erfx2*(-erfy1+erfy2));
                     mapint_mod(ii)=mapint_i(ii);
@@ -3206,7 +3223,7 @@ for i=1:valprops.numpass
         case {'mean','median'}
             %call validation mean/median subfunction
             [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops_i);
-
+keyboard
             %refresh the location estimation with the validation results
             X2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,6);
             Y2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,7);

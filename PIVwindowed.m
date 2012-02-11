@@ -1,4 +1,4 @@
-function [X,Y,U,V,C,Dia,Corrplanes]=PIVwindowed(im1,im2,corr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,fracval,saveplane,X,Y,Uin,Vin)
+function [X,Y,U,V,C,Dia,Corrplanes]=PIVwindowed(im1,im2,tcorr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,fracval,saveplane,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
 
 %convert input parameters
@@ -9,10 +9,6 @@ L=size(im1);
 %convert to gridpoint list
 X=X(:);
 Y=Y(:);
-
-%correlation and window mask types
-ctype    = {'SCC','RPC','GCC','FWC','SPC'};
-tcorr = char(ctype(corr+1)); %and because corr = A.Corr-1, we have to fix it again here - why bother?
 
 %preallocate velocity fields and grid format
 Nx = window(1);
@@ -69,6 +65,14 @@ elseif strcmpi(tcorr,'GCC')
     spectral = ones(size(spectral));
 else
     frac = 1;
+end
+
+% For dynamic rpc flip this switch which allows for dynamic calcuation of
+% the spectral function using the diameter of the autocorrelation.
+if strcmpi(tcorr,'DRPC')
+    dyn_rpc = 1;
+else
+    dyn_rpc = 0;
 end
 
 if saveplane
@@ -140,7 +144,7 @@ switch upper(tcorr)
                 G = mean(Gens,3);
                 
                 %subpixel estimation
-                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Sx,Sy,cnorm,Peaklocator,Peakswitch);
                 if Peakswitch
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
@@ -204,7 +208,7 @@ switch upper(tcorr)
                 G = abs(G);
                 
                 %subpixel estimation
-                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Sx,Sy,cnorm,Peaklocator,Peakswitch);
                 if Peakswitch
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
@@ -216,10 +220,10 @@ switch upper(tcorr)
         end
 
     %Robust Phase Correlation
-    case {'RPC','GCC','FWC'}
+    case {'RPC','DRPC','GCC','FWC'}
         
         if size(im1,3) == 3
-            Gens=zeros(Ny,Nx,3);
+            Gens=zeros(Sy,Sx,3);
             for n=1:length(X)
                 
                 %apply the second order discrete window offset
@@ -277,6 +281,14 @@ switch upper(tcorr)
                         R = P21./W;
                     end
                     
+                    % If DRPC, the calculate the spectral function
+                    % dynamically based on the autocorrelation
+                    if dyn_rpc
+                        CPS = ifftn(Wden,'symmetric');
+                        [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
+                        spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));
+                    end
+                    
                     %Robust Phase Correlation with spectral energy filter
                     G = ifftn(R.*spectral,'symmetric');
                     G = G(fftindy,fftindx);
@@ -285,7 +297,7 @@ switch upper(tcorr)
                 G=mean(Gens,3);
                 
                 %subpixel estimation
-                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Sx,Sy,cnorm,Peaklocator,Peakswitch);
                 if Peakswitch
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
@@ -352,13 +364,21 @@ switch upper(tcorr)
                     R = P21./W;
                 end
                 
+                % If DRPC, the calculate the spectral function
+                % dynamically based on the autocorrelation
+                if dyn_rpc
+                    CPS = ifftn(Wden,'symmetric');try
+                    [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
+                    spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));catch; keyboard; end
+                end
+
                 %Robust Phase Correlation with spectral energy filter
                 G = ifftn(R.*spectral,'symmetric');
                 G = G(fftindy,fftindx);
                 G = abs(G);
                 
                 %subpixel estimation
-                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Nx,Ny,cnorm,Peaklocator,Peakswitch);
+                [U(n,:),V(n,:),Ctemp,Dtemp]=subpixel(G,Sx,Sy,cnorm,Peaklocator,Peakswitch);
                 if Peakswitch
                     C(n,:)=Ctemp;
                     Dia(n,:)=Dtemp;
