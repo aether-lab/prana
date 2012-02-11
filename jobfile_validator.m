@@ -11,6 +11,7 @@ if ~isfield(Data,'version')
         handles.data.version='1.9';
     end
 end
+
 %does the job file have the zero mean option
 if ~isfield(Data.PIV0,'zeromean')
     for pass=0:str2double(Data.passes)
@@ -58,6 +59,28 @@ if ~isfield(Data,'outputpassbase')
     eval(['Data.outputpassbase = Data.PIV' Data.passes '.outbase;']);
 end
 
+% Check to see if the job file is using the old version of correlation
+% names with numbers.  The code now uses string names which make it easier
+% to add features in the future.
+if length(Data.PIV0.corr) == 1
+    for pass=0:str2double(Data.passes)
+        eval(['ctype = str2double(Data.PIV',num2str(pass),'.corr);']);
+        if ctype == 1;
+            eval(['Data.PIV',num2str(pass),'.corr = ''SCC'';']);
+        elseif ctype == 2;
+            eval(['Data.PIV',num2str(pass),'.corr = ''RPC'';']);
+        elseif ctype == 3;
+            eval(['Data.PIV',num2str(pass),'.corr = ''GCC'';']);
+        elseif ctype == 4;
+            eval(['Data.PIV',num2str(pass),'.corr = ''FWC'';']);
+        elseif ctype == 5;
+            eval(['Data.PIV',num2str(pass),'.corr = ''SPC'';']);
+        end
+    end
+end
+
+
+% --- Tacking Info ---
 %does the job file have tracking infromation.
 if ~isfield(Data,'ID')
     if ispc
@@ -108,5 +131,9 @@ if ~isfield(Data.ID,'runid')
     Data.Track.valprops.valrad = '20,20,0';
     Data.Track.valprops.MAD_U = '1,0.75,0';
     Data.Track.valprops.MAD_V = '1,0.75,0';
+end
+
+if ~isfield(Data.Size,'p_area')
+    Data.Size.p_area = '0';
 end
 end

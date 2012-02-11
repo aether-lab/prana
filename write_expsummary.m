@@ -89,7 +89,7 @@ if str2double(Data.runPIV)
     end
     
     for i=1:str2double(Data.passes)
-        corr={'SCC','RPC','GCC','FWC','SPC'};
+%         corr={'SCC','RPC','GCC','FWC','SPC'};
         peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
         y_n={'No','Yes'};
         A=eval(['Data.PIV' num2str(i)]);
@@ -110,10 +110,12 @@ if str2double(Data.runPIV)
         else
             expsummary = [expsummary sprintf(['Bulk Window Offset (pix):                     ','0,0','\n'])];
         end
-        expsummary = [expsummary sprintf(['Correlation:                                  ',corr{str2double(A.corr)},'\n'])];
-        if strcmpi(corr{str2double(A.corr)},'RPC')
+        expsummary = [expsummary sprintf(['Correlation:                                  ',A.corr,'\n'])];
+        if strcmpi(A.corr,'RPC')
             expsummary = [expsummary sprintf(['   RPC Diameter:                              ',A.RPCd,'\n'])];
-        elseif strcmpi(corr{str2double(A.corr)},'FWC')
+        elseif strcmpi(A.corr,'DRPC')
+            expsummary = [expsummary sprintf(['   RPC Diameter:                              ','Dynamic','\n'])];
+        elseif strcmpi(A.corr,'FWC')
             expsummary = [expsummary sprintf(['   FWC Weight:                                ',A.frac_filt,'\n'])];
         end
         expsummary = [expsummary sprintf(['Zero-Mean Image Windows:                      ',y_n{str2double(A.zeromean)+1},'\n'])];

@@ -119,7 +119,7 @@ catch
     defaultdata.PIV0.gridtype='1';
     defaultdata.PIV0.gridbuf='8,8';
     defaultdata.PIV0.BWO='0,0';
-    defaultdata.PIV0.corr='2';
+    defaultdata.PIV0.corr='RPC';
     defaultdata.PIV0.RPCd='2.8';
     defaultdata.PIV0.frac_filt='1';
     defaultdata.PIV0.zeromean='0';
@@ -1956,16 +1956,17 @@ end
 % --- Correlation Type Drop-Down Menu ---
 function correlationtype_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.corr = num2str(get(hObject,''Value''));'])
+    ctype = {'SCC','RPC','DRPC','GCC','FWC','SPC'};
+    eval(['handles.data.PIV' handles.data.cpass '.corr = ctype{get(hObject,''Value'')};'])
     guidata(hObject,handles)
     N=handles.data.cpass;
     A=eval(['handles.data.PIV' num2str(N)]);
-    if any(str2double(A.corr)== [1 3]) %2 and 5 are RPC and SPC, both need rpcdiameter
+    if any(strcmpi(A.corr,{'SCC','GCC','DRPC'}))%any(str2double(A.corr)== [1 3]) %2 and 5 are RPC and SPC, both need rpcdiameter
         set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
     else
         set(handles.rpcdiameter,'backgroundcolor',[1 1 1]);
     end
-    if str2double(A.corr) == 4
+    if strcmpi(A.corr,'FWC')
         set(handles.frac_filter_weight,'backgroundcolor',[1 1 1]);
         set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
     else
@@ -2973,6 +2974,19 @@ end
 function handles=set_PIVcontrols(handles)
 N=get(handles.passlist,'Value');
 A=eval(['handles.data.PIV' num2str(N)]);
+if strcmpi(A.corr,'SCC');
+    corr = 1;
+elseif strcmpi(A.corr,'RPC');
+    corr = 2;
+elseif strcmpi(A.corr,'DRPC');
+    corr = 3;
+elseif strcmpi(A.corr,'GCC');
+    corr = 4;
+elseif strcmpi(A.corr,'FWC');
+    corr = 5;
+elseif strcmpi(A.corr,'SPC');
+    corr = 6;
+end
 set(handles.windowres,'string',A.winres);
 set(handles.windowsize,'string',A.winsize);
 set(handles.autowinsizecheckbox,'Value',str2double(A.winauto));
@@ -2980,7 +2994,7 @@ set(handles.gridres,'string',A.gridres);
 set(handles.winoverlap,'string',A.winoverlap);
 set(handles.gridbuffer,'string',A.gridbuf);
 set(handles.bulkwinoffset,'string',A.BWO);
-set(handles.correlationtype,'Value',str2double(A.corr));
+set(handles.correlationtype,'Value',corr);
 set(handles.subpixelinterp,'Value',str2double(A.peaklocator));
 set(handles.zeromeancheckbox,'Value',str2double(A.zeromean));
 set(handles.rpcdiameter,'string',str2double(A.RPCd));
@@ -4504,6 +4518,20 @@ if str2double(handles.Njob)>0
     guidata(hObject,handles)
 end
 function sizingstd_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- This is the area filter for the sizing code ---
+function size_min_area_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Size.p_area = get(hObject,'String');
+    update_PTV(handles);
+    guidata(hObject,handles)
+end
+
+% --- Executes during object creation, after setting all properties.
+function size_min_area_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end

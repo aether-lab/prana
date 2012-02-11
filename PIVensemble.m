@@ -1,4 +1,4 @@
-function [X,Y,CC]=PIVensemble(im1,im2,corr,window,res,zpad,D,Zeromean,fracval,X,Y,Uin,Vin)
+function [X,Y,CC]=PIVensemble(im1,im2,tcorr,window,res,zpad,D,Zeromean,fracval,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
 
 %convert input parameters
@@ -9,10 +9,6 @@ L = size(im1);
 %convert to gridpoint list
 X=X(:);
 Y=Y(:);
-
-%correlation and window mask types
-ctype    = {'SCC','RPC','GCC','FWC','SPC'};
-tcorr = char(ctype(corr+1)); 
 
 %preallocate velocity fields and grid format
 Nx = window(1);
@@ -54,6 +50,14 @@ elseif strcmpi(tcorr,'GCC')
     spectral = ones(size(spectral));
 else
     frac = 1;
+end
+
+% For dynamic rpc flip this switch which allows for dynamic calcuation of
+% the spectral function using the diameter of the autocorrelation.
+if strcmpi(tcorr,'DRPC')
+    dyn_rpc = 1;
+else
+    dyn_rpc = 0;
 end
 
 switch upper(tcorr)
@@ -194,7 +198,7 @@ switch upper(tcorr)
         end
 
     %Robust Phase Correlation
-    case {'RPC','GCC','FWC'}
+    case {'RPC','DRPC','GCC','FWC'}
 
         %initialize correlation tensor
         CC = zeros(Sy,Sx,length(X));
@@ -256,6 +260,14 @@ switch upper(tcorr)
                 R = P21./(W.^frac);%apply factional weighting to the normalization
             else
                 R = P21./W;
+            end
+            
+            % If DRPC, the calculate the spectral function
+            % dynamically based on the autocorrelation
+            if dyn_rpc
+                CPS = ifftn(Wden,'symmetric');
+                [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
+                spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));
             end
 
             %Robust Phase Correlation with spectral energy filter
@@ -323,6 +335,14 @@ switch upper(tcorr)
                 R = P21./(W.^frac);%apply factional weighting to the normalization
             else
                 R = P21./W;
+            end
+            
+            % If DRPC, the calculate the spectral function
+            % dynamically based on the autocorrelation
+            if dyn_rpc
+                CPS = ifftn(Wden,'symmetric');
+                [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
+                spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));
             end
 
             %Robust Phase Correlation with spectral energy filter
@@ -419,5 +439,4 @@ switch upper(tcorr)
         error('Correlation type not supported')
 
 end
-
 end
