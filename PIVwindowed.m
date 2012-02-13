@@ -367,9 +367,9 @@ switch upper(tcorr)
                 % If DRPC, the calculate the spectral function
                 % dynamically based on the autocorrelation
                 if dyn_rpc
-                    CPS = ifftn(Wden,'symmetric');try
+                    CPS = ifftn(Wden,'symmetric');
                     [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
-                    spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));catch; keyboard; end
+                    spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));
                 end
 
                 %Robust Phase Correlation with spectral energy filter

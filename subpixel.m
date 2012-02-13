@@ -17,7 +17,7 @@ if M==0
         M=zeros(1,3);
         D=zeros(1,3);
     else
-        u=0; v=0;
+        u=0; v=0; M=0; D=0; 
     end
 else
     if Peakswitch

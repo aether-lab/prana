@@ -3177,11 +3177,13 @@ end
 if str2double(handles.data.Size.runsize)
     set(handles.runsizingcheckbox,'Value',str2double(handles.data.Size.runsize));
     set(handles.sizingmethod,'Value',str2double(handles.data.Size.method),'backgroundcolor',[1 1 1]);
+    set(handles.sizing_min_area,'Value',str2double(handles.data.Size.min_area),'backgroundcolor',[1 1 1]);
     set(handles.sizingstd,'String',handles.data.Size.std,'backgroundcolor',[1 1 1]);
     set(handles.sizingsavebase,'String',handles.data.Size.savebase,'backgroundcolor',[1 1 1]);
     set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
 else
     set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizing_min_area,'backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingstd,'backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingsavebase,'backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingsaveloc,'backgroundcolor',0.5*[1 1 1]);
@@ -4523,15 +4525,15 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 % --- This is the area filter for the sizing code ---
-function size_min_area_Callback(hObject, eventdata, handles)
+function sizing_min_area_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.Size.p_area = get(hObject,'String');
+    handles.data.Size.min_area = get(hObject,'String');
     update_PTV(handles);
     guidata(hObject,handles)
 end
 
 % --- Executes during object creation, after setting all properties.
-function size_min_area_CreateFcn(hObject, eventdata, handles)
+function sizing_min_area_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
