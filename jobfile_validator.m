@@ -133,7 +133,7 @@ if ~isfield(Data.ID,'runid')
     Data.Track.valprops.MAD_V = '1,0.75,0';
 end
 
-if ~isfield(Data.Size,'p_area')
-    Data.Size.p_area = '0';
+if ~isfield(Data.Size,'min_area')
+    Data.Size.min_area = '0';
 end
 end

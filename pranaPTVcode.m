@@ -14,6 +14,12 @@ Data.imcstep=str2double(PTV_Data.imcstep);
 Data.imfstep=str2double(PTV_Data.imfstep);
 Data.imfstart=str2double(PTV_Data.imfstart);
 Data.imfend=str2double(PTV_Data.imfend);
+Data.channel=str2double(PTV_Data.channel);
+if Data.channel==6
+    fprintf(['Ensemble Color does not currently work with tracking code.\n'...
+        'Resetting the color channel to 1 (grey scale)\n'])
+    Data.channel=1;
+end
 
 % --- ID ---
 IDmethod = {'blob','dynamic','combined'};
@@ -29,7 +35,7 @@ Data.ID.save_dir=PTV_Data.ID.save_dir;
 Data.Size.run=str2double(PTV_Data.Size.runsize);
 Data.Size.thresh=str2double(PTV_Data.ID.imthresh);
 Data.Size.method=str2double(PTV_Data.Size.method);
-Data.Size.p_area=str2double(Data.Size.p_area);
+Data.Size.p_area=str2double(PTV_Data.Size.min_area);
 Data.Size.sigma=str2double(PTV_Data.Size.std);
 Data.Size.errors=0;%str2double(Data.Size.errors);
 Data.Size.s_name=PTV_Data.Size.savebase;
@@ -169,6 +175,35 @@ if Data.ID.run
                     error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
                 end
                 
+                if size(IM, 3) > 2
+                    %Extract only red channel
+                    if Data.channel == 1;
+                        IM = IM(:,:,1);
+                        %Extract only green channel
+                    elseif Data.channel == 2;
+                        IM = IM(:,:,2);
+                        im2 = im2(:,:,2);
+                        %Extract only blue channel
+                    elseif Data.channel == 3;
+                        IM = IM(:,:,3);
+                        %Weighted average of channels (see rgb2gray for
+                        %explanation of weighting factors)
+                    elseif Data.channel == 4;
+                        IM = 0.2989 * IM(:, :, 1) + 0.5870 * IM(:, :, 2) + 0.1140 * IM(:, :, 3);
+                        %Evenly weighted mean of channels
+                    elseif Data.channel == 5;
+                        IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
+                        %ensemble correlation of channels
+%                     elseif channel == 6;
+%                         im1=im1(:,:,1:3);
+%                         im2=im2(:,:,1:3);
+                    end
+                else
+                    %	Take only red channel
+                    IM =IM(:,:,1);
+                    Data.channel = 1;
+                end
+
                 s_num = I1dist(i);
                 
                 [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops,s_num);
@@ -192,6 +227,34 @@ if Data.ID.run
                 IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'mat'));
             else
                 error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
+            end
+            if size(IM, 3) > 2
+                %Extract only red channel
+                if Data.channel == 1;
+                    IM = IM(:,:,1);
+                    %Extract only green channel
+                elseif Data.channel == 2;
+                    IM = IM(:,:,2);
+                    im2 = im2(:,:,2);
+                    %Extract only blue channel
+                elseif Data.channel == 3;
+                    IM = IM(:,:,3);
+                    %Weighted average of channels (see rgb2gray for
+                    %explanation of weighting factors)
+                elseif Data.channel == 4;
+                    IM = 0.2989 * IM(:, :, 1) + 0.5870 * IM(:, :, 2) + 0.1140 * IM(:, :, 3);
+                    %Evenly weighted mean of channels
+                elseif Data.channel == 5;
+                    IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
+                    %ensemble correlation of channels
+%                 elseif channel == 6;
+%                     im1=im1(:,:,1:3);
+%                     im2=im2(:,:,1:3);
+                end
+            else
+                %	Take only red channel
+                IM =IM(:,:,1);
+                Data.channel = 1;
             end
             
             s_num = I1(i);
@@ -239,6 +302,35 @@ if Data.Size.run
                     error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
                 end
                 
+                if size(IM, 3) > 2
+                    %Extract only red channel
+                    if Data.channel == 1;
+                        IM = IM(:,:,1);
+                        %Extract only green channel
+                    elseif Data.channel == 2;
+                        IM = IM(:,:,2);
+                        im2 = im2(:,:,2);
+                        %Extract only blue channel
+                    elseif Data.channel == 3;
+                        IM = IM(:,:,3);
+                        %Weighted average of channels (see rgb2gray for
+                        %explanation of weighting factors)
+                    elseif Data.channel == 4;
+                        IM = 0.2989 * IM(:, :, 1) + 0.5870 * IM(:, :, 2) + 0.1140 * IM(:, :, 3);
+                        %Evenly weighted mean of channels
+                    elseif Data.channel == 5;
+                        IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
+                        %ensemble correlation of channels
+%                     elseif channel == 6;
+%                         im1=im1(:,:,1:3);
+%                         im2=im2(:,:,1:3);
+                    end
+                else
+                    %	Take only red channel
+                    IM =IM(:,:,1);
+                    Data.channel = 1;
+                end
+                
                 im1=IM(:,:);
                 im1(im1<=Data.Size.thresh) = 0;
                 
@@ -274,6 +366,35 @@ if Data.Size.run
             IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'mat'));
         else
             error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
+        end
+        
+        if size(IM, 3) > 2
+            %Extract only red channel
+            if Data.channel == 1;
+                IM = IM(:,:,1);
+                %Extract only green channel
+            elseif Data.channel == 2;
+                IM = IM(:,:,2);
+                im2 = im2(:,:,2);
+                %Extract only blue channel
+            elseif Data.channel == 3;
+                IM = IM(:,:,3);
+                %Weighted average of channels (see rgb2gray for
+                %explanation of weighting factors)
+            elseif Data.channel == 4;
+                IM = 0.2989 * IM(:, :, 1) + 0.5870 * IM(:, :, 2) + 0.1140 * IM(:, :, 3);
+                %Evenly weighted mean of channels
+            elseif Data.channel == 5;
+                IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
+                %ensemble correlation of channels
+%             elseif channel == 6;
+%                 im1=im1(:,:,1:3);
+%                 im2=im2(:,:,1:3);
+            end
+        else
+            %	Take only red channel
+            IM =IM(:,:,1);
+            Data.channel = 1;
         end
 
         im1=IM(:,:);  
