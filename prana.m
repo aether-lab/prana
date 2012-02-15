@@ -170,6 +170,7 @@ catch
     % Sizing Default values
     defaultdata.Size.runsize    = '0';
     defaultdata.Size.method     = '1';
+    defaultdata.Size.min_area   = '0';
     defaultdata.Size.std        = '4';
     defaultdata.Size.savebase   = 'SIZE_';
     % Tracking Default values
