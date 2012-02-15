@@ -267,7 +267,7 @@ switch upper(tcorr)
             if dyn_rpc
                 CPS = ifftn(Wden,'symmetric');
                 [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
-                spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));
+                spectral = fftshift(energyfilt(Sx,Sy,Drpc./sqrt(2),0));
             end
 
             %Robust Phase Correlation with spectral energy filter
@@ -342,7 +342,7 @@ switch upper(tcorr)
             if dyn_rpc
                 CPS = ifftn(Wden,'symmetric');
                 [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
-                spectral = fftshift(energyfilt(Sx,Sy,Drpc,0));
+                spectral = fftshift(energyfilt(Sx,Sy,Drpc./sqrt(2),0));
             end
 
             %Robust Phase Correlation with spectral energy filter

@@ -887,12 +887,12 @@ switch char(M)
                                 cnvg_est = 0;
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             else
-%                                 cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
-                                ave_pre = (CCmdist/(q-1));
+                                % % cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
+                                % ave_pre = (CCmdist/(q-1));
                                 CCmdist=CCmdist+CC;% Now includes the current frame
-                                ave_cur = ((CCmdist)/q);
-                                ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zeros
-                                cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
+                                % ave_cur = ((CCmdist)/q);
+                                % ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zeros
+                                cnvg_est = 0;%nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
                         else %if Corr(e)==4 %SPC processor
@@ -902,7 +902,8 @@ switch char(M)
                         if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
                             fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))                        
                         end
-                        fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+%                         fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                        fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
                     end
                 end
 %                 if Corr(e)<4 %SCC or RPC processor
@@ -1087,12 +1088,12 @@ switch char(M)
                             cnvg_est = 0;
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         else
-%                             cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
-                            ave_pre = (CCm*length(I1)/(q-1));
+                            % cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
+                            % ave_pre = (CCm*length(I1)/(q-1));
                             CCm=CCm+CC/length(I1);% Now adding the current pass
-                            ave_cur = ((CCm*length(I1))/q);
-                            ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zero.
-                            cnvg_est = nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
+                            % ave_cur = ((CCm*length(I1))/q);
+                            % ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zero.
+                            cnvg_est = 0;%nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     else %if Corr(e)==4 %SPC processor, should this be just ELSE?
@@ -1109,8 +1110,8 @@ switch char(M)
                     if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
                         fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))
                     end
-%                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble L2 %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
-                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+%                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
+                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
                 end
             end
 

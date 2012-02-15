@@ -6,8 +6,8 @@ cc_y = -ccsizey/2:ccsizey/2-1;
 %find maximum correlation value
 [M,I] = max(G(:));
 
-% Use 3 standard deviations for the peak sizing
-sigma = 3;
+% Use 4 standard deviations for the peak sizing (e^-2)
+sigma = 4;
 
 %if correlation empty
 if M==0
@@ -21,6 +21,10 @@ if M==0
     end
 else
     if Peakswitch
+        u=zeros(1,3);
+        v=zeros(1,3);
+        M=zeros(1,3);
+        D=zeros(1,3);
         %Locate peaks using imregionalmax
         A=imregionalmax(G);
         peakmat=G.*A;
@@ -30,6 +34,10 @@ else
         end
         j=length(M);
     else
+        u=zeros(1,1);
+        v=zeros(1,1);
+        M=zeros(1,1);
+        D=zeros(1,1);
         j=1;    
     end
     
@@ -88,7 +96,7 @@ else
                     shift_locy   shift_locx-1 G(shift_locy  ,shift_locx-1);...
                     shift_locy   shift_locx+1 G(shift_locy  ,shift_locx+1)];
                 
-            [Isort,IsortI] = sort(points(:,3),'descend');
+            [~,IsortI] = sort(points(:,3),'descend');
             points = points(IsortI,:);
 
             x1=points(1,2); x2=points(2,2); x3=points(3,2); x4=points(4,2);
