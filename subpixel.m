@@ -128,7 +128,7 @@ else
             betas = abs((log(a2)-log(a1))/((x2-x_centroid)^2+(y2-y_centroid)^2-(x1-x_centroid)^2-(y1-y_centroid)^2));
             D(i)=sqrt(sigma^2/(2*betas));
             
-        elseif method==3
+        elseif any(method==[3 4])
             
             %%%%%%%%%%%%%%%%%%%%%%%%%%
             % Gaussian Least Squares %
@@ -163,7 +163,7 @@ else
 
             %Run solver; default to 3-point gauss if it fails
             try
-                xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points(:),[yloc(:),xloc(:)]);
+                xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points(:),[yloc(:),xloc(:)],method);
                 shift_errx=xvars(3)-shift_locx;
                 shift_erry=xvars(4)-shift_locy;
                 D(i) = sqrt(sigma^2/(2*abs(xvars(2))));

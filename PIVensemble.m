@@ -33,6 +33,17 @@ end
 sfilt1 = windowmask([Nx Ny],[res(1, 1) res(1, 2)]);
 sfilt2 = windowmask([Nx Ny],[res(2, 1) res(2, 2)]);
 
+%correlation plane normalization function (always off).  
+% This is only used in the DRPC code.
+cnorm = ones(Ny,Nx);
+%#####################################
+% This is for the Dynamic RPC.  The DRPC requires a call to the subpixel
+% function which requires infromation about which peak located the user
+% would like to use.  Right now is is hard coded to be '1' which means 3pt
+% Guassian fit.
+Peaklocator = 1;
+%#####################################
+
 %RPC spectral energy filter
 spectral = fftshift(energyfilt(Sx,Sy,D,0));
 
