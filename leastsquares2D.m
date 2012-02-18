@@ -25,20 +25,37 @@ y_centroid=x(4);
 num1=(I0*pi)/4;
 num2=sqrt(abs(betas));
 
-gauss_int = zeros(size(mapint_i));
-xp = zeros(size(mapint_i));
-yp = zeros(size(mapint_i));
-for ii = 1:length(mapint_i)
-    xp(ii) = locxy_i(ii,2);
-    yp(ii) = locxy_i(ii,1);
+if method==3
+    gauss_int = zeros(size(mapint_i));
+    xp = zeros(size(mapint_i));
+    yp = zeros(size(mapint_i));
+    for ii = 1:length(mapint_i)
+        xp(ii) = locxy_i(ii,2);
+        yp(ii) = locxy_i(ii,1);
+    end
+    
+    % map an intensity profile of a gaussian function:
+    for rr = 1:size(xp,1)
+        gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
+            ((yp(rr))-y_centroid)^2));
+    end
+    
+elseif method==4
+    S = size(mapint_i);
+    gauss_int = zeros(S(1),S(2));
+    xp = zeros(size(mapint_i));
+    yp = zeros(size(mapint_i));
+    for ii = 1:length(mapint_i)
+        xp(ii) = locxy_i(ii,1)-0.5;
+        yp(ii) = locxy_i(ii,2)-0.5;
+        erfx1 = erf(num2*(xp(ii)-x_centroid));
+        erfy1 = erf(num2*(yp(ii)-y_centroid));
+        erfx2 = erf(num2*(xp(ii)+1-x_centroid));
+        erfy2 = erf(num2*(yp(ii)+1-y_centroid));
+        % map an intensity profile of a gaussian function:
+        gauss_int(ii)=(num1/abs(betas))*(erfx1*(erfy1-erfy2)+erfx2*(-erfy1+erfy2));
+    end
 end
-
-% map an intensity profile of a gaussian function:
-for rr = 1:size(xp,1)
-    gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
-        ((yp(rr))-y_centroid)^2));
-end
-
 % compare the Gaussian curve to the actual pixel intensities
 F=mapint_i-gauss_int;
 

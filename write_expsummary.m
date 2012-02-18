@@ -1,5 +1,30 @@
 function expsummary = write_expsummary(Data)
 
+% Here are all the different string options that are used durring this
+% function call.
+y_n={'No','Yes'};
+% These are the PIV methods
+methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
+    'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)'};
+% These are the different interpolation methods for the velocity field
+velinterp={'Nearest Neighbor','Bilinear','Cubic'};
+% These are the interpolation methods for the image deformations
+iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
+% These are the different peak fitting schemes
+peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
+% This is the number of peaks the user is outputing
+peaks={'1','1,2','1,2,3'};
+% This is for validation method
+uod_type={'Mean','Median'};
+% This is for the tracking for multiple purposes
+s_d = {'Static','Dynamic'};
+% These are the different sizing methods for the particle sizing
+sizing_meth = {'Intensity_Weighted Centroid','Three Point Gaussian','Four Point Gaussian',...
+    'Continuous Four Point Gaussian','Least Sqaures Gaussian','Continuous Least Squares Gaussian'};
+% This is the prediction method used for the tracking
+PIV_PTV = {'PTV','PIV','PIV-PTV'};
+
+% Start Building the experimental summary string.
 expsummary = [];
 
 expsummary = [expsummary sprintf(['Summary for PIV Job: ',Data.batchname,'\n'])];
@@ -69,12 +94,15 @@ else
     expsummary = [expsummary sprintf('None\n')];
 end
 
+expsummary = [expsummary sprintf('\n---------------------Parallel Processing----------------------\n')];
+expsummary = [expsummary sprintf(['Parallel Processing:           ',y_n{str2double(Data.par)+1},'\n'])];
+if str2double(Data.par) == 1
+    expsummary = [expsummary sprintf(['Number of Processors:          ',Data.parprocessors,'\n'])];
+end
+
 % This section is for displaying all of the settings pretaining to PIV.
 if str2double(Data.runPIV)
-    methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
-        'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)'};
-    velinterp={'Nearest Neighbor','Bilinear','Cubic'};
-    iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter'};
+    
     expsummary = [expsummary sprintf('\n-----------------------PIV Processing------------------------\n')];
     expsummary = [expsummary sprintf(['Algorithm:                     ',methods{str2double(Data.method)},'\n'])];
     if str2double(Data.method)~=1 && str2double(Data.method)~=6
@@ -87,11 +115,9 @@ if str2double(Data.runPIV)
         expsummary = [expsummary sprintf(['PIV Error:                     ',Data.PIVerror,'\n'])];
         expsummary = [expsummary sprintf(['Maximum Framestep:             ',Data.framestep,'\n'])];
     end
-    
+        
     for i=1:str2double(Data.passes)
 %         corr={'SCC','RPC','GCC','FWC','SPC'};
-        peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
-        y_n={'No','Yes'};
         A=eval(['Data.PIV' num2str(i)]);
         expsummary = [expsummary sprintf(['\n------------------------Pass ',num2str(i),' Setup-------------------------\n'])];
         if isfield(A,'winres1')
@@ -120,11 +146,9 @@ if str2double(Data.runPIV)
         end
         expsummary = [expsummary sprintf(['Zero-Mean Image Windows:                      ',y_n{str2double(A.zeromean)+1},'\n'])];
         expsummary = [expsummary sprintf(['Subpixel Peak Location Method:                ',peak{str2double(A.peaklocator)},'\n'])];
-        if str2double(Data.method)~=1 && str2double(Data.method)~=5
-            expsummary = [expsummary sprintf(['Smoothing:                                    ',y_n{str2double(A.velsmooth)+1},'\n'])];
-            if str2double(A.velsmooth)
-                expsummary = [expsummary sprintf(['Smoothing Size:                               ',A.velsmoothfilt,'\n'])];
-            end
+        expsummary = [expsummary sprintf(['Smoothing:                                    ',y_n{str2double(A.velsmooth)+1},'\n'])];
+        if str2double(A.velsmooth)
+            expsummary = [expsummary sprintf(['   Smoothing Weight (STD):                    ',A.velsmoothfilt,'\n'])];
         end
         if any(str2double(Data.method)==[3 5])
             expsummary = [expsummary sprintf(['Deformation Infromation:\n'])];
@@ -149,7 +173,6 @@ if str2double(Data.runPIV)
                 expsummary = [expsummary sprintf(['Vmin, Vmax (pix):                             ',A.valvthresh,'\n'])];
             end
             if str2double(A.uod)
-                uod_type={'Mean','Median'};
                 expsummary = [expsummary sprintf(['UOD Type:                                     ',uod_type{str2double(A.uod_type)},'\n'])];
                 expsummary = [expsummary sprintf(['UOD Window Sizes:                             ',A.uod_window,'\n'])];
                 expsummary = [expsummary sprintf(['UOD Thresholds:                               ',A.uod_thresh,'\n'])];
@@ -168,7 +191,6 @@ if str2double(Data.runPIV)
             expsummary = [expsummary sprintf(['Output Basename:                              ',A.outbase,'\n'])];
             expsummary = [expsummary sprintf(['Save Add. Peak Info:                          ',y_n{str2double(A.savepeakinfo)+1},'\n'])];
             if str2double(A.savepeakinfo)
-                peaks={'1','1,2','1,2,3'};
                 expsummary = [expsummary sprintf(['Save Data for Peaks:                          ',peaks{str2double(A.corrpeaknum)},'\n'])];
                 expsummary = [expsummary sprintf(['Save Peak Magnitude:                          ',y_n{str2double(A.savepeakmag)+1},'\n'])];
                 expsummary = [expsummary sprintf(['Save Resulting Vel.:                          ',y_n{str2double(A.savepeakvel)+1},'\n'])];
@@ -182,7 +204,6 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
     expsummary = [expsummary sprintf('\n--------------------ID, Size, & Tracking---------------------')];
     if str2double(Data.ID.runid)
         expsummary = [expsummary sprintf('\n-----------------------------ID------------------------------\n')];
-        s_d = {'Static','Dynamic'};
         expsummary = [expsummary sprintf(['Identification Method:                        ',s_d{str2double(Data.ID.method)},'\n'])];
         expsummary = [expsummary sprintf(['Image Threshold:                              ',Data.ID.imthresh,'\n'])];
         expsummary = [expsummary sprintf(['ID Output Basename:                           ',Data.ID.savebase,'\n'])];
@@ -190,8 +211,6 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
     end
     if str2double(Data.Size.runsize)
         expsummary = [expsummary sprintf('\n---------------------------Sizing----------------------------\n')];
-        sizing_meth = {'Intensity_Weighted Centroid','Three Point Gaussian','Four Point Gaussian',...
-            'Continuous Four Point Gaussian','Least Sqaures Gaussian','Continuous Least Squares Gaussian'};
         expsummary = [expsummary sprintf(['Sizing Method:                                ',sizing_meth{str2double(Data.Size.method)},'\n'])];
         expsummary = [expsummary sprintf(['Standard Deviation:                           ',Data.Size.std,'\n'])];
         expsummary = [expsummary sprintf(['Sizing Output Basename:                       ',Data.Size.savebase,'\n'])];
@@ -199,8 +218,6 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
     end
     if str2double(Data.Track.runtrack)
         expsummary = [expsummary sprintf('\n--------------------------Tracking---------------------------\n')];
-        PIV_PTV = {'PTV','PIV','PIV-PTV'};
-        s_d = {'Static','Dynamic'};
         expsummary = [expsummary sprintf(['Tracking Method:                              ',PIV_PTV{str2double(Data.Track.method)},'\n'])];
         expsummary = [expsummary sprintf(['Prediction Method:                            ',s_d{str2double(Data.Track.prediction)},'\n'])];
         if str2double(Data.Track.method) == 3
@@ -226,6 +243,7 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
         
     end
 end
+
 % This string contains the date and time this function was called and
 % appends it to the end of the expsummary.  This way when the jobs
 % internals are changed but not the batch name a different text file will
