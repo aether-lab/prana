@@ -23,7 +23,6 @@ else
     if Peakswitch
         u=zeros(1,3);
         v=zeros(1,3);
-        M=zeros(1,3);
         D=zeros(1,3);
         %Locate peaks using imregionalmax
         A=imregionalmax(G);
@@ -36,7 +35,6 @@ else
     else
         u=zeros(1,1);
         v=zeros(1,1);
-        M=zeros(1,1);
         D=zeros(1,1);
         j=1;    
     end

@@ -1183,7 +1183,7 @@ switch char(M)
                 C(Eval>=0)=Cc(:);
                 Di(Eval>=0)=Dc(:);
             end
-            
+
             %validation
             if Valswitch(e)
                 t1=tic;
@@ -1204,7 +1204,7 @@ switch char(M)
                     Dval=[];
                 end
             end
-            
+
             % --- Iterative Deformation Check ---
             if strcmpi(M,'EDeform')
                 if defloop == 1
