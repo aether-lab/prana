@@ -269,7 +269,7 @@ if Data.ID.run
         end
     end
 
-    save(sprintf('%s%s%s',Data.ID.save_dir,'particle_ID_parameters.mat'));
+    save(fullfile(Data.ID.save_dir,'particle_ID_parameters.mat'));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -420,7 +420,7 @@ if Data.Size.run
     end
     end
 
-    save(sprintf('%s%s%s',Data.Size.save_dir,'particle_SIZE_parameters.mat'));
+    save(fullfile(Data.Size.save_dir,'particle_SIZE_parameters.mat'));
 end
 
 

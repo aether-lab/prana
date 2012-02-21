@@ -1200,7 +1200,7 @@ if str2double(handles.Njob)>0
                 mask = double(imread(handles.data.staticmaskname));
                 mask = flipud(mask);
             elseif strcmp(handles.data.masktype,'dynamic')
-                mask = double(imread(fullfile(handles.data.maskdirec, [handles.data.maskbase, sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],str2double(handles.data.maskfstart))])));
+                mask = double(imread(fullfile(handles.data.maskdirec, [handles.data.maskbase, sprintf(['%0.' handles.data.maskzeros 'i.' handles.data.maskext],str2double(handles.data.imfstart))])));
                 mask = flipud(mask);
             else
                 mask = ones(size(im1));
@@ -1220,7 +1220,7 @@ if str2double(handles.Njob)>0
         msgbox('Image Frame Not Found');
         e=-1;
     end
-    
+
     if e==0
         h=figure;hold on
 
