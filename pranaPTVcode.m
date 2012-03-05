@@ -182,7 +182,6 @@ if Data.ID.run
                         %Extract only green channel
                     elseif Data.channel == 2;
                         IM = IM(:,:,2);
-                        im2 = im2(:,:,2);
                         %Extract only blue channel
                     elseif Data.channel == 3;
                         IM = IM(:,:,3);
@@ -235,7 +234,6 @@ if Data.ID.run
                     %Extract only green channel
                 elseif Data.channel == 2;
                     IM = IM(:,:,2);
-                    im2 = im2(:,:,2);
                     %Extract only blue channel
                 elseif Data.channel == 3;
                     IM = IM(:,:,3);
@@ -309,7 +307,6 @@ if Data.Size.run
                         %Extract only green channel
                     elseif Data.channel == 2;
                         IM = IM(:,:,2);
-                        im2 = im2(:,:,2);
                         %Extract only blue channel
                     elseif Data.channel == 3;
                         IM = IM(:,:,3);
@@ -3344,7 +3341,7 @@ for i=1:valprops.numpass
         case {'mean','median'}
             %call validation mean/median subfunction
             [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops_i);
-keyboard
+
             %refresh the location estimation with the validation results
             X2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,6);
             Y2_est( MAD_ratio(:,5) ,1) = MAD_ratio(:,7);

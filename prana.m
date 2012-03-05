@@ -154,7 +154,7 @@ catch
     defaultdata.PIV2=defaultdata.PIV0;
 
     defaultdata.passes='2';
-    defaultdata.method='1';
+    defaultdata.method='2';
     defaultdata.velinterp='3';
     defaultdata.iminterp='2';
     defaultdata.framestep='3';

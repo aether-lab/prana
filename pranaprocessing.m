@@ -25,10 +25,10 @@ elseif strcmp(Data.masktype,'static')
     mask = flipud(mask);
     maskname=[];
 elseif strcmp(Data.masktype,'dynamic')
-    if nargin<4
+%     if nargin<4
         maskfend=str2double(Data.imfstart)+str2double(Data.imfstep)*length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend))-1;
         maskname=str2double(Data.imfstart):str2double(Data.imfstep):maskfend;
-    end
+%     end
 end
 
 %method and passes
