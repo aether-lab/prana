@@ -267,7 +267,36 @@ if Data.ID.run
         end
     end
 
-    save(fullfile(Data.ID.save_dir,'particle_ID_parameters.mat'));
+    %save(fullfile(Data.ID.save_dir,'particle_ID_parameters.mat'));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if str2double(PTV_Data.par)
+    matlabpool close
+end
+
+if str2double(PTV_Data.par)
+    if length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)) < str2double(PTV_Data.parprocessors)
+        PTV_Data.parprocessors=num2str(length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)));
+    end
+    fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
+    try
+        matlabpool('open','local',PTV_Data.parprocessors);
+    catch
+        try
+            matlabpool close
+            matlabpool('open','local',PTV_Data.parprocessors);
+        catch
+            beep
+            disp('Error Running Job in Parallel - Defaulting to Single Processor')
+            poolopen=0;
+        end
+    end
+    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+else
+    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -372,7 +401,6 @@ if Data.Size.run
                 %Extract only green channel
             elseif Data.channel == 2;
                 IM = IM(:,:,2);
-                im2 = im2(:,:,2);
                 %Extract only blue channel
             elseif Data.channel == 3;
                 IM = IM(:,:,3);
@@ -417,7 +445,7 @@ if Data.Size.run
     end
     end
 
-    save(fullfile(Data.Size.save_dir,'particle_SIZE_parameters.mat'));
+    %save(fullfile(Data.Size.save_dir,'particle_SIZE_parameters.mat'));
 end
 
 
@@ -3502,10 +3530,10 @@ end
 
 %populate the 'tracks' arrays with the following structure: 
 %   tracks=[X1, X2, Y1, Y2, Z1, Z2, d1, d2, I1, I2, p#1 p#2 match_probability]
-tracks=[X1_org(p_pairs(:,1)), X2(p_pairs(:,2)), Y1_org(p_pairs(:,1)), Y2(p_pairs(:,2)), ...
+try;tracks=[X1_org(p_pairs(:,1)), X2(p_pairs(:,2)), Y1_org(p_pairs(:,1)), Y2(p_pairs(:,2)), ...
     Z1_org(p_pairs(:,1)), Z2(p_pairs(:,2)), d1(p_pairs(:,1)), d2(p_pairs(:,2)), ...
     I1(p_pairs(:,1)), I2(p_pairs(:,2)), p_pairs(:,:)];
-
+catch;keyboard;end
 end
 
 function [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops)
