@@ -200,7 +200,7 @@ if Data.ID.run
                 else
                     %	Take only red channel
                     IM =IM(:,:,1);
-                    Data.channel = 1;
+%                     Data.channel = 1;
                 end
 
                 s_num = I1dist(i);
@@ -213,6 +213,7 @@ if Data.ID.run
                     ,floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             end
         end
+        clear I1dist IM eltime i loadname num_p p_matrix peaks s_num t0 verstr
     else
         for i= 1:length(I1)
             
@@ -267,14 +268,14 @@ if Data.ID.run
         end
     end
 
-    %save(fullfile(Data.ID.save_dir,'particle_ID_parameters.mat'));
+    save(fullfile(Data.ID.save_dir,'particle_ID_parameters.mat'));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if str2double(PTV_Data.par)
-    matlabpool close
+    matlabpool('close')
 end
 
 if str2double(PTV_Data.par)
@@ -354,7 +355,7 @@ if Data.Size.run
                 else
                     %	Take only red channel
                     IM =IM(:,:,1);
-                    Data.channel = 1;
+%                     Data.channel = 1;
                 end
                 
                 im1=IM(:,:);
@@ -379,6 +380,7 @@ if Data.Size.run
                 
             end
         end
+        clear I1dist ID_info IM SIZE1 eltime i im1 loadname sizeprops sname t0 verstr
 	else
     for i = 1:length(I1)
         
@@ -445,9 +447,8 @@ if Data.Size.run
     end
     end
 
-    %save(fullfile(Data.Size.save_dir,'particle_SIZE_parameters.mat'));
+    save(fullfile(Data.Size.save_dir,'particle_SIZE_parameters.mat'));
 end
-
 
 if str2double(PTV_Data.par)
     matlabpool close
