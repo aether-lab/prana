@@ -1197,9 +1197,14 @@ for i=1:length(STATS)
     end
 end
 
-%populate mapsize (size of each array in mapint) and also trim locxy
-mapsize=[locxy(keep,4),locxy(keep,3)];  locxy=locxy(keep,1:2);
-num_p = length(keep);
+if keep(1) == 0
+    mapsize = []; locxy = [];
+    num_p = 0;
+else
+    %populate mapsize (size of each array in mapint) and also trim locxy
+    mapsize=[locxy(keep,4),locxy(keep,3)];  locxy=locxy(keep,1:2);
+    num_p = length(keep);
+end
 %code for plotting the results of this function 
 %COMMENT OUT FOR NORMAL OPERATION
 % figure

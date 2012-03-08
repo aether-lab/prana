@@ -2730,6 +2730,7 @@ if str2double(handles.Njob) == 0
     set(handles.idsaveloc,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingstd,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizing_min_area,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingsavebase,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.sizingsaveloc,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.trackingmethod,'backgroundcolor',0.5*[1 1 1]);
@@ -2819,6 +2820,7 @@ else
     set(handles.idsaveloc,'String','','backgroundcolor',[1 1 1]);
     set(handles.sizingmethod,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.sizingstd,'String','','backgroundcolor',[1 1 1]);
+    set(handles.sizing_min_area,'String','','backgroundcolor',[1 1 1]);
     set(handles.sizingsavebase,'String','','backgroundcolor',[1 1 1]);
     set(handles.sizingsaveloc,'String','','backgroundcolor',[1 1 1]);
     set(handles.trackingmethod,'Value',1,'backgroundcolor',[1 1 1]);
@@ -3178,7 +3180,7 @@ end
 if str2double(handles.data.Size.runsize)
     set(handles.runsizingcheckbox,'Value',str2double(handles.data.Size.runsize));
     set(handles.sizingmethod,'Value',str2double(handles.data.Size.method),'backgroundcolor',[1 1 1]);
-    set(handles.sizing_min_area,'Value',str2double(handles.data.Size.min_area),'backgroundcolor',[1 1 1]);
+    set(handles.sizing_min_area,'String',handles.data.Size.min_area,'backgroundcolor',[1 1 1]);
     set(handles.sizingstd,'String',handles.data.Size.std,'backgroundcolor',[1 1 1]);
     set(handles.sizingsavebase,'String',handles.data.Size.savebase,'backgroundcolor',[1 1 1]);
     set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
