@@ -478,7 +478,9 @@ if Data.Track.run
         check2=isnan(SIZE2.XYDiameter(:,3))==0;
         SIZE1.XYDiameter=SIZE1.XYDiameter(check1,:);
         SIZE2.XYDiameter=SIZE2.XYDiameter(check2,:);
-        
+
+        if ~isempty(SIZE1.XYDiameter) && ~isempty(SIZE2.XYDiameter)
+
         estlocprops      = Data.Track;
         estlocprops.Data = Data;
         
@@ -1931,18 +1933,18 @@ end
             %Adapted from M. Brady's 'fourptintgaussfit'
             %B.Drew - 7.18.2008
 
-            x1=points(1,1);
-            x2=points(2,1);
-            x3=points(3,1);
-            x4=points(4,1);
-            y1=points(1,2);
-            y2=points(2,2);
-            y3=points(3,2);
-            y4=points(4,2);
-            a1=points(1,3);
-            a2=points(2,3);
-            a3=points(3,3);
-            a4=points(4,3);
+            xx1=points(1,1);
+            xx2=points(2,1);
+            xx3=points(3,1);
+            xx4=points(4,1);
+            yy1=points(1,2);
+            yy2=points(2,2);
+            yy3=points(3,2);
+            yy4=points(4,2);
+            aa1=points(1,3);
+            aa2=points(2,3);
+            aa3=points(3,3);
+            aa4=points(4,3);
 
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %For unknown reasons, the fsolve function tries negative values of x(2),
@@ -1951,10 +1953,10 @@ end
             %final x(2) value ends up positive.
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-            F = [pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(x1-x(3)))-erf(sqrt(abs(x(2)))*(x1+1-x(3))))*(erf(sqrt(abs(x(2)))*(y1-x(4)))-erf(sqrt(abs(x(2)))*(y1+1-x(4)))))-a1;
-                pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(x2-x(3)))-erf(sqrt(abs(x(2)))*(x2+1-x(3))))*(erf(sqrt(abs(x(2)))*(y2-x(4)))-erf(sqrt(abs(x(2)))*(y2+1-x(4)))))-a2;
-                pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(x3-x(3)))-erf(sqrt(abs(x(2)))*(x3+1-x(3))))*(erf(sqrt(abs(x(2)))*(y3-x(4)))-erf(sqrt(abs(x(2)))*(y3+1-x(4)))))-a3;
-                pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(x4-x(3)))-erf(sqrt(abs(x(2)))*(x4+1-x(3))))*(erf(sqrt(abs(x(2)))*(y4-x(4)))-erf(sqrt(abs(x(2)))*(y4+1-x(4)))))-a4];
+            F = [pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(xx1-x(3)))-erf(sqrt(abs(x(2)))*(xx1+1-x(3))))*(erf(sqrt(abs(x(2)))*(yy1-x(4)))-erf(sqrt(abs(x(2)))*(yy1+1-x(4)))))-aa1;
+                pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(xx2-x(3)))-erf(sqrt(abs(x(2)))*(xx2+1-x(3))))*(erf(sqrt(abs(x(2)))*(yy2-x(4)))-erf(sqrt(abs(x(2)))*(yy2+1-x(4)))))-aa2;
+                pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(xx3-x(3)))-erf(sqrt(abs(x(2)))*(xx3+1-x(3))))*(erf(sqrt(abs(x(2)))*(yy3-x(4)))-erf(sqrt(abs(x(2)))*(yy3+1-x(4)))))-aa3;
+                pi*x(1)/4/x(2)*((erf(sqrt(abs(x(2)))*(xx4-x(3)))-erf(sqrt(abs(x(2)))*(xx4+1-x(3))))*(erf(sqrt(abs(x(2)))*(yy4-x(4)))-erf(sqrt(abs(x(2)))*(yy4+1-x(4)))))-aa4];
 
         end
     end
@@ -3494,17 +3496,21 @@ for i=1:num_p1
     %build comparison array using particle whose linear distance is within
     %the user defined search radius (s_radius)
     p_index=find(distance<=s_radius);  compare_i=zeros(length(p_index),3);
-    compare_i(:,1)=ones(size(p_index)).*i;  compare_i(:,2)=p_index;
-    
-    %compute the match probability for each possible pairing
-    Prob_D=(distance(p_index)./s_radius).*weights(1);
-    Prob_d=(abs(d2(p_index)-d1(i,1))./d_diff_max).*weights(2);
-    Prob_I=(abs(I2(p_index)-I1(i,1))./I_diff_max).*weights(3);
-    compare_i(:,3)=(Prob_D+Prob_d+Prob_I)./sum(weights);
-    
-    %populate main 'compare' array 
-    compare{i}=compare_i;
-    
+
+    % This statement catches the possibility that no paritlces are with in
+    % the search radius.
+    if ~isempty(p_index)
+        compare_i(:,1)=ones(size(p_index)).*i;  compare_i(:,2)=p_index;
+        
+        %compute the match probability for each possible pairing
+        Prob_D=(distance(p_index)./s_radius).*weights(1);
+        Prob_d=(abs(d2(p_index)-d1(i,1))./d_diff_max).*weights(2);
+        Prob_I=(abs(I2(p_index)-I1(i,1))./I_diff_max).*weights(3);
+        compare_i(:,3)=(Prob_D+Prob_d+Prob_I)./sum(weights);
+        
+        %populate main 'compare' array
+        compare{i}=compare_i;
+    end
 
     clear dX dY dZ distance p_index compare_i Prob_D Prob_d Prob_I
 end
@@ -3536,10 +3542,9 @@ end
 
 %populate the 'tracks' arrays with the following structure: 
 %   tracks=[X1, X2, Y1, Y2, Z1, Z2, d1, d2, I1, I2, p#1 p#2 match_probability]
-try;tracks=[X1_org(p_pairs(:,1)), X2(p_pairs(:,2)), Y1_org(p_pairs(:,1)), Y2(p_pairs(:,2)), ...
+tracks=[X1_org(p_pairs(:,1)), X2(p_pairs(:,2)), Y1_org(p_pairs(:,1)), Y2(p_pairs(:,2)), ...
     Z1_org(p_pairs(:,1)), Z2(p_pairs(:,2)), d1(p_pairs(:,1)), d2(p_pairs(:,2)), ...
     I1(p_pairs(:,1)), I2(p_pairs(:,2)), p_pairs(:,:)];
-catch;keyboard;end
 end
 
 function [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops)
