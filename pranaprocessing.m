@@ -651,7 +651,7 @@ switch char(M)
             end
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             frametime(q)=eltime;
-            comptime=mean(frametime)*(length(I1)-q);
+            comptime=mean(frametime(1:q))*(length(I1)-q);
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
         end
         
@@ -1307,7 +1307,7 @@ switch char(M)
                 %output text
                 fprintf('total pass time...               %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
                 frametime(e)=eltime;
-                comptime=mean(frametime)*(P-e);
+                comptime=mean(frametime(1:e))*(P-e);
                 fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
             end
 
@@ -1592,7 +1592,7 @@ switch char(M)
             end
             fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
             frametime(q+1-qstart)=eltime;
-            comptime=nanmean(frametime)*(length(qstart:qend)-(q+1-qstart));
+            comptime=nanmean(frametime(1:q+1-qstart))*(length(qstart:qend)-(q+1-qstart));
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
         end
 end
