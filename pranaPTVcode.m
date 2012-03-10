@@ -37,7 +37,7 @@ Data.Size.thresh=str2double(PTV_Data.ID.imthresh);
 Data.Size.method=str2double(PTV_Data.Size.method);
 Data.Size.p_area=str2double(PTV_Data.Size.min_area);
 Data.Size.sigma=str2double(PTV_Data.Size.std);
-Data.Size.errors=0;%str2double(Data.Size.errors);
+Data.Size.errors=1;%str2double(Data.Size.errors);
 Data.Size.s_name=PTV_Data.Size.savebase;
 Data.Size.save_dir=PTV_Data.Size.save_dir;
 
@@ -1187,7 +1187,7 @@ for i=1:length(STATS)
     %check each particle to assure that its area is >= 'p_area'; remove if this
     %condition is violated and reset the particle index number; Also remove
     %particles that are the size of only 1 pixel.
-    if length(STATS(i,1).PixelIdxList)>1 && STATS(i,1).Area >=p_area
+    if length(STATS(i,1).PixelIdxList)>1 && STATS(i,1).Area >=p_area 
         mapint{1,c}=zeros(locxy(i,4),locxy(i,3));
         for j=1:length(STATS(i,1).PixelIdxList)
             pix_loc_row=STATS(i,1).PixelList(j,2)-locxy(i,2)+1;
