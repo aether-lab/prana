@@ -37,7 +37,7 @@ Data.Size.thresh=str2double(PTV_Data.ID.imthresh);
 Data.Size.method=str2double(PTV_Data.Size.method);
 Data.Size.p_area=str2double(PTV_Data.Size.min_area);
 Data.Size.sigma=str2double(PTV_Data.Size.std);
-Data.Size.errors=0;%str2double(Data.Size.errors);
+Data.Size.errors=1;%str2double(Data.Size.errors);
 Data.Size.s_name=PTV_Data.Size.savebase;
 Data.Size.save_dir=PTV_Data.Size.save_dir;
 
@@ -564,7 +564,9 @@ if Data.Track.run
         eltime=etime(clock,t0);
         fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
         
-    end
+        else
+            fprintf('...SKIPPED Due to lack of particles!\n');
+        end
     
     %save processing parameters
     save(sprintf('%s%s%s',Data.Track.save_dir,'particle_TRACK_Val_PIV_parameters.mat'));
@@ -1187,7 +1189,7 @@ for i=1:length(STATS)
     %check each particle to assure that its area is >= 'p_area'; remove if this
     %condition is violated and reset the particle index number; Also remove
     %particles that are the size of only 1 pixel.
-    if length(STATS(i,1).PixelIdxList)>1 && STATS(i,1).Area >=p_area
+    if length(STATS(i,1).PixelIdxList)>1 && STATS(i,1).Area >=p_area 
         mapint{1,c}=zeros(locxy(i,4),locxy(i,3));
         for j=1:length(STATS(i,1).PixelIdxList)
             pix_loc_row=STATS(i,1).PixelList(j,2)-locxy(i,2)+1;
@@ -3516,35 +3518,43 @@ for i=1:num_p1
 end
 clear i
 compare = cell2mat(compare);
-%sort the comparison array in ascending order based on the pairing
-%probability
-compare_sort=sortrows(compare,3);
 
-%determine the best particle matches and successively match particles
-%until the max number of pairs has been reached (or no more exist)
-p_pairs=[];
-max_matches=min(num_p1,num_p2);
-found_matches_im1=[];  found_matches_im2=[];
-c=0;  i=1;
-while (c<=max_matches) && (i<=size(compare_sort,1))
-    test1=found_matches_im1==compare_sort(i,1);
-    test2=found_matches_im2==compare_sort(i,2);
-    if (any(test1) || any(test2))
-        i=i+1;
-    else
-        found_matches_im1=vertcat(found_matches_im1,compare_sort(i,1));
-        found_matches_im2=vertcat(found_matches_im2,compare_sort(i,2));
-        p_pairs=vertcat(p_pairs,compare_sort(i,:));
-        i=i+1;
-        c=c+1;
+% Check to make sure that the compare variable is not empty.  It will be
+% empty if no particles where paired durring this processes.  The use
+% should try increasing there search radius.
+if ~isempty(compare)
+    %sort the comparison array in ascending order based on the pairing
+    %probability
+    compare_sort=sortrows(compare,3);
+    
+    %determine the best particle matches and successively match particles
+    %until the max number of pairs has been reached (or no more exist)
+    p_pairs=[];
+    max_matches=min(num_p1,num_p2);
+    found_matches_im1=[];  found_matches_im2=[];
+    c=0;  i=1;
+    while (c<=max_matches) && (i<=size(compare_sort,1))
+        test1=found_matches_im1==compare_sort(i,1);
+        test2=found_matches_im2==compare_sort(i,2);
+        if (any(test1) || any(test2))
+            i=i+1;
+        else
+            found_matches_im1=vertcat(found_matches_im1,compare_sort(i,1));
+            found_matches_im2=vertcat(found_matches_im2,compare_sort(i,2));
+            p_pairs=vertcat(p_pairs,compare_sort(i,:));
+            i=i+1;
+            c=c+1;
+        end
     end
+    
+    %populate the 'tracks' arrays with the following structure:
+    %   tracks=[X1, X2, Y1, Y2, Z1, Z2, d1, d2, I1, I2, p#1 p#2 match_probability]
+    tracks=[X1_org(p_pairs(:,1)), X2(p_pairs(:,2)), Y1_org(p_pairs(:,1)), Y2(p_pairs(:,2)), ...
+        Z1_org(p_pairs(:,1)), Z2(p_pairs(:,2)), d1(p_pairs(:,1)), d2(p_pairs(:,2)), ...
+        I1(p_pairs(:,1)), I2(p_pairs(:,2)), p_pairs(:,:)];
+else
+    tracks = [];
 end
-
-%populate the 'tracks' arrays with the following structure: 
-%   tracks=[X1, X2, Y1, Y2, Z1, Z2, d1, d2, I1, I2, p#1 p#2 match_probability]
-tracks=[X1_org(p_pairs(:,1)), X2(p_pairs(:,2)), Y1_org(p_pairs(:,1)), Y2(p_pairs(:,2)), ...
-    Z1_org(p_pairs(:,1)), Z2(p_pairs(:,2)), d1(p_pairs(:,1)), d2(p_pairs(:,2)), ...
-    I1(p_pairs(:,1)), I2(p_pairs(:,2)), p_pairs(:,:)];
 end
 
 function [MAD_ratio,MAD_ratio_hdr]=PTVval_meanandmedian(tracks,valprops)
