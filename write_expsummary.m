@@ -22,7 +22,7 @@ s_d = {'Static','Dynamic'};
 sizing_meth = {'Intensity_Weighted Centroid','Three Point Gaussian','Four Point Gaussian',...
     'Continuous Four Point Gaussian','Least Sqaures Gaussian','Continuous Least Squares Gaussian'};
 % This is the prediction method used for the tracking
-PIV_PTV = {'PTV','PIV','PIV-PTV'};
+PIV_PTV = {'None','PTV','PIV','PIV-PTV'};
 
 % Start Building the experimental summary string.
 expsummary = [];

@@ -53,7 +53,7 @@ eval(['Data.PIV.Data.outbase = PTV_Data.PIV' PTV_Data.passes '.outbase;'])
 
 % --- Tracking ---
 Data.Track.run=str2double(PTV_Data.Track.runtrack);
-PTVmethod = {'ptv','piv','piv-ptv'};
+PTVmethod = {'none','ptv','piv','piv-ptv'};
 PTVpredict = {'static','dynamic'};
 Data.Track.method = PTVmethod{str2double(PTV_Data.Track.method)};
 Data.Track.predict_mode = PTVpredict{str2double(PTV_Data.Track.prediction)};

@@ -175,7 +175,7 @@ catch
     defaultdata.Size.savebase   = 'SIZE_';
     % Tracking Default values
     defaultdata.Track.runtrack  = '0';
-    defaultdata.Track.method    = '1';
+    defaultdata.Track.method    = '2';
     defaultdata.Track.prediction= '1';
     defaultdata.Track.PIVweight = '0.5';
     defaultdata.Track.radius    = '15';
