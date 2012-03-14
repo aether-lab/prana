@@ -2,7 +2,7 @@ function varargout=pranaPIVcode(Data)
 
 if ischar(Data)
     if strcmpi(Data,'version')
-        varargout{1} = '2.0.beta.r2012.03.10';
+        varargout{1} = '2.0.beta.r2012.03.14';
     else
         error('Error: String request must be ''version''.')
     end
@@ -22,6 +22,21 @@ else
     if str2double(Data.par)
         fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
         poolopen=1;
+        
+        % This section of code checks the job file for the number of
+        % parallel processors requested for the job.  If the job requests
+        % more then what is available in the machine it reduces the number
+        % requested to 1 less then the machine maximum.  The reason for '1
+        % less' is so that machine is not unintensionally over worked.  If
+        % the users requests all of the machines processors this code will
+        % not stop the user.  Only if a request is made OVER the avialable
+        % number.
+        compinfo=findResource('scheduler','configuration','local');
+        avail_parprocs=num2str(compinfo.clustersize);
+        if str2double(Data.parprocessors) > avail_parprocs
+            fprintf('Job file requested %s processors while the machine only contains %s processors\n Updating job file to request %s processors',Data.parprocessors,num2str(avail_parprocs),num2str(avail_parprocs-1))
+            Data.parprocessors = num2str(avail_parprocs-1);
+        end
         
         %Don't open more processors than there are image pairs
         if length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend)) < str2double(Data.parprocessors)
