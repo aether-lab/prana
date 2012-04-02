@@ -1018,8 +1018,10 @@ particleprops=zeros(num_p,6);
 c = 1;
 if sizeprops.method<7
     for i=1:num_p
+%          [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
+%              centroidfit(mapint{i},locxy(i,:));
         [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
-            centroidfit(mapint{i},locxy(i,:));
+            geometric_centroid(p_matrix,im);
         particleprops(c,1)=particleprops(c,1) - 1;
         particleprops(c,2)=particleprops(c,2) - 1;
         particleprops(c,5)=i;
@@ -1223,32 +1225,54 @@ end
 
 end
 
+function [x_centroid,y_centroid,diameter,I0] = geometric_centroid(p_mat,im)
+%
+%
+%
+%
+
+R = regionprops(p_mat,im,'Area','Centroid','MaxIntensity');
+x_centroid = zeros(length(R),1);
+y_centroid = zeros(length(R),1);
+diameter = zeros(length(R),1);
+I0 = zeros(length(R),1);
+
+for i = 1:length(R)
+    x_centroid(i) = R(i).Centroid(1);
+    y_centroid(i) = R(i).Centroid(2);
+    diameter(i)   = R(i).Area;
+    I0(i)         = R(i).MaxIntensity;    
+end
+keyboard
+end
+
+
 function [x_centroid,y_centroid,diameter,I0] = centroidfit(mapint_i,locxy_i)
 
-%
-%[x_centroid,y_centroid,diameter]=centroidfit(mapint_i,locxy_i)
-%
-%given an input particle intensity profile, the function computes the x and
-%y Intensity Weighted Centroid (IWC) location in index units relative to
-%the upper left hand pixel of the entire input image
-%
-%function also estimates a particle's diameter given an input particle 
-%intensity profile(mapint_i), relative locator to the entire image(locxy_i), 
-%and the previously derived particle centroid location(x_centroid,y_centroid).
-%
-%The function extimates the diameter by meauring the total intensity of 
-%the particle then calculating the portion of that associated with the 
-%actual particle (86.4665%) from light scattering theory.  Starting with 
-%the pixel closest to the particle center and working outward, the function 
-%calculates a running intensity summation until 86.4665% of the total 
-%intensity is reached.
-%
-%mapint_i - input particle intensity profile
-%locxy_i  - index location of the upper left pixel in the particles square
+% 
+% [x_centroid,y_centroid,diameter]=centroidfit(mapint_i,locxy_i)
+% 
+% given an input particle intensity profile, the function computes the x and
+% y Intensity Weighted Centroid (IWC) location in index units relative to
+% the upper left hand pixel of the entire input image
+% 
+% function also estimates a particle's diameter given an input particle 
+% intensity profile(mapint_i), relative locator to the entire image(locxy_i), 
+% and the previously derived particle centroid location(x_centroid,y_centroid).
+% 
+% The function extimates the diameter by meauring the total intensity of 
+% the particle then calculating the portion of that associated with the 
+% actual particle (86.4665%) from light scattering theory.  Starting with 
+% the pixel closest to the particle center and working outward, the function 
+% calculates a running intensity summation until 86.4665% of the total 
+% intensity is reached.
+% 
+% mapint_i - input particle intensity profile
+% locxy_i  - index location of the upper left pixel in the particles square
 %           projection, used to orient the IWC to the entire image
-%
-%N. Cardwell - 2.8.2008
-%B. Drew - 7.31.2008
+% 
+% N. Cardwell - 2.8.2008
+% B. Drew - 7.31.2008
 
 %The first section of the code calcualtes the centroid locations, the
 %second calculates the particle diameter
