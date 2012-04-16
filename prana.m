@@ -3170,7 +3170,12 @@ if str2double(handles.data.ID.runid)
     set(handles.idmethod,'Value',str2double(handles.data.ID.method),'backgroundcolor',[1 1 1]);
     set(handles.idimthresh,'String',handles.data.ID.imthresh,'backgroundcolor',[1 1 1]);
     set(handles.idsavebase,'String',handles.data.ID.savebase,'backgroundcolor',[1 1 1]);
-    set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+%     set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+    if exist(handles.data.ID.save_dir,'dir')
+        set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor','r');
+    end
 else
     set(handles.idmethod,'backgroundcolor',0.5*[1 1 1]);
     set(handles.idimthresh,'backgroundcolor',0.5*[1 1 1]);
@@ -3184,6 +3189,11 @@ if str2double(handles.data.Size.runsize)
     set(handles.sizingstd,'String',handles.data.Size.std,'backgroundcolor',[1 1 1]);
     set(handles.sizingsavebase,'String',handles.data.Size.savebase,'backgroundcolor',[1 1 1]);
     set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
+    if exist(handles.data.Size.save_dir,'dir')
+        set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor','r');
+    end
 else
     set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
     set(handles.sizing_min_area,'backgroundcolor',0.5*[1 1 1]);
@@ -3206,6 +3216,11 @@ if str2double(handles.data.Track.runtrack)
     set(handles.trackingiterations,'String',handles.data.Track.iterations,'backgroundcolor',[1 1 1]);
     set(handles.trackingsavebase,'String',handles.data.Track.savebase,'backgroundcolor',[1 1 1]);
     set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor',[1 1 1]);
+    if exist(handles.data.Track.save_dir,'dir')
+        set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor','r');
+    end
     if str2double(handles.data.Track.valprops.run)
         set(handles.trackingvalcheckbox,'Value',str2double(handles.data.Track.valprops.run));
         set(handles.trackingvalcoefficient,'String',handles.data.Track.valprops.valcoef,'backgroundcolor',[1 1 1]);
@@ -3382,7 +3397,7 @@ else
     set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
 end
 
-if isempty(dir(handles.data.outdirec))
+if exist(handles.data.outdirec,'dir')
     set(handles.outputdirectory,'backgroundcolor','r');
 else
     set(handles.outputdirectory,'backgroundcolor',[1 1 1]);

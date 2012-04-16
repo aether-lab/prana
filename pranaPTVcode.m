@@ -6,15 +6,15 @@ else
     Data.slsh='/';
 end
 % --- Images ---
-Data.imdirec=PTV_Data.imdirec;
-Data.imbase=PTV_Data.imbase;
-Data.imext=PTV_Data.imext;
-Data.imzeros=str2double(PTV_Data.imzeros);
-Data.imcstep=str2double(PTV_Data.imcstep);
-Data.imfstep=str2double(PTV_Data.imfstep);
-Data.imfstart=str2double(PTV_Data.imfstart);
-Data.imfend=str2double(PTV_Data.imfend);
-Data.channel=str2double(PTV_Data.channel);
+Data.imdirec  = PTV_Data.imdirec;
+Data.imbase   = PTV_Data.imbase;
+Data.imext    = PTV_Data.imext;
+Data.imzeros  = str2double(PTV_Data.imzeros);
+Data.imcstep  = str2double(PTV_Data.imcstep);
+Data.imfstep  = str2double(PTV_Data.imfstep);
+Data.imfstart = str2double(PTV_Data.imfstart);
+Data.imfend   = str2double(PTV_Data.imfend);
+Data.channel  = str2double(PTV_Data.channel);
 if Data.channel==6
     fprintf(['Ensemble Color does not currently work with tracking code.\n'...
         'Resetting the color channel to 1 (grey scale)\n'])
@@ -23,23 +23,23 @@ end
 
 % --- ID ---
 IDmethod = {'blob','dynamic','combined'};
-Data.ID.method=IDmethod{str2double(PTV_Data.ID.method)};
-Data.ID.run=str2double(PTV_Data.ID.runid);
-Data.ID.v=str2double(PTV_Data.ID.imthresh);
+Data.ID.method   = IDmethod{str2double(PTV_Data.ID.method)};
+Data.ID.run      = str2double(PTV_Data.ID.runid);
+Data.ID.v        = str2double(PTV_Data.ID.imthresh);
 Data.ID.contrast_ratio=0;%str2double(Data.ID.contrast_ratio);
-Data.ID.s_num=0;%str2double(Data.ID.s_num);
-Data.ID.s_name=PTV_Data.ID.savebase;
-Data.ID.save_dir=PTV_Data.ID.save_dir;
+Data.ID.s_num    = 0;%str2double(Data.ID.s_num);
+Data.ID.s_name   = PTV_Data.ID.savebase;
+Data.ID.save_dir = PTV_Data.ID.save_dir;
 
 % --- Sizing ---
-Data.Size.run=str2double(PTV_Data.Size.runsize);
-Data.Size.thresh=str2double(PTV_Data.ID.imthresh);
-Data.Size.method=str2double(PTV_Data.Size.method);
-Data.Size.p_area=str2double(PTV_Data.Size.min_area);
-Data.Size.sigma=str2double(PTV_Data.Size.std);
-Data.Size.errors=1;%str2double(Data.Size.errors);
-Data.Size.s_name=PTV_Data.Size.savebase;
-Data.Size.save_dir=PTV_Data.Size.save_dir;
+Data.Size.run      = str2double(PTV_Data.Size.runsize);
+Data.Size.thresh   = str2double(PTV_Data.ID.imthresh);
+Data.Size.method   = str2double(PTV_Data.Size.method);
+Data.Size.p_area   = str2double(PTV_Data.Size.min_area);
+Data.Size.sigma    = str2double(PTV_Data.Size.std);
+Data.Size.errors   = 1;%str2double(Data.Size.errors);
+Data.Size.s_name   = PTV_Data.Size.savebase;
+Data.Size.save_dir = PTV_Data.Size.save_dir;
 
 % --- PIV Info ---
 if str2double(PTV_Data.datout)
