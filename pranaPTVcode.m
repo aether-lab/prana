@@ -120,32 +120,32 @@ Data.Track.valprops.MAD_V=MAD_V;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Parallel Processing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if str2double(PTV_Data.par)
-    if length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)) < str2double(PTV_Data.parprocessors)
-        PTV_Data.parprocessors=num2str(length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)));
-    end
-    fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
-    try
-        matlabpool('open','local',PTV_Data.parprocessors);
-    catch
+if Data.ID.run
+    if str2double(PTV_Data.par)
+        if length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)) < str2double(PTV_Data.parprocessors)
+            PTV_Data.parprocessors=num2str(length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)));
+        end
+        fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
         try
-            matlabpool close
             matlabpool('open','local',PTV_Data.parprocessors);
         catch
-            beep
-            disp('Error Running Job in Parallel - Defaulting to Single Processor')
-            poolopen=0;
+            try
+                matlabpool close
+                matlabpool('open','local',PTV_Data.parprocessors);
+            catch
+                beep
+                disp('Error Running Job in Parallel - Defaulting to Single Processor')
+                poolopen=0;
+            end
         end
+        fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+    else
+        fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
     end
-    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
-else
-    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Particle ID Code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if Data.ID.run
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Particle ID Code
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Write the Experimental Summary
     write_expsummary(PTV_Data);
     PTV_Data.ID.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
@@ -153,7 +153,7 @@ if Data.ID.run
     I1 = Data.imfstart:Data.imfstep:Data.imfend;
     particleIDprops       = Data.ID;
     particleIDprops.Data  = Data;
-
+    
     if str2double(PTV_Data.par) && matlabpool('size')>1
         spmd
             verstr=version('-release');
@@ -194,15 +194,15 @@ if Data.ID.run
                         IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
                         %ensemble correlation of channels
 %                     elseif channel == 6;
-%                         im1=im1(:,:,1:3);
-%                         im2=im2(:,:,1:3);
+%                            im1=im1(:,:,1:3);
+%                            im2=im2(:,:,1:3);
                     end
                 else
                     %	Take only red channel
                     IM =IM(:,:,1);
-%                     Data.channel = 1;
+                    %                     Data.channel = 1;
                 end
-
+                
                 s_num = I1dist(i);
                 
                 [p_matrix,peaks,num_p]=particle_ID_MAIN_V1(IM,particleIDprops,s_num);
@@ -267,43 +267,44 @@ if Data.ID.run
             
         end
     end
-
+    
     save(fullfile(Data.ID.save_dir,'particle_ID_parameters.mat'));
+    
+    
+    if str2double(PTV_Data.par)
+        matlabpool('close')
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if str2double(PTV_Data.par)
-    matlabpool('close')
-end
-
-if str2double(PTV_Data.par)
-    if length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)) < str2double(PTV_Data.parprocessors)
-        PTV_Data.parprocessors=num2str(length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)));
-    end
-    fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
-    try
-        matlabpool('open','local',PTV_Data.parprocessors);
-    catch
+if Data.Size.run
+    if str2double(PTV_Data.par)
+        if length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)) < str2double(PTV_Data.parprocessors)
+            PTV_Data.parprocessors=num2str(length(str2double(PTV_Data.imfstart):str2double(PTV_Data.imfstep):str2double(PTV_Data.imfend)));
+        end
+        fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
         try
-            matlabpool close
             matlabpool('open','local',PTV_Data.parprocessors);
         catch
-            beep
-            disp('Error Running Job in Parallel - Defaulting to Single Processor')
-            poolopen=0;
+            try
+                matlabpool close
+                matlabpool('open','local',PTV_Data.parprocessors);
+            catch
+                beep
+                disp('Error Running Job in Parallel - Defaulting to Single Processor')
+                poolopen=0;
+            end
         end
+        fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+    else
+        fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
     end
-    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
-else
-    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Particle Size Code
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if Data.Size.run
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %% Particle Size Code
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Write the Experimental Summary
     write_expsummary(PTV_Data);
     PTV_Data.Size.run='0';% Turn off ID so that it will write the next exp_summary in sizing folder
@@ -355,7 +356,7 @@ if Data.Size.run
                 else
                     %	Take only red channel
                     IM =IM(:,:,1);
-%                     Data.channel = 1;
+                    %                     Data.channel = 1;
                 end
                 
                 im1=IM(:,:);
@@ -381,78 +382,80 @@ if Data.Size.run
             end
         end
         clear I1dist ID_info IM SIZE1 eltime i im1 loadname sizeprops sname t0 verstr
-	else
-    for i = 1:length(I1)
-        
-        t0 = clock;
-        loadname = sprintf('%%s%%s%%s%%0%0.0fd.%%s',Data.imzeros);
-        fprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,I1(i),Data.imext)
-
-        if strcmpi(Data.imext,'tif')
-            IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'tif'));
-        elseif strcmpi(Data.imext,'mat')
-            IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'mat'));
-        else
-            error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
-        end
-        
-        if size(IM, 3) > 2
-            %Extract only red channel
-            if Data.channel == 1;
-                IM = IM(:,:,1);
-                %Extract only green channel
-            elseif Data.channel == 2;
-                IM = IM(:,:,2);
-                %Extract only blue channel
-            elseif Data.channel == 3;
-                IM = IM(:,:,3);
-                %Weighted average of channels (see rgb2gray for
-                %explanation of weighting factors)
-            elseif Data.channel == 4;
-                IM = 0.2989 * IM(:, :, 1) + 0.5870 * IM(:, :, 2) + 0.1140 * IM(:, :, 3);
-                %Evenly weighted mean of channels
-            elseif Data.channel == 5;
-                IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
-                %ensemble correlation of channels
-%             elseif channel == 6;
-%                 im1=im1(:,:,1:3);
-%                 im2=im2(:,:,1:3);
+    else
+        for i = 1:length(I1)
+            
+            t0 = clock;
+            loadname = sprintf('%%s%%s%%s%%0%0.0fd.%%s',Data.imzeros);
+            fprintf(loadname,'Sizing Frame-',Data.slsh,Data.imbase,I1(i),Data.imext)
+            
+            if strcmpi(Data.imext,'tif')
+                IM = imread(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'tif'));
+            elseif strcmpi(Data.imext,'mat')
+                IM = load(sprintf(loadname,Data.imdirec,Data.slsh,Data.imbase,I1(i),'mat'));
+            else
+                error('Unknown Extension type: .%s use, please use either ''.tif '' or ''.mat'' ',Data.imext)
             end
-        else
-            %	Take only red channel
-            IM =IM(:,:,1);
-            Data.channel = 1;
+            
+            if size(IM, 3) > 2
+                %Extract only red channel
+                if Data.channel == 1;
+                    IM = IM(:,:,1);
+                    %Extract only green channel
+                elseif Data.channel == 2;
+                    IM = IM(:,:,2);
+                    %Extract only blue channel
+                elseif Data.channel == 3;
+                    IM = IM(:,:,3);
+                    %Weighted average of channels (see rgb2gray for
+                    %explanation of weighting factors)
+                elseif Data.channel == 4;
+                    IM = 0.2989 * IM(:, :, 1) + 0.5870 * IM(:, :, 2) + 0.1140 * IM(:, :, 3);
+                    %Evenly weighted mean of channels
+                elseif Data.channel == 5;
+                    IM = (IM(:,:,1) + IM(:,:,2) + IM(:,:,3))/3;
+                    %ensemble correlation of channels
+%                 elseif channel == 6;
+%                     im1=im1(:,:,1:3);
+%                     im2=im2(:,:,1:3);
+                end
+            else
+                %	Take only red channel
+                IM =IM(:,:,1);
+                Data.channel = 1;
+            end
+            
+            im1=IM(:,:);
+            im1(im1<=Data.Size.thresh) = 0;
+            
+            %load in the identified particles
+            sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
+            
+            ID_info = load(fullfile(Data.ID.save_dir,sprintf(sname,Data.ID.s_name,I1(i),'.mat')));
+            
+            %size the particles
+            sizeprops       = Data.Size;
+            sizeprops.Data  = Data;
+            sizeprops.s_num =I1(i);
+            
+            [SIZE1.XYDiameter,SIZE1.mapsizeinfo,SIZE1.locxy]=particle_size_MAIN_V1(im1,ID_info.p_matrix,...
+                ID_info.num_p,sizeprops);
+            
+            fprintf('...done!\t');
+            eltime=etime(clock,t0);
+            fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            
         end
-
-        im1=IM(:,:);  
-        im1(im1<=Data.Size.thresh) = 0;
-
-        %load in the identified particles
-        sname = sprintf('%%s%%0%0.0fd',Data.imzeros);
-
-        ID_info = load(fullfile(Data.ID.save_dir,sprintf(sname,Data.ID.s_name,I1(i),'.mat')));
-
-        %size the particles
-        sizeprops       = Data.Size;
-        sizeprops.Data  = Data;
-        sizeprops.s_num =I1(i);
-        
-        [SIZE1.XYDiameter,SIZE1.mapsizeinfo,SIZE1.locxy]=particle_size_MAIN_V1(im1,ID_info.p_matrix,...
-            ID_info.num_p,sizeprops);
-
-        fprintf('...done!\t');
-        eltime=etime(clock,t0);
-        fprintf('Time: %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
-
     end
-    end
-
+    
     save(fullfile(Data.Size.save_dir,'particle_SIZE_parameters.mat'));
+    
+    
+    if str2double(PTV_Data.par)
+        matlabpool close
+    end
 end
 
-if str2double(PTV_Data.par)
-    matlabpool close
-end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Particle Tracking Code
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
