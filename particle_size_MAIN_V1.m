@@ -65,6 +65,11 @@ function [XYDiameter,mapsizeinfo,locxy] = particle_size_MAIN_V1(im,p_matrix,num_
 %initialize particle properties array
 particleprops=zeros(num_p,6);
 
+if strcmpi(sizeprops.method,'GEO')
+[particleprops(:,1),particleprops(:,2),particleprops(:,3),particleprops(:,4)]=...
+    geometric_centroid(p_matrix,im);
+end
+
 %calculate the Intensity Weigthed Centorid (IWC) using (centroidfit)
 %these results will be outputted if the other methods return NaN's and
 %the user does not want errors in the output
@@ -73,12 +78,10 @@ particleprops=zeros(num_p,6);
 %           *diameter   - calculated diameter of the particle
 %           *I0         - intensity value of the brightest pixel
 c = 1;
-if sizeprops.method<7
+if strcmpi(sizeprops.method,'IWC') % sizeprops.method<7
     for i=1:num_p
-%          [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
-%              centroidfit(mapint{i},locxy(i,:));
-        [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
-            geometric_centroid(p_matrix,im);
+         [particleprops(c,1),particleprops(c,2),particleprops(c,3),particleprops(c,4)]=...
+             centroidfit(mapint{i},locxy(i,:));
         particleprops(c,1)=particleprops(c,1) - 1;
         particleprops(c,2)=particleprops(c,2) - 1;
         particleprops(c,5)=i;
@@ -93,9 +96,9 @@ end
 %           *y_centroid - y (row) index location of the particles IWC
 %           *diameter   - calculated diameter of the particle
 %           *I0         - calculated maximum particle intensity
-if sizeprops.method==2
+if strcmpi(sizeprops.method,'TPG')%sizeprops.method==2
     for i=1:num_p
-        [x_cg,y_cg,D,I0,E,Meth]=Gaussfit(mapint{i},sizeprops.method-1,sizeprops.sigma);
+        [x_cg,y_cg,D,I0,~,Meth]=Gaussfit(mapint{i},sizeprops.method-1,sizeprops.sigma);
         x_c = locxy(i,1)+x_cg-1;
         y_c = locxy(i,2)+y_cg-1;
 
@@ -116,9 +119,9 @@ if sizeprops.method==2
 %           *y_centroid - y (row) index location of the particles IWC
 %           *diameter   - calculated diameter of the particle
 %           *I0         - calculated maximum particle intensity
-elseif sizeprops.method==3 || sizeprops.method==4
+elseif strcmpi(sizeprops.method,'FPG') || strcmpi(sizeprops.method,'CFPG') %sizeprops.method==3 || sizeprops.method==4
     for i=1:num_p
-        [x_cg,y_cg,D,I0,E,Meth]=Gaussfit(mapint{i},sizeprops.method,sizeprops.sigma);
+        [x_cg,y_cg,D,I0,~,Meth]=Gaussfit(mapint{i},sizeprops.method,sizeprops.sigma);
         x_c = locxy(i,1)+x_cg-1;
         y_c = locxy(i,2)+y_cg-1;
 
@@ -139,9 +142,9 @@ elseif sizeprops.method==3 || sizeprops.method==4
 %           *y_centroid - y (row) index location of the particles IWC
 %           *diameter   - calculated diameter of the particle
 %           *I0         - calculated maximum particle intensity
-elseif sizeprops.method==5 || sizeprops.method==6
+elseif strcmpi(sizeprops.method,'LSG') || strcmpi(sizeprops.method,'CLSG')%sizeprops.method==5 || sizeprops.method==6
     for i=1:num_p
-        [x_cl,y_cl,D_l,I0_l,E_l,Meth] = Leastsqrfit(mapint{i},sizeprops.method-2,sizeprops.sigma);
+        [x_cl,y_cl,D_l,I0_l,~,Meth] = Leastsqrfit(mapint{i},sizeprops.method-2,sizeprops.sigma);
         x_c = locxy(i,1)+x_cl-1;
         y_c = locxy(i,2)+y_cl-1;
         

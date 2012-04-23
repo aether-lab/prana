@@ -16,5 +16,4 @@ for i = 1:length(R)
     diameter(i)   = R(i).Area;
     I0(i)         = R(i).MaxIntensity;    
 end
-keyboard
 end

@@ -56,15 +56,30 @@ catch ME
 end
 
 %algorithm options
-Velinterp=str2double(Data.velinterp);
-Iminterp=str2double(Data.iminterp);
-Nmax=str2double(Data.framestep);
-ds=str2double(Data.PIVerror);
+Velinterp = str2double(Data.velinterp);
+Iminterp  = str2double(Data.iminterp);
+Nmax      = str2double(Data.framestep);
+ds        = str2double(Data.PIVerror);
 
 %physical parameters
-Mag = str2double(Data.wrmag);
-dt = str2double(Data.wrsep);
+Mag  = str2double(Data.wrmag);
+dt   = str2double(Data.wrsep);
 Freq = str2double(Data.wrsamp);
+%checking to makesure physical parameters are infact numbers.
+if isnan(Mag) || isnan(dt) || isnan(Freq)
+    if isnan(Mag)    
+    Mag = 1;
+    fprintf('Magnifcation Value improporly set, changing the value to 1\n')
+    end
+    if isnan(dt)    
+    dt = 1;
+    fprintf('Pulse Separation improporly set, changing the value to 1\n')
+    end
+    if isnan(Freq)
+    Freq = 1;
+    fprintf('Sampling Rate improporly set, changing the value to 1\n')
+    end
+end
 
 % %initialization
 % Effective size of window after Gaussian filtering
@@ -79,36 +94,36 @@ Gres = zeros(P,2);
 % NOT SURE
 
 % Not Sure
-Gbuf=zeros(P,2);
-Corr=cell(P,1);            %correlation type on each pass
-D=zeros(P,1);
-Zeromean=zeros(P,1);
-Peaklocator=zeros(P,1);
-Velsmoothswitch=zeros(P,1);
-Velsmoothfilt=zeros(P,1);
-Valswitch=zeros(P,1);
-UODswitch=zeros(P,1);
-Bootswitch=zeros(P,1);
-Threshswitch=zeros(P,1);
-Writeswitch=zeros(P,1);
-Peakswitch=zeros(P,1);
-UODwinsize=zeros(P,2,1);
-UODthresh=zeros(P,1);
-Bootper=zeros(P,1);
-Bootiter=zeros(P,1);
-Bootkmax=zeros(P,1);
-Uthresh=zeros(P,2);
-Vthresh=zeros(P,2);
-extrapeaks=zeros(P,1);
-PeakNum=zeros(P,1);
-PeakMag=zeros(P,1);
-PeakVel=zeros(P,1);
-wbase=cell(0);
-frac_filt=zeros(P,1);
-mindefloop=zeros(P,1);% variables for the deformation convergences
-maxdefloop=zeros(P,1);
-condefloop=zeros(P,1);
-saveplane=zeros(P,1);
+Gbuf            = zeros(P,2);
+Corr            = cell(P,1);  %correlation type on each pass
+D               = zeros(P,1);
+Zeromean        = zeros(P,1);
+Peaklocator     = zeros(P,1);
+Velsmoothswitch = zeros(P,1);
+Velsmoothfilt   = zeros(P,1);
+Valswitch       = zeros(P,1);
+UODswitch       = zeros(P,1);
+Bootswitch      = zeros(P,1);
+Threshswitch    = zeros(P,1);
+Writeswitch     = zeros(P,1);
+Peakswitch      = zeros(P,1);
+UODwinsize      = zeros(P,2);
+UODthresh       = zeros(P,1);
+Bootper         = zeros(P,1);
+Bootiter        = zeros(P,1);
+Bootkmax        = zeros(P,1);
+Uthresh         = zeros(P,2);
+Vthresh         = zeros(P,2);
+extrapeaks      = zeros(P,1);
+PeakNum         = zeros(P,1);
+PeakMag         = zeros(P,1);
+PeakVel         = zeros(P,1);
+wbase           = cell(0);
+frac_filt       = zeros(P,1);
+mindefloop      = zeros(P,1); % variables for the deformation convergences
+maxdefloop      = zeros(P,1);
+condefloop      = zeros(P,1);
+saveplane       = zeros(P,1);
 
 %read data info for each pass
 for e=1:P

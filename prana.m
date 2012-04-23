@@ -169,7 +169,7 @@ catch
     defaultdata.ID.savebase     = 'ID_';
     % Sizing Default values
     defaultdata.Size.runsize    = '0';
-    defaultdata.Size.method     = '1';
+    defaultdata.Size.method     = 'GEO';
     defaultdata.Size.min_area   = '0';
     defaultdata.Size.std        = '4';
     defaultdata.Size.savebase   = 'SIZE_';
@@ -2315,7 +2315,7 @@ function pulseseparation_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.wrsep = get(hObject,'String');
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
+    if str2double(get(hObject,'String'))<=0 || isnan(str2double(get(hObject,'String')))
         set(hObject,'backgroundcolor','r')
     else
         set(hObject,'backgroundcolor',[1 1 1])
@@ -2331,7 +2331,7 @@ function samplingrate_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.wrsamp = get(hObject,'String');
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
+    if str2double(get(hObject,'String'))<=0 || isnan(str2double(get(hObject,'String')))
         set(hObject,'backgroundcolor','r')
     else
         set(hObject,'backgroundcolor',[1 1 1])
@@ -2348,7 +2348,7 @@ if str2double(handles.Njob)>0
     handles.data.wrmag = get(hObject,'String');
     [handles]=load_data(handles);
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
+    if str2double(get(hObject,'String'))<=0 || isnan(str2double(get(hObject,'String')))
         set(hObject,'backgroundcolor','r')
     else
         set(hObject,'backgroundcolor',[1 1 1])
@@ -3184,7 +3184,7 @@ else
 end
 if str2double(handles.data.Size.runsize)
     set(handles.runsizingcheckbox,'Value',str2double(handles.data.Size.runsize));
-    set(handles.sizingmethod,'Value',str2double(handles.data.Size.method),'backgroundcolor',[1 1 1]);
+    set(handles.sizingmethod,'Value',sizeMethodLookup(handles.data.Size.method),'backgroundcolor',[1 1 1]);
     set(handles.sizing_min_area,'String',handles.data.Size.min_area,'backgroundcolor',[1 1 1]);
     set(handles.sizingstd,'String',handles.data.Size.std,'backgroundcolor',[1 1 1]);
     set(handles.sizingsavebase,'String',handles.data.Size.savebase,'backgroundcolor',[1 1 1]);
@@ -3397,7 +3397,7 @@ else
     set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
 end
 
-if exist(handles.data.outdirec,'dir')
+if ~exist(handles.data.outdirec,'dir')
     set(handles.outputdirectory,'backgroundcolor','r');
 else
     set(handles.outputdirectory,'backgroundcolor',[1 1 1]);
@@ -4522,7 +4522,9 @@ end
 % --- Executes on selection change in sizingmethod.
 function sizingmethod_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.Size.method = num2str(get(hObject,'Value'));
+    
+    handles.data.Size.method = sizeMethodLookup(get(hObject,'Value'));
+%     handles.data.Size.method = num2str(get(hObject,'Value'));
     update_PTV(handles);
     guidata(hObject,handles)
 end
@@ -5051,6 +5053,29 @@ end
     handles=update_data(handles); % Update handles
     guidata(hObject,handles)
     
+end
+
+function S = sizeMethodLookup(M)
+% This function switch between numerials and strings for the sizing method.
+% If a string is entered it will pass back the corresponding number and if
+% a number is entered it will pass back the correct string.
+
+size_str = {'GEO','IWC','TPG','FTG','CFPG','LSG','CLSG'};
+
+if ischar(M)
+    T = strfind(size_str,M);
+    for i = 1:length(T)
+        if ~isempty(T{i})
+            S=i;
+        end
+    end
+elseif isnumeric(M)
+    S = size_str{M};
+elseif isnan(M)
+    S = 'GEO';
+end
+if ~exist('S','var')
+    keyboard
 end
 
 
