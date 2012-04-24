@@ -130,9 +130,23 @@ if ~isempty(trackprops.save_dir)
         fprintf('Making Save Directory %s \n',trackprops.save_dir)
         mkdir(trackprops.save_dir)
     end
-    sname = sprintf('%%s%%0%0.0fd.mat',trackprops.Data.imzeros);
-    save(fullfile(trackprops.save_dir,sprintf(sname,trackprops.s_name,trackprops.s_num)),...
-        'tracks','trackprops','valprops');
+    
+    sname = sprintf('%%s%%0%0.0fd',trackprops.Data.imzeros);
+    fname = fullfile(trackprops.save_dir,sprintf(sname,trackprops.s_name,trackprops.s_num));
+        
+    if trackprops.savedat
+        X = tracks(:,1);
+        Y = tracks(:,3);
+        U = tracks(:,2)-tracks(:,1);
+        V = tracks(:,4)-tracks(:,3);
+        D = tracks(:,7);
+        Int = tracks(:,9);
+        Coef = tracks(:,13);
+        write_dat_ptv(fname,{X},{'X'},{Y,U,V,D,Int,Coef},{'Y','U','V','Diameter','Intensity','Coefficient'},1,'T','block','zone')
+    end
+    if trackprops.savemat
+        save(fname,'tracks','trackprops','valprops');
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

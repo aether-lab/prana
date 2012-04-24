@@ -65,11 +65,24 @@ function [XYDiameter,mapsizeinfo,locxy] = particle_size_MAIN_V1(im,p_matrix,num_
 %initialize particle properties array
 particleprops=zeros(num_p,6);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Geometric Centroid (GEO)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%calculate the Geometeric Centorid (GEO) using (geometric_centroid)
+%these results will be outputted if the other methods return NaN's and
+%the user does not want errors in the output
+%returns    *x_centroid - x (column) index location of the particles IWC
+%           *y_centroid - y (row) index location of the particles IWC
+%           *diameter   - calculated diameter of the particle
+%           *I0         - intensity value of the brightest pixel
 if strcmpi(sizeprops.method,'GEO')
-[particleprops(:,1),particleprops(:,2),particleprops(:,3),particleprops(:,4)]=...
-    geometric_centroid(p_matrix,im);
+    [particleprops(:,1),particleprops(:,2),particleprops(:,3),particleprops(:,4)]=...
+        geometric_centroid(p_matrix,im,sizeprops.p_area);
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Intensity Weigthed Centorid (IWC)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %calculate the Intensity Weigthed Centorid (IWC) using (centroidfit)
 %these results will be outputted if the other methods return NaN's and
 %the user does not want errors in the output
@@ -90,6 +103,9 @@ if strcmpi(sizeprops.method,'IWC') % sizeprops.method<7
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Three Point Gaussian (TPG)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %calculate the centroid location and particle diameter using the 3-point
 %approximation method (threeptgausfit)
 %returns    *x_centroid - x (column) index location of the particles IWC
@@ -98,21 +114,24 @@ end
 %           *I0         - calculated maximum particle intensity
 if strcmpi(sizeprops.method,'TPG')%sizeprops.method==2
     for i=1:num_p
-        [x_cg,y_cg,D,I0,~,Meth]=Gaussfit(mapint{i},sizeprops.method-1,sizeprops.sigma);
+        [x_cg,y_cg,D,I0,~,Meth]=Gaussfit(mapint{i},sizeprops.method,sizeprops.sigma);
         x_c = locxy(i,1)+x_cg-1;
         y_c = locxy(i,2)+y_cg-1;
-
+        
         if nnz(isnan([x_c,y_c,D,I0])>1)
             if sizeprops.errors==0
                 %retain the IWC estimate
             else
                 particleprops(i,:)=[x_c,y_c,max(D),max(I0),i,Meth+1];
             end
-        else 
+        else
             particleprops(i,:)=[x_c,y_c,max(D),max(I0),i,Meth+1];
         end
     end
     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Four Point Gaussian (FPG and CFPG)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %calculate the centroid location and particle diameter using the 4-point
 %or continuous 4-point approximation method (fourptgausfit)
 %returns    *x_centroid - x (column) index location of the particles IWC
@@ -136,6 +155,9 @@ elseif strcmpi(sizeprops.method,'FPG') || strcmpi(sizeprops.method,'CFPG') %size
         end
     end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Least Squares Gaussian (LSG and CLSG)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %calculate the centroid location and particle diameter using the local
 %least squares or continuous local least squares method (localleastsquares)
 %returns    *x_centroid - x (column) index location of the particles IWC
@@ -144,7 +166,7 @@ elseif strcmpi(sizeprops.method,'FPG') || strcmpi(sizeprops.method,'CFPG') %size
 %           *I0         - calculated maximum particle intensity
 elseif strcmpi(sizeprops.method,'LSG') || strcmpi(sizeprops.method,'CLSG')%sizeprops.method==5 || sizeprops.method==6
     for i=1:num_p
-        [x_cl,y_cl,D_l,I0_l,~,Meth] = Leastsqrfit(mapint{i},sizeprops.method-2,sizeprops.sigma);
+        [x_cl,y_cl,D_l,I0_l,~,Meth] = Leastsqrfit(mapint{i},sizeprops.method,sizeprops.sigma);
         x_c = locxy(i,1)+x_cl-1;
         y_c = locxy(i,2)+y_cl-1;
         
@@ -158,7 +180,7 @@ elseif strcmpi(sizeprops.method,'LSG') || strcmpi(sizeprops.method,'CLSG')%sizep
             particleprops(i,:)=[x_c,y_c,max(D_l),max(I0_l),i,Meth+2];
         end
     end
-    fprintf('\n\t%3.2f%% of particles sized with method %0.0f ',(sum(particleprops(:,6)==sizeprops.method)/num_p)*100,sizeprops.method)
+%     fprintf('\n\t%3.2f%% of particles sized with method %0.0f ',(sum(particleprops(:,6)==sizeprops.method)/num_p)*100,sizeprops.method)
 end
 
 XYDiameter=particleprops;

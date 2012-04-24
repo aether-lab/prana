@@ -1,4 +1,4 @@
-function [x_c,y_c,D,P,E,Meth] = Gaussfit(intmap,method,sigma)
+function [x_c,y_c,D,P,E,Meth] = Gaussfit(intmap,method_in,sigma)
 %
 %[x_c,y_c,D,P,E] = Gaussfit(intmap,method,sigma)
 %
@@ -24,7 +24,15 @@ function [x_c,y_c,D,P,E,Meth] = Gaussfit(intmap,method,sigma)
 %                        Thesis of M. Brady)
 %S.Raben - 9.20.2008
 
-if method <1 || method > 4
+
+if strcmpi(method_in,'TPG')
+    method = 1;
+elseif strcmpi(method_in,'FPG')
+    method = 3;
+elseif strcmpi(method_in,'CFPG')
+    method = 4;
+else
+% if method <1 || method > 4
     error('Unknown Method in Gaussfit Function')
 end
 Meth = method;

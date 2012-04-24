@@ -35,7 +35,7 @@ Data.ID.save_dir       = PTV_Data.ID.save_dir;
 % --- Sizing ---
 Data.Size.run      = str2double(PTV_Data.Size.runsize);
 Data.Size.thresh   = str2double(PTV_Data.ID.imthresh);
-Data.Size.method   = str2double(PTV_Data.Size.method);
+Data.Size.method   = PTV_Data.Size.method;
 Data.Size.p_area   = str2double(PTV_Data.Size.min_area);
 Data.Size.sigma    = str2double(PTV_Data.Size.std);
 Data.Size.errors   = 1;%str2double(Data.Size.errors);
@@ -67,6 +67,8 @@ Data.Track.numvecs        = str2double(PTV_Data.Track.vectors);
 Data.Track.max_iterations = str2double(PTV_Data.Track.iterations);
 Data.Track.s_name         = PTV_Data.Track.savebase;
 Data.Track.save_dir       = PTV_Data.Track.save_dir;
+Data.Track.savemat        = str2double(PTV_Data.Track.trackmat);
+Data.Track.savedat        = str2double(PTV_Data.Track.trackdat);
 
 cutoff_commas = strfind(PTV_Data.Track.valprops.valcoef,',');
 radius_commas = strfind(PTV_Data.Track.valprops.valrad,',');
@@ -444,6 +446,8 @@ if Data.Track.run
     write_expsummary(PTV_Data);
     
     Data.Track.Data  = Data;
+    
+    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
     
     for k=1:length(im_list)-1
         t0 = clock;

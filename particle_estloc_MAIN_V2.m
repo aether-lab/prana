@@ -90,15 +90,15 @@ switch lower(estlocprops.method)
 end
 
 %section for saving sized particle information
-if ~isempty(estlocprops.save_dir)
-    if exist(estlocprops.save_dir,'dir')~=7
-        fprintf('Making Save Directory %s \n',estlocprops.save_dir)
-        mkdir(estlocprops.save_dir)
-    end
-    sname = sprintf('%%s%%0%0.0fd',estlocprops.Data.imzeros);
-    save(fullfile(estlocprops.save_dir,sprintf(sname,estlocprops.s_name,estlocprops.s_num)),...
-        'estlocprops','X2_est','Y2_est','Z2_est');
-end
+% if ~isempty(estlocprops.save_dir)
+%     if exist(estlocprops.save_dir,'dir')~=7
+%         fprintf('Making Save Directory %s \n',estlocprops.save_dir)
+%         mkdir(estlocprops.save_dir)
+%     end
+%     sname = sprintf('%%s%%0%0.0fd',estlocprops.Data.imzeros);
+%     save(fullfile(estlocprops.save_dir,sprintf(sname,estlocprops.s_name,estlocprops.s_num)),...
+%         'estlocprops','X2_est','Y2_est','Z2_est');
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %plotting code - COMMENT OUT FOR NORMAL OPERATION
