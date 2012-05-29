@@ -2891,7 +2891,7 @@ end
 
 % --- Load Image List ---
 function load_imlist(handles)
-dir_struct = dir(handles.data.imdirec);
+dir_struct = dir(fullfile(handles.data.imdirec,['*.' handles.data.imext]));
 if isempty(dir_struct)
     set(handles.imagedirectory,'backgroundcolor','r');
 else

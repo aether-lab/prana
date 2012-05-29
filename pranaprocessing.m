@@ -475,7 +475,7 @@ switch char(M)
                     % has been made in the job file.
                     if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                         Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
-                        save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','C_planes')
+                        save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
                         clear Xloc Yloc C_planes
                     end
                     
@@ -1285,7 +1285,7 @@ switch char(M)
                 end
                 if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                     Xloc = Xc;Yloc=Yc;%#ok
-                    save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','CCm')
+                    save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(1)),'Xloc','Yloc','CCm')
                     clear Xloc Yloc
                 end
                 X=Xval;Y=Yval;
@@ -1554,7 +1554,7 @@ switch char(M)
                     end
                     if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                         Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
-                        save(sprintf('%s%scorrplanes.mat',pltdirec,wbase{e,:}),'Xloc','Yloc','C_planes')
+                        save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
                         clear Xloc Yloc C_planes
                     end
                     X=Xval;Y=Yval;
