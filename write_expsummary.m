@@ -211,7 +211,7 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
     end
     if str2double(Data.Size.runsize)
         expsummary = [expsummary sprintf('\n---------------------------Sizing----------------------------\n')];
-        expsummary = [expsummary sprintf(['Sizing Method:                                ',sizing_meth{str2double(Data.Size.method)},'\n'])];
+        expsummary = [expsummary sprintf(['Sizing Method:                                ',Data.Size.method,'\n'])];
         expsummary = [expsummary sprintf(['Standard Deviation:                           ',Data.Size.std,'\n'])];
         expsummary = [expsummary sprintf(['Sizing Output Basename:                       ',Data.Size.savebase,'\n'])];
         expsummary = [expsummary sprintf(['Sizing Output Location:                       ',Data.Size.save_dir,'\n'])];
@@ -240,7 +240,12 @@ if any([str2double(Data.ID.runid) str2double(Data.Size.runsize) str2double(Data.
         end
         expsummary = [expsummary sprintf(['Tracking Output Basename:                     ',Data.Track.savebase,'\n'])];
         expsummary = [expsummary sprintf(['Tracking Output Location:                     ',Data.Track.save_dir,'\n'])];
-        
+        if str2double(Data.Track.trackdat) == 1
+            expsummary = [expsummary sprintf(['  Tracking Output Type:                       ','*.dat','\n'])];
+        end
+        if str2double(Data.Track.trackmat) == 1
+            expsummary = [expsummary sprintf(['  Tracking Output Type:                       ','*.mat','\n'])];
+        end
     end
 end
 

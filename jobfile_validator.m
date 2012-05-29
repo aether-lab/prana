@@ -108,7 +108,7 @@ if ~isfield(Data.ID,'runid')
     Data.ID.savebase     = 'ID_';
     % Sizing Default values
     Data.Size.runsize    = '0';
-    Data.Size.method     = '1';
+    Data.Size.method     = 'GEO';
     Data.Size.std        = '4';
     Data.Size.savebase   = 'SIZE_';
     % Tracking Default values
@@ -123,6 +123,8 @@ if ~isfield(Data.ID,'runid')
     Data.Track.estradius = '15';
     Data.Track.estweight = '.1';
     Data.Track.savebase  = 'Track_';
+    Data.Track.trackdat  = '0';
+    Data.Track.trackmat  = '1';
     Data.Track.vectors   = '3';
     Data.Track.iterations= '3';
     % Tracking Validation Values
@@ -136,4 +138,16 @@ end
 if ~isfield(Data.Size,'min_area')
     Data.Size.min_area = '0';
 end
+% Check to see if the job files have the new tracking output options.  If
+% not add them to the jobfile setting *.mat as the output.
+if ~isfield(Data.Track,'trackdat')
+    Data.Track.trackdat  = '0';
+    Data.Track.trackmat  = '1';
+end
+
+% Check to see if an old job with numerical sizing methods was loaded and
+% switch the number to a string.
+if ~isnan(str2double(Data.Size.method))
+    size_str = {'IWC','TPG','FTG','CFPG','LSG','CLSG'};
+    Data.Size.method = size_str{str2double(Data.Size.method)};
 end

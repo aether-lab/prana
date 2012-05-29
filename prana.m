@@ -169,7 +169,7 @@ catch
     defaultdata.ID.savebase     = 'ID_';
     % Sizing Default values
     defaultdata.Size.runsize    = '0';
-    defaultdata.Size.method     = '1';
+    defaultdata.Size.method     = 'GEO';
     defaultdata.Size.min_area   = '0';
     defaultdata.Size.std        = '4';
     defaultdata.Size.savebase   = 'SIZE_';
@@ -185,6 +185,8 @@ catch
     defaultdata.Track.estradius = '15';
     defaultdata.Track.estweight = '.1';
     defaultdata.Track.savebase  = 'Track_';
+    defaultdata.Track.trackdat  = '0';
+    defaultdata.Track.trackmat  = '1';
     defaultdata.Track.vectors   = '3';
     defaultdata.Track.iterations= '3';    
     % Tracking Validation Values
@@ -2315,7 +2317,7 @@ function pulseseparation_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.wrsep = get(hObject,'String');
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
+    if str2double(get(hObject,'String'))<=0 || isnan(str2double(get(hObject,'String')))
         set(hObject,'backgroundcolor','r')
     else
         set(hObject,'backgroundcolor',[1 1 1])
@@ -2331,7 +2333,7 @@ function samplingrate_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     handles.data.wrsamp = get(hObject,'String');
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
+    if str2double(get(hObject,'String'))<=0 || isnan(str2double(get(hObject,'String')))
         set(hObject,'backgroundcolor','r')
     else
         set(hObject,'backgroundcolor',[1 1 1])
@@ -2348,7 +2350,7 @@ if str2double(handles.Njob)>0
     handles.data.wrmag = get(hObject,'String');
     [handles]=load_data(handles);
     guidata(hObject,handles)
-    if str2double(get(hObject,'String'))<=0
+    if str2double(get(hObject,'String'))<=0 || isnan(str2double(get(hObject,'String')))
         set(hObject,'backgroundcolor','r')
     else
         set(hObject,'backgroundcolor',[1 1 1])
@@ -2889,7 +2891,7 @@ end
 
 % --- Load Image List ---
 function load_imlist(handles)
-dir_struct = dir(handles.data.imdirec);
+dir_struct = dir(fullfile(handles.data.imdirec,['*.' handles.data.imext]));
 if isempty(dir_struct)
     set(handles.imagedirectory,'backgroundcolor','r');
 else
@@ -3170,26 +3172,36 @@ if str2double(handles.data.ID.runid)
     set(handles.idmethod,'Value',str2double(handles.data.ID.method),'backgroundcolor',[1 1 1]);
     set(handles.idimthresh,'String',handles.data.ID.imthresh,'backgroundcolor',[1 1 1]);
     set(handles.idsavebase,'String',handles.data.ID.savebase,'backgroundcolor',[1 1 1]);
-    set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+%     set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+    if exist(handles.data.ID.save_dir,'dir')
+        set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.idsaveloc,'String',handles.data.ID.save_dir,'backgroundcolor','r');
+    end
 else
     set(handles.idmethod,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.idimthresh,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.idsavebase,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.idsaveloc,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idimthresh,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.idsavebase,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.idsaveloc,'backgroundcolor',0.5*[1 1 1],'String','');
 end
 if str2double(handles.data.Size.runsize)
     set(handles.runsizingcheckbox,'Value',str2double(handles.data.Size.runsize));
-    set(handles.sizingmethod,'Value',str2double(handles.data.Size.method),'backgroundcolor',[1 1 1]);
+    set(handles.sizingmethod,'Value',sizeMethodLookup(handles.data.Size.method),'backgroundcolor',[1 1 1]);
     set(handles.sizing_min_area,'String',handles.data.Size.min_area,'backgroundcolor',[1 1 1]);
     set(handles.sizingstd,'String',handles.data.Size.std,'backgroundcolor',[1 1 1]);
     set(handles.sizingsavebase,'String',handles.data.Size.savebase,'backgroundcolor',[1 1 1]);
     set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
+    if exist(handles.data.Size.save_dir,'dir')
+        set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.sizingsaveloc,'String',handles.data.Size.save_dir,'backgroundcolor','r');
+    end
 else
     set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.sizing_min_area,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.sizingstd,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.sizingsavebase,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.sizingsaveloc,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizing_min_area,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.sizingstd,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.sizingsavebase,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.sizingsaveloc,'backgroundcolor',0.5*[1 1 1],'String','');
 end
 if str2double(handles.data.Track.runtrack)
     set(handles.runtrackingcheckbox,'Value',str2double(handles.data.Track.runtrack));
@@ -3206,6 +3218,11 @@ if str2double(handles.data.Track.runtrack)
     set(handles.trackingiterations,'String',handles.data.Track.iterations,'backgroundcolor',[1 1 1]);
     set(handles.trackingsavebase,'String',handles.data.Track.savebase,'backgroundcolor',[1 1 1]);
     set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor',[1 1 1]);
+    if exist(handles.data.Track.save_dir,'dir')
+        set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.trackingsaveloc,'String',handles.data.Track.save_dir,'backgroundcolor','r');
+    end
     if str2double(handles.data.Track.valprops.run)
         set(handles.trackingvalcheckbox,'Value',str2double(handles.data.Track.valprops.run));
         set(handles.trackingvalcoefficient,'String',handles.data.Track.valprops.valcoef,'backgroundcolor',[1 1 1]);
@@ -3213,29 +3230,34 @@ if str2double(handles.data.Track.runtrack)
         set(handles.trackingvalUthresh,'String',handles.data.Track.valprops.MAD_U,'backgroundcolor',[1 1 1]);
         set(handles.trackingvalVthresh,'String',handles.data.Track.valprops.MAD_V,'backgroundcolor',[1 1 1]);
     else
-        set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1]);
-        set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1],'String','');
+        set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1],'String','');
+        set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1],'String','');
+        set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1],'String','');
     end
+    set(handles.trackingoutputdat,'Value',str2double(handles.data.Track.trackdat));
+    set(handles.trackingoutputmat,'Value',str2double(handles.data.Track.trackmat));
+
 else
     set(handles.trackingmethod,'backgroundcolor',0.5*[1 1 1]);
     set(handles.trackingprediction,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingPIVweight,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingradius,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingdistweight,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingsizeweight,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingintensityweight,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingestradius,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingestweight,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingvectors,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingiterations,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingsavebase,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingsaveloc,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingPIVweight,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingradius,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingdistweight,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingsizeweight,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingintensityweight,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingestradius,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingestweight,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingvectors,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingiterations,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingsavebase,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingsaveloc,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingoutputdat,'Value',0);
+    set(handles.trackingoutputmat,'Value',0);
 end
 
 
@@ -3382,7 +3404,7 @@ else
     set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
 end
 
-if isempty(dir(handles.data.outdirec))
+if ~exist(handles.data.outdirec,'dir')
     set(handles.outputdirectory,'backgroundcolor','r');
 else
     set(handles.outputdirectory,'backgroundcolor',[1 1 1]);
@@ -4507,7 +4529,9 @@ end
 % --- Executes on selection change in sizingmethod.
 function sizingmethod_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    handles.data.Size.method = num2str(get(hObject,'Value'));
+    
+    handles.data.Size.method = sizeMethodLookup(get(hObject,'Value'));
+%     handles.data.Size.method = num2str(get(hObject,'Value'));
     update_PTV(handles);
     guidata(hObject,handles)
 end
@@ -4744,6 +4768,23 @@ function trackingsaveloc_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+% --- Executes on button press in trackingoutputdat.
+function trackingoutputdat_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.trackdat = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles);
+end
+
+% --- Executes on button press in trackingoutputmat.
+function trackingoutputmat_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.Track.trackmat = num2str(get(hObject,'Value'));
+    update_PTV(handles);
+    guidata(hObject,handles);
+end
+
 
 % --- Executes on button press in loadtrackingsaveloc.
 function loadtrackingsaveloc_Callback(hObject, eventdata, handles)
@@ -5036,6 +5077,26 @@ end
     handles=update_data(handles); % Update handles
     guidata(hObject,handles)
     
+end
+
+function S = sizeMethodLookup(M)
+% This function switch between numerials and strings for the sizing method.
+% If a string is entered it will pass back the corresponding number and if
+% a number is entered it will pass back the correct string.
+
+size_str = {'GEO','IWC','TPG','FTG','CFPG','LSG','CLSG'};
+
+if ischar(M)
+    T = strfind(size_str,M);
+    for i = 1:length(T)
+        if ~isempty(T{i})
+            S=i;
+        end
+    end
+elseif isnumeric(M)
+    S = size_str{M};
+elseif isnan(M)
+    S = 'GEO';
 end
 
 
