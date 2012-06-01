@@ -151,3 +151,8 @@ if ~isnan(str2double(Data.Size.method))
     size_str = {'IWC','TPG','FTG','CFPG','LSG','CLSG'};
     Data.Size.method = size_str{str2double(Data.Size.method)};
 end
+
+ver = pranaPIVcode('version');
+Data.version = ver;
+ver = pranaPTVcode('version');
+Data.ptv_version = ver;
