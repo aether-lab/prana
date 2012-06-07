@@ -277,7 +277,7 @@ switch upper(tcorr)
             % dynamically based on the autocorrelation
             if dyn_rpc
                 CPS = ifftn(Wden,'symmetric');
-                [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
+                [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0,D);
                 spectral = fftshift(energyfilt(Sx,Sy,Drpc./sqrt(2),0));
             end
 
@@ -352,7 +352,7 @@ switch upper(tcorr)
             % dynamically based on the autocorrelation
             if dyn_rpc
                 CPS = ifftn(Wden,'symmetric');
-                [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0);
+                [~,~,~,Drpc]=subpixel(CPS(fftindy,fftindx),Sx,Sy,cnorm,Peaklocator,0,D);
                 spectral = fftshift(energyfilt(Sx,Sy,Drpc./sqrt(2),0));
             end
 

@@ -120,7 +120,7 @@ catch
     defaultdata.PIV0.gridbuf='8,8';
     defaultdata.PIV0.BWO='0,0';
     defaultdata.PIV0.corr='RPC';
-    defaultdata.PIV0.RPCd='2.8';
+    defaultdata.PIV0.RPCd='2.8,2.8';
     defaultdata.PIV0.frac_filt='1';
     defaultdata.PIV0.zeromean='0';
     defaultdata.PIV0.peaklocator='1';
@@ -1901,7 +1901,7 @@ if str2double(handles.Njob) > 0
         gy = round(wyMax * (1 - overY / 100));
         
 % Update "Window Overlap" field in "Piv Pass" data structure
-        eval(['handles.data.PIV' handles.data.cpass '.winoverlap = get(hObject,''String'');'])
+        eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX) '','' num2str(overY)];'])
         
 % Update "Grid Resolution" field in "Piv Pass" data structure
         eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
@@ -1927,13 +1927,15 @@ end
 % --- Grid Buffer Text Box ---
 function gridbuffer_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
+    [Bufx Bufy] = parseNum(get(hObject,'string')); 
     if str2double(handles.data.method)==1
         for e=1:str2double(handles.data.passes)
-            eval(['handles.data.PIV' num2str(e) '.gridbuf = get(hObject,''String'');'])
+            eval(['handles.data.PIV' num2str(e) '.gridbuf = [num2str(Bufx) '','' num2str(Bufy)];'])
         end
     else
-        eval(['handles.data.PIV' handles.data.cpass '.gridbuf = get(hObject,''String'');'])
+        eval(['handles.data.PIV' handles.data.cpass '.gridbuf = [num2str(Bufx) '','' num2str(Bufy)];'])
     end
+    handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
 end
 function gridbuffer_CreateFcn(hObject, eventdata, handles)
@@ -1945,7 +1947,9 @@ end
 function bulkwinoffset_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
     if str2double(handles.data.cpass)==1
-        eval(['handles.data.PIV' handles.data.cpass '.BWO = get(hObject,''String'');'])
+        [BWOx BWOy] = parseNum(get(hObject,'string')); %#ok<ASGLU,NASGU> 
+        eval(['handles.data.PIV' handles.data.cpass '.BWO = [num2str(BWOx) '','' num2str(BWOy)];'])
+        handles=set_PIVcontrols(handles);
         guidata(hObject,handles)
     else
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.BWO)'])
@@ -1985,11 +1989,21 @@ end
 % --- RPC Diameter Text Box ---
 function rpcdiameter_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    eval(['handles.data.PIV' handles.data.cpass '.RPCd = get(hObject,''String'');'])
+        
+    % Parse the string to find the differnt RPC diameter for the X and Y
+    % directions.
+    [RPCdx RPCdy] = parseNum(get(hObject,'string'));
+    
+    % Put the new values into the job file.
+    eval(['handles.data.PIV' handles.data.cpass '.RPCd = [num2str(RPCdx) '','' num2str(RPCdy)];'])
+    
+    % Update the boxes in the GUI
+    handles=set_PIVcontrols(handles);
+    
     guidata(hObject,handles)
     if any(get(handles.correlationtype,'Value')==[2 5]) %need to check for RPC, SPC
-        if str2double(get(hObject,'String'))<2
-            if str2double(get(hObject,'String'))==0
+        if RPCdx < 2 || RPCdy < 2%str2double(get(hObject,'String'))<2
+            if RPCdx <= 0 || RPCdy <= 0%str2double(get(hObject,'String'))==0
                 set(hObject,'backgroundcolor','r');
             else
                 set(hObject,'backgroundcolor',[1 0.5 0]);
@@ -3002,7 +3016,7 @@ set(handles.bulkwinoffset,'string',A.BWO);
 set(handles.correlationtype,'Value',corr);
 set(handles.subpixelinterp,'Value',str2double(A.peaklocator));
 set(handles.zeromeancheckbox,'Value',str2double(A.zeromean));
-set(handles.rpcdiameter,'string',str2double(A.RPCd));
+set(handles.rpcdiameter,'string',A.RPCd);
 set(handles.frac_filter_weight,'string',str2double(A.frac_filt));
 set(handles.deform_min_iter,'string',str2double(A.deform_min));
 set(handles.deform_max_iter,'string',str2double(A.deform_max));
@@ -3102,8 +3116,8 @@ else
 end
 
 if str2double(A.winauto) == 1
-     B=get(handles.windowsize,'String');
-     [Rx Ry] = parseNum(B);
+    B=get(handles.windowsize,'String');
+    [Rx Ry] = parseNum(B);
     set(handles.windowsize,'backgroundcolor',0.5*[1 1 1]);
     set(handles.windowsize,'String',[num2str(Rx) ',' num2str(Ry)]);
     eval(['handles.data.PIV' handles.data.cpass '.winsize = get(handles.windowsize,''String'');'])
@@ -4894,7 +4908,7 @@ else
 
     
  %  Read numerical values from string and ignore delimiters (, ; :)
-    nums = strread(str, '%d', -1, 'delimiter', ',;:');
+    nums = strread(str, '%f', -1, 'delimiter', ',;:');
   
 % Replicate array 4 times (max number of inputs in any texbox in this GUI)
 % to allow simplified input for homogeneous window sizes.

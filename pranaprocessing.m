@@ -96,7 +96,7 @@ Gres = zeros(P,2);
 % Not Sure
 Gbuf            = zeros(P,2);
 Corr            = cell(P,1);  %correlation type on each pass
-D               = zeros(P,1);
+D               = zeros(P,2);
 Zeromean        = zeros(P,1);
 Peaklocator     = zeros(P,1);
 Velsmoothswitch = zeros(P,1);
@@ -161,7 +161,7 @@ for e=1:P
     Gres(e,:) = [str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
     Gbuf(e,:) = [str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
     Corr{e} = A.corr; %why do we subtract 1 from A.corr?  Just to make things more confusing? (SCC,RPC,GCC,FWC,SPC)
-    D(e) = str2double(A.RPCd);
+    D(e,:) = [str2double(A.RPCd(1:(strfind(A.RPCd,',')-1))) str2double(A.RPCd((strfind(A.RPCd,',')+1):end))];
     frac_filt(e) = str2double(A.frac_filt);
     Zeromean(e) = str2double(A.zeromean);
     Peaklocator(e) = str2double(A.peaklocator);
@@ -323,7 +323,7 @@ switch char(M)
                 if (e~=1 || defloop~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
                     %if Corr(e)<4
                     if ~strcmpi(Corr{e},'SPC')
-                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
                         if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -332,7 +332,7 @@ switch char(M)
                             Vc = Vc + Vb(Eval>=0);
                         end
                     else
-                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
                         %[Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         Dc = zeros(size(Cc));
@@ -346,9 +346,9 @@ switch char(M)
                         if any(isnan(Ub(:)))
                             keyboard
                         end
-                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
-                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         Dc = zeros(size(Cc));
                     end
                 end
@@ -891,9 +891,9 @@ switch char(M)
                         %correlate image pair and average correlations
 %                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
-                            [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
+                            [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         else
-                            [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                            [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         end
                     
                         if ~strcmpi(Corr{e},'SPC')
@@ -1092,9 +1092,9 @@ switch char(M)
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
-                        [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                     else
-                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
                     
                     if ~strcmpi(Corr{e},'SPC')   %SPC=4 %SCC or RPC 
@@ -1155,8 +1155,8 @@ switch char(M)
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
             elseif strcmpi(Corr{e},'SPC') %SPC processor
                     %RPC filter for weighting function
-                cutoff=2/pi/D(e);
-                wt = energyfilt(Z(2),Z(1),D(e),0);
+                cutoff=2/pi/mean(D(e,:));
+                wt = energyfilt(Z(2),Z(1),D(e,:),0);
                 wtX=wt(:,Z(1)/2+1)';
                 wtX(wtX<cutoff)=0;
                 wtY=wt(Z(2)/2+1,:);
@@ -1435,7 +1435,7 @@ switch char(M)
 
                         %correlate image pair
 %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
-                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t),Cp(:,:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peaklocator(e),1,frac_filt(e),saveplane(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
+                        [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t),Dc(:,:,t),Cp(:,:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),1,frac_filt(e),saveplane(e),X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
                     end
                     U(repmat(Eval>=0,[1 1 N]))=Uc;
                     V(repmat(Eval>=0,[1 1 N]))=Vc;
@@ -1471,7 +1471,7 @@ switch char(M)
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
 %                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:), Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
-                    [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
+                    [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
                         C=zeros(length(X),3);
                         Di=zeros(length(X),3);
