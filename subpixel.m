@@ -1,4 +1,4 @@
-function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch)
+function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
 %intialize indices
 cc_x = -ccsizex/2:ccsizex/2-1;
 cc_y = -ccsizey/2:ccsizey/2-1;
@@ -133,8 +133,8 @@ else
             %%%%%%%%%%%%%%%%%%%%%%%%%%
             
             %Find a suitable window around the peak (5x5 preferred)
-            x_min=shift_locx-2; x_max=shift_locx+2;
-            y_min=shift_locy-2; y_max=shift_locy+2;
+            x_min=shift_locx-round(d(1)/2); x_max=shift_locx+round(d(1)/2);
+            y_min=shift_locy-round(d(2)/2); y_max=shift_locy+round(d(2)/2);
             if x_min<1
                 x_min=1;
             end
@@ -166,6 +166,7 @@ else
                 shift_erry=xvars(4)-shift_locy;
                 D(i) = sqrt(sigma^2/(2*abs(xvars(2))));
             catch %#ok
+                keyboard
                 method=1;
             end
         end

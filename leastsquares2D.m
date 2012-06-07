@@ -1,4 +1,4 @@
-function F = leastsquares2D(x,mapint_i,locxy_i)
+function F = leastsquares2D(x,mapint_i,locxy_i,method)
 %This function is called by lsqnonlin if the least squares or continuous
 %least squares method has been chosen. x contains initial guesses[I0, betas, x_c,
 %y_c]. mapint_i is a matrix containing pixel intensity values, and locxy_i
