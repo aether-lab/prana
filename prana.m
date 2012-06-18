@@ -110,8 +110,8 @@ catch
     defaultdata.runPIV='1';
     
     defaultdata.PIV0.winres='32,32; 32,32';
-    defaultdata.PIV0.winres1='32,32';
-    defaultdata.PIV0.winres2='32,32';
+%     defaultdata.PIV0.winres1='32,32';
+%     defaultdata.PIV0.winres2='32,32';
     defaultdata.PIV0.winsize='64,64';
     defaultdata.PIV0.winauto='1';
     defaultdata.PIV0.gridres='8,8';
@@ -552,7 +552,7 @@ end
 if isnumeric(f)==0
     try
         for pp=1:length(f)
-            load([handles.loaddirec char(f(pp))]);
+            load(fullfile(handles.loaddirec,char(f(pp))));
             if exist('Data','var')~=0
                 vn=0;
                 while vn==0
@@ -1583,83 +1583,83 @@ PIVhelp(8)
 
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
-%  If a job has been created or loaded...
+% If a job has been created or loaded...
 if str2double(handles.Njob) > 0
         
-%    Read the string in the window resolution textbox
+    % Read the string in the window resolution textbox
     A = get(hObject,'String');
 
-% Parse string in window resolution textbox to determine the resolutions of each window
+    % Parse string in window resolution textbox to determine the resolutions of each window
     [wx1 wy1 wx2 wy2] = parseNum(A);
     
-% Set "window resolution" field in the "PIV pass" data structure to the string in the winres textbox
+    % Set "window resolution" field in the "PIV pass" data structure to the string in the winres textbox
     eval(['handles.data.PIV' handles.data.cpass '.winres = [num2str(wx1) '','' num2str(wy1) '';'' num2str(wx2) '','' num2str(wy2)];'])
 
-% Determine the largest window dimensions for the pass
+    % Determine the largest window dimensions for the pass
     wxMax = max([wx1 wx2]);
     wyMax = max([wy1 wy2]);
     
-% Check whether actual window size should be determined automatically
+    % Check whether actual window size should be determined automatically
     if get(handles.autowinsizecheckbox, 'Value') == 1
         
-% Calculate x- and y- window sizes (pixels)
-        [xbin ybin] = roiSize(A);
+    % Calculate x- and y- window sizes (pixels)
+        [xbin ybin] = roiSize(A); %#ok<NASGU,ASGLU>
         
-% Set "window size" fields in "PIV pass" data structure to the window sizes calculated above
+    % Set "window size" fields in "PIV pass" data structure to the window sizes calculated above
         eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xbin) '','' num2str(ybin)];'])
         eval(['set(handles.windowsize,''String'', handles.data.PIV' handles.data.cpass '.winsize)']) 
     end
     
-% Alert user if window size is smaller than 256 pixels. Not sure why this is important.
+    % Alert user if window size is smaller than 256 pixels. Not sure why this is important.
     if wxMax * wyMax < 256
         set(hObject,'backgroundcolor',[1 0.5 0]);
     else
         set(hObject,'backgroundcolor',[1 1 1]);
     end
     
-% If specifying grid resolution...
+    % If specifying grid resolution...
     if get(handles.setgridresbutton,'Value') == 1
         
-% Read string in "grid resolution" text box 
+        % Read string in "grid resolution" text box 
         A = get(handles.gridres,'String');
         
-% Parse string in "grid resolution" text box to determine x- and y- grid resolutions
+        % Parse string in "grid resolution" text box to determine x- and y- grid resolutions
          [gx gy] = parseNum(A);
         
-% Calculate window overlaps (%)
+        % Calculate window overlaps (%)
         overX=(wxMax - gx) / wxMax * 100;
         overY=(wyMax - gy) / wyMax * 100;
         
-%  Set overlaps to zero if overlaps are calculated to be less than zero
-        overX = overX * (overX > 0);
-        overY = overY * (overY > 0);
+        % Set overlaps to zero if overlaps are calculated to be less than zero
+        overX = overX * (overX > 0); %#ok<NASGU>
+        overY = overY * (overY > 0); %#ok<NASGU>
         
-% Set "overlap" fields in "PIV pass" data structure to the overlaps calculated above
+        % Set "overlap" fields in "PIV pass" data structure to the overlaps calculated above
         eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
         
-% Otherwise, if specifying window overlap....
+    % Otherwise, if specifying window overlap....
     else
         
-% Read string in "window overlap" textbox
+        % Read string in "window overlap" textbox
         A = get(handles.winoverlap,'String');
         
-% Parse string in "window overlap" textbox to determine the x- and y- window overlaps (%)
+        % Parse string in "window overlap" textbox to determine the x- and y- window overlaps (%)
         [overX overY] = parseNum(A);
         
-% Calculate x- and y- grid resolutions from overlaps 
-        gx = round(wxMax * (1-overX/100));
-        gy = round(wyMax * (1-overY/100));
+        % Calculate x- and y- grid resolutions from overlaps 
+        gx = round(wxMax * (1-overX/100)); %#ok<NASGU>
+        gy = round(wyMax * (1-overY/100)); %#ok<NASGU>
         
-% Update "grid resolution" field in "PIV pass" data structure to the grid resolutions calculated above
+        % Update "grid resolution" field in "PIV pass" data structure to the grid resolutions calculated above
         eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
     end
     
-%  Update "window resolution" fields in "PIV pass" data structure to the
-%  window resolutions calculated above
-    eval(['handles.data.PIV' handles.data.cpass '.winres1 = [num2str(wx1) '','' num2str(wy1)];']); 
-    eval(['handles.data.PIV' handles.data.cpass '.winres2 = [num2str(wx2) '','' num2str(wy2)];']); 
+    % Update "window resolution" fields in "PIV pass" data structure to the
+    % window resolutions calculated above
+    % eval(['handles.data.PIV' handles.data.cpass '.winres1 = [num2str(wx1) '','' num2str(wy1)];']); 
+    % eval(['handles.data.PIV' handles.data.cpass '.winres2 = [num2str(wx2) '','' num2str(wy2)];']); 
     
-% Update GUI
+    % Update GUI
     handles=set_PIVcontrols(handles);
     guidata(hObject,handles)
     
@@ -1676,54 +1676,54 @@ function windowsize_Callback(hObject, eventdata, handles)
 % If a job has been loaded or created....
 if str2double(handles.Njob ) > 0
 
-% If the "auto window size" checkbox is NOT checked (i.e. if the window size is specified explicitly)
+    % If the "auto window size" checkbox is NOT checked (i.e. if the window size is specified explicitly)
     if get(handles.autowinsizecheckbox,'Value') == 0
         
-% Read the string in the "Actual Window Size" text box
+        % Read the string in the "Actual Window Size" text box
         A = get(hObject,'String');
         
-% Determine the dimensions of the interrogation region by parsing the string in the "Actual Window Size" text box
+        % Determine the dimensions of the interrogation region by parsing the string in the "Actual Window Size" text box
         [Rx Ry] = parseNum(A);
 
-% Read the string in the "Window Resolution" text box
+        % Read the string in the "Window Resolution" text box
         B = get(handles.windowres,'String');
         
-% Determine the window resolutions by parsing the string in the "Window Resolution" text box
-        [wx1 wy1 wx2 wy2] = parseNum(B);        
+        % Determine the window resolutions by parsing the string in the "Window Resolution" text box
+        [wx1 wy1 wx2 wy2] = parseNum(B);
 
-% Determine largest window resolutions
+        % Determine largest window resolutions
         wxMax = max(wx1, wx2);
         wyMax = max(wy1, wy2);
 
-%  If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
-%  re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
+        % If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
+        % re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
         if Rx < wxMax
             Rx = wxMax;
             set(hObject,'String',[num2str(Rx) ',' num2str(Ry)]);
         end
         
-%  If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
-%  re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
+        % If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
+        % re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
         if Ry < wyMax
             Ry = wyMax;
             set(hObject,'String',[num2str(Rx) ',' num2str(Ry)]);
         end
         
-% Update the "window size" field of the "PIV Pass" data structure to the value of the 
-% string in the "Actual Window Size" text box
-eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(Rx) '','' num2str(Ry)];']);
+        % Update the "window size" field of the "PIV Pass" data structure to the value of the 
+        % string in the "Actual Window Size" text box
+        eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(Rx) '','' num2str(Ry)];']);
  
-% If the "auto window size" checkbox IS checked (i.e. if the window size is calculated automatically)
+    % If the "auto window size" checkbox IS checked (i.e. if the window size is calculated automatically)
     else
         
-% Set the text in the "Actual Window Size" text box to the value stored in
-% the "PIV Pass" data structure
+        % Set the text in the "Actual Window Size" text box to the value stored in
+        % the "PIV Pass" data structure
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winsize);'])
        
     end
     % Update the GUI
-        handles = set_PIVcontrols(handles);
-        guidata(hObject,handles)
+    handles = set_PIVcontrols(handles);
+    guidata(hObject,handles)
 end
 
 function windowsize_CreateFcn(hObject, eventdata, handles)
@@ -1737,7 +1737,7 @@ function autowinsizecheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob) > 0
   
     A = get(handles.windowres, 'String');
-    [xROI yROI] = roiSize(A);
+    [xROI yROI] = roiSize(A); %#ok<NASGU,ASGLU>
     
    eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xROI) '','' num2str(yROI)];']); 
     
@@ -1768,85 +1768,87 @@ function gridres_Callback(hObject, eventdata, handles)
 % If a job has been specified or loaded....
 if str2double(handles.Njob) > 0
     
-%  If performing a multi-pass job...
+    % If performing a multi-pass job...
     if get(handles.setgridresbutton,'Value') == 1
         
-%  Read string in grid resolution texbox
+        % Read string in grid resolution texbox
         A = get(hObject,'String');
         
-% Parse string in "grid resolution" text box to determine x- and y- grid resolutions
+        % Parse string in "grid resolution" text box to determine x- and y- grid resolutions
         [gx gy] = parseNum(A);
 
-%  If performing a multipass run....
+        % If performing a multipass run....
         if str2double(handles.data.method) == 1
             
-% Then calculate the window overlaps for each pass...
+            % Then calculate the window overlaps for each pass...
             for e=1:str2double(handles.data.passes)
                 
-% Read window resolutions from data structure
-                eval(['A=handles.data.PIV', num2str(e) '.winres1;'])
-                eval(['B=handles.data.PIV', num2str(e) '.winres2;'])
+                % Read window resolutions from data structure
+                % eval(['A=handles.data.PIV', num2str(e) '.winres1;'])
+                % eval(['B=handles.data.PIV', num2str(e) '.winres2;'])
+                eval(['A=handles.data.PIV', num2str(e) '.winres;'])
                 
-%  Parse the strings containing the window resolution information for each image
-                [wx1 wy1] = parseNum(A);
-                [wx2 wy2] = parseNum(B);
+                % Parse the strings containing the window resolution information for each image
+                % [wx1 wy1] = parseNum(A);
+                % [wx2 wy2] = parseNum(B);
+                [wx1 wy1 wx2 wy2] = parseNum(A);
 
-%  Determine the size of the largest window resolution in each dimension
+                % Determine the size of the largest window resolution in each dimension
                 wxMax = max(wx1, wx2);
                 wyMax = max(wy1, wy2);
                 
-% Calculate the x- and y- window overlaps
+                % Calculate the x- and y- window overlaps
                 overX = (wxMax - gx) / wxMax * 100;
                 overY = (wyMax - gy) / wyMax * 100;
                 
-%  Set overlaps to zero if "overlap" is calculated to be less than zero
-            overX = overX * (overX > 0);
-            overY = overY * (overY > 0);
+                % Set overlaps to zero if "overlap" is calculated to be less than zero
+                overX = overX * (overX > 0); %#ok<NASGU>
+                overY = overY * (overY > 0); %#ok<NASGU>
                 
-%  Update the "grid resolution" and "window overlap" fields in the "pass" data structure
+                % Update the "grid resolution" and "window overlap" fields in the "pass" data structure
                 eval(['handles.data.PIV' num2str(e) '.gridres = [num2str(gx) '','' num2str(gy)];'])
                 eval(['handles.data.PIV' num2str(e) '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
                 
-%  End of "multipass" case...
-        end
+            % End of "multipass" case...
+            end
             
-%  Otherwise, If NOT performing a multipass run...  
+        % Otherwise, If NOT performing a multipass run...  
         else
        
-% Read string in the "Grid Resolution" text box;
-        A = get(hObject, 'String');
-        [gx gy] = parseNum(A);
+            % Read string in the "Grid Resolution" text box;
+            A = get(hObject, 'String');
+            [gx gy] = parseNum(A);
             
-% Read string in window resolution textbox
+            % Read string in window resolution textbox
             B = get(handles.windowres,'String');
             
-% Parse string in window resolution textbox to determine the resolutions of each window
+            % Parse string in window resolution textbox to determine the resolutions of each window
             [wx1 wy1 wx2 wy2] = parseNum(B);
             
-% Determine the size of the largest window resolution in each dimension
+            % Determine the size of the largest window resolution in each dimension
             wxMax = max(wx1, wx2);
             wyMax = max(wy1, wy2);
             
-% Calculate the x- and y- window overlaps
+            % Calculate the x- and y- window overlaps
             overX = (wxMax - gx) / wxMax * 100;
             overY = (wyMax - gy) / wyMax * 100;
             
-%  Set overlaps to zero if "overlap" is calculated to be less than zero
-            overX = overX * (overX > 0);
-            overY = overY * (overY > 0);
+            %  Set overlaps to zero if "overlap" is calculated to be less than zero
+            overX = overX * (overX > 0); %#ok<NASGU>
+            overY = overY * (overY > 0); %#ok<NASGU>
             
-%  Update the "grid resolution" and "window overlap" fields in the "pass" data structure   
+            % Update the "grid resolution" and "window overlap" fields in the "pass" data structure   
             eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx) '','' num2str(gy)];'])
             eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX),'','',num2str(overY)];'])
         end
         
-% Update GUI
+        % Update GUI
         handles=set_PIVcontrols(handles);
         guidata(hObject,handles)
     else
         
-%  If specifying window overlap rather than grid resolution, just read the
-%  grid resolution. 
+        % If specifying window overlap rather than grid resolution, just read the
+        % grid resolution. 
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.gridres);'])
     
     end
@@ -1876,44 +1878,44 @@ function winoverlap_Callback(hObject, eventdata, handles)
 
 % If a job has been loaded or created...
 if str2double(handles.Njob) > 0
-
-% If specifying window overlap...
+    
+    % If specifying window overlap...
     if get(handles.setwinoverlapbutton,'Value') == 1
-
-% Read string in "window resolution" text box
+        
+        % Read string in "window resolution" text box
         A=get(handles.windowres,'String');
-
-% Parse string in "window resolution" text box to determine the desired window resolutions
+        
+        % Parse string in "window resolution" text box to determine the desired window resolutions
         [wx1 wy1 wx2 wy2] = parseNum(A);
         
-% Determine sizes of largest window dimensions
+        % Determine sizes of largest window dimensions
         wxMax = max(wx1, wx2);
         wyMax = max(wy1, wy2);
-
-% Read string in "Window Overlap" text box
+        
+        % Read string in "Window Overlap" text box
         B = get(hObject,'String');
         
-% Parse string in "Window Overlap" text box to determine the desired window overlaps
+        % Parse string in "Window Overlap" text box to determine the desired window overlaps
         [overX overY] = parseNum(B);
         
-% Calculate grid resolution from specified overlaps
-        gx = round(wxMax * (1 - overX / 100));
-        gy = round(wyMax * (1 - overY / 100));
+        % Calculate grid resolution from specified overlaps
+        gx = round(wxMax * (1 - overX / 100)); %#ok<NASGU>
+        gy = round(wyMax * (1 - overY / 100)); %#ok<NASGU>
         
-% Update "Window Overlap" field in "Piv Pass" data structure
+        % Update "Window Overlap" field in "Piv Pass" data structure
         eval(['handles.data.PIV' handles.data.cpass '.winoverlap = [num2str(overX) '','' num2str(overY)];'])
         
-% Update "Grid Resolution" field in "Piv Pass" data structure
+        % Update "Grid Resolution" field in "Piv Pass" data structure
         eval(['handles.data.PIV' handles.data.cpass '.gridres = [num2str(gx),'','',num2str(gy)];'])
         
-% Update GUI
+        % Update GUI
         handles=set_PIVcontrols(handles);
         guidata(hObject,handles)
         
-% Otherwise, if specifying grid resolution... 
+        % Otherwise, if specifying grid resolution...
     else
         
-% Update the "Window Overlap" field in the "PIV Pass" data structure to the value calculated automatically
+        % Update the "Window Overlap" field in the "PIV Pass" data structure to the value calculated automatically
         eval(['set(hObject,''String'',handles.data.PIV' handles.data.cpass '.winoverlap);'])
         
     end

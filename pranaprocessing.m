@@ -137,18 +137,18 @@ for e=1:P
     end
     
     % Window Resolution (eventually move the str2double commands to the GUI callback)
-    
-    if isfield(A,'winres1')
+    winres_com = regexp(A.winres,'[,;]');
+    if length(winres_com) > 1%isfield(A,'winres1')
     %  Window resolutions for first image in correlation pair
-    xwin_im1 = str2double(A.winres1(1:(strfind(A.winres1,',')-1)));
-    ywin_im1 = str2double(A.winres1((strfind(A.winres1,',') + 1):end));
+    xwin_im1 = str2double(A.winres(1:winres_com(1)-1));
+    ywin_im1 = str2double(A.winres(winres_com(1) + 1:winres_com(2)-1));
     
     %  Window resolutions for second image in correlation pair
-    xwin_im2 = str2double(A.winres2(1:(strfind(A.winres2,',')-1)));
-    ywin_im2 = str2double(A.winres2((strfind(A.winres2,',') + 1):end));
+    xwin_im2 = str2double(A.winres(winres_com(2)+1:winres_com(3)-1));
+    ywin_im2 = str2double(A.winres(winres_com(3)+1:end));
     else
-    xwin_im1 = str2double(A.winres(1:(strfind(A.winres,',')-1)));
-    ywin_im1 = str2double(A.winres((strfind(A.winres,',')+1):end));
+    xwin_im1 = str2double(A.winres(1:winres_com(1)-1));
+    ywin_im1 = str2double(A.winres(winres_com(1)+1:end));
     xwin_im2 = xwin_im1;
     ywin_im2 = ywin_im1;
     end
@@ -170,6 +170,10 @@ for e=1:P
     mindefloop(e) = str2double(A.deform_min);
     maxdefloop(e) = str2double(A.deform_max);
     condefloop(e) = str2double(A.deform_conv);
+    
+    if any(Wres(1,:,e)>Wsize(e,:)) || any(Wres(2,:,e)>Wsize(e,:))
+        warning('warning:ResGraterThenSize','Pass %0.0f has a window resolution larger then the windown size!\n   [%0.0f,%0.0f;%0.0f %0.0f] > [%0.0f,%0.0f]\n',e,Wres(1,1,e),Wres(1,2,e),Wres(2,1,e),Wres(2,2,e),Wsize(e,1), Wsize(e,2))
+    end
     
     %validation and thresholding
     Valswitch(e)=str2double(A.val);

@@ -159,3 +159,14 @@ if ~isnan(str2double(Data.Size.method))
     size_str = {'IWC','TPG','FTG','CFPG','LSG','CLSG'};
     Data.Size.method = size_str{str2double(Data.Size.method)};
 end
+
+% This checks to see if the variables 'winres1' and winres2' exist and if
+% so remove them.  The code now will just parse the winres string limiting
+% the number of places this data is stored.
+if isfield(Data.PIV0,'winres1')
+    for i = 0:str2double(Data.passes)
+        eval(['Data.PIV' num2str(i) '.winres= sprintf(''%s;%s'',Data.PIV' num2str(i) '.winres1,Data.PIV' num2str(i) '.winres2);'])
+        eval(['Data.PIV' num2str(i) '=rmfield(Data.PIV' num2str(i) ',''winres1'');'])
+        eval(['Data.PIV' num2str(i) '=rmfield(Data.PIV' num2str(i) ',''winres2'');'])
+    end
+end
