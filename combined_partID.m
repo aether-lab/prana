@@ -10,7 +10,7 @@ function [p_matrix,peaks,num_p]=combined_partID(im,v)
 %(beta) N.Cardwell - 10.28.2009
 
 %call the mapparticles subfunction ('blob' particle ID analysis)
-[p_matrix,peaks,num_p]=mapparticles(im,v);
+[p_matrix,peaks,num_p]=mapparticles_v3(im,v);
 
 %preallocate arrays
 p_matrix_new=zeros(size(p_matrix));  num_p_new=0;  peaks_new=zeros(size(p_matrix));

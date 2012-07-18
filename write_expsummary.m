@@ -17,7 +17,7 @@ peaks={'1','1,2','1,2,3'};
 % This is for validation method
 uod_type={'Mean','Median'};
 % This is for the tracking for multiple purposes
-s_d = {'Static','Dynamic'};
+s_d = {'Static','Dynamic','Combined'};
 % These are the different sizing methods for the particle sizing
 sizing_meth = {'Intensity_Weighted Centroid','Three Point Gaussian','Four Point Gaussian',...
     'Continuous Four Point Gaussian','Least Sqaures Gaussian','Continuous Least Squares Gaussian'};

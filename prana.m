@@ -1168,7 +1168,11 @@ if str2double(handles.Njob)>0
     channel = str2double(handles.data.channel);
     
     try
-        im = double(imread(fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))])));
+        fileloc = fullfile(handles.data.imdirec, [handles.data.imbase, sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],str2double(handles.data.imfstart))]);
+        % Get information about the file with the most important being the
+        % MaxSampleValue which will be need to normalizing the image.
+        imageInfo = imfinfo(fileloc);
+        im = double(imread(fileloc));
         if size(im, 3) > 1
             %   Extract only red channel
             if channel == 1;
@@ -1195,7 +1199,7 @@ if str2double(handles.Njob)>0
         end
 
     %   Flip and normalize image
-    im1 = im(end:-1:1,:,:)./255;
+    im1 = im(end:-1:1,:,:)./imageInfo.MaxSampleValue;
 
         try
             if strcmp(handles.data.masktype,'static')

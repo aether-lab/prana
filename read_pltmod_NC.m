@@ -181,7 +181,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 catch %#ok
     if fid==-1
-        error('%s does not exist',[direc picfilename])
+        error('%s does not exist',fullfile(direc,picfilename))
     else
         rethrow(lasterror)%#ok
     end
