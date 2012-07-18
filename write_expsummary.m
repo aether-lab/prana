@@ -29,6 +29,7 @@ expsummary = [];
 
 expsummary = [expsummary sprintf(['Summary for PIV Job: ',Data.batchname,'\n'])];
 expsummary = [expsummary sprintf(['PIV Code Version: ',Data.version,'\n'])];
+expsummary = [expsummary sprintf(['PTV Code Version: ',Data.ptv_version,'\n'])];
 expsummary = [expsummary sprintf('\n--------------------Experiment Parameters--------------------\n')];
 expsummary = [expsummary sprintf(['Date of Experiment:            ',Data.exp_date,'\n'])];
 expsummary = [expsummary sprintf(['Laser Wavelength (um):         ',Data.exp_wavelength,'\n'])];

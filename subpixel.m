@@ -166,7 +166,6 @@ else
                 shift_erry=xvars(4)-shift_locy;
                 D(i) = sqrt(sigma^2/(2*abs(xvars(2))));
             catch %#ok
-                keyboard
                 method=1;
             end
         end

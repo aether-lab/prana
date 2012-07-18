@@ -160,6 +160,10 @@ if ~isnan(str2double(Data.Size.method))
     Data.Size.method = size_str{str2double(Data.Size.method)};
 end
 
+ver = pranaPIVcode('version');
+Data.version = ver;
+ver = pranaPTVcode('version');
+Data.ptv_version = ver;
 % This checks to see if the variables 'winres1' and winres2' exist and if
 % so remove them.  The code now will just parse the winres string limiting
 % the number of places this data is stored.
