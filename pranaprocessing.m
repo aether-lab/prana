@@ -1153,7 +1153,7 @@ switch char(M)
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
-                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)));
+                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
