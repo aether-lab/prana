@@ -1,29 +1,38 @@
 function F = leastsquares2D(x,mapint_i,locxy_i,method)
-%This function is called by lsqnonlin if the least squares or continuous
-%least squares method has been chosen. x contains initial guesses[I0, betas, x_c,
-%y_c]. mapint_i is a matrix containing pixel intensity values, and locxy_i
-%is a 1x2 vector containing the row/column coordinates of the top left
-%pixel in mapint_i
+% function F = leastsquares2D(x,mapint_i,locxy_i,method)
+% This function is called by lsqnonlin if the least squares or continuous
+% least squares method has been chosen. It solve (leastsqures) for a 
+% Gaussian surface that best fist a list of sample points.  The code has
+% been updated to now handle eliptical Gaussian shapes using a 
+% trigonometric formulation for an arbitrary eliptical Gaussian function
+% taken from ( Scharnowski (2012) Exp Fluids).  
+% 
+% Inputs: 
+%  x:        Is a vectore containing an intial guess at the parameter values 
+%            for the gaussian fit.  [Max Value, Beta in the X direction, 
+%            Beta in the Y direction, Estimated Centroid for X, Estimated
+%            Centroid for Y, Estimated Orientation Angle]
+%  mapint_i: List of the points sampled.
+%  locxy_i:  Location of maximum pixel value for X and Y
+%  method:   This switches between Standard Gaussian (3) and Continous
+%            Gaussian (4).
+%    
+% Outputs:
+% F:         Is the variable being minimized - the difference between the 
+%            gaussian curve and the actual intensity values.
 %
-%F is the variable being minimized - the difference between the gaussian
-%curve and the actual intensity values.
-%
-%Adapted from M. Brady's 'leastsquaresgaussfit' and 'mapintensity'
-%B.Drew - 7.18.2008
+% Adapted from M. Brady's 'leastsquaresgaussfit' and 'mapintensity'
+% Edited:
+% B.Drew - 7.18.2008
+% S. Raben - 7.24.2012
+
 
 I0=x(1);
-betas=x(2);
-x_centroid=x(3);
-y_centroid=x(4);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Just like in the continuous four-point method, lsqnonlin tries negative
-%values for x(2), which will return errors unless the abs() function is
-%used in front of all the x(2)'s.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-num1=(I0*pi)/4;
-num2=sqrt(abs(betas));
+betasx=x(2);
+betasy=x(3);
+x_centroid=x(4);
+y_centroid=x(5);
+alpha = x(6);
 
 if method==3
     gauss_int = zeros(size(mapint_i));
@@ -36,11 +45,20 @@ if method==3
     
     % map an intensity profile of a gaussian function:
     for rr = 1:size(xp,1)
-        gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
-            ((yp(rr))-y_centroid)^2));
+%         gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
+%             ((yp(rr))-y_centroid)^2));
+        gauss_int(rr)=I0*exp(-abs(betasx).*(cos(alpha).*(xp(rr)-x_centroid) - sin(alpha).*(yp(rr)-y_centroid)).^2 - ...
+            abs(betasy).*(sin(alpha).*(xp(rr)-x_centroid) + cos(alpha).*(yp(rr)-y_centroid)).^2);
     end
-    
+
 elseif method==4
+    
+    %Just like in the continuous four-point method, lsqnonlin tries negative
+    %values for x(2) and x(3), which will return errors unless the abs() function is
+    %used in front of all the x(2)'s.
+    num1=(I0*pi)/4;
+    num2=sqrt(abs(mean([betasx betasy])));
+    
     S = size(mapint_i);
     gauss_int = zeros(S(1),S(2));
     xp = zeros(size(mapint_i));

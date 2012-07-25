@@ -155,16 +155,18 @@ else
                 'Algorithm','levenberg-marquardt');
             
             %Initial values for the solver
-            x0=[M(i) 1 shift_locx shift_locy];
+            x0=[M(i) 1 1 shift_locx shift_locy 0];
 
             [xloc yloc]=meshgrid(x_min:x_max,y_min:y_max);
 
             %Run solver; default to 3-point gauss if it fails
             try
                 xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points(:),[yloc(:),xloc(:)],method);
-                shift_errx=xvars(3)-shift_locx;
-                shift_erry=xvars(4)-shift_locy;
-                D(i) = sqrt(sigma^2/(2*abs(xvars(2))));
+%                 shift_errx=xvars(3)-shift_locx;
+%                 shift_erry=xvars(4)-shift_locy;
+                shift_errx=xvars(4)-shift_locx;
+                shift_erry=xvars(5)-shift_locy;
+                D(i) = sqrt(sigma^2/(2*sqrt(xvars(2).^2 + xvars(3).^2)));
             catch %#ok
                 method=1;
             end
