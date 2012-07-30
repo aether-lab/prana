@@ -83,7 +83,7 @@ end
 % This will be used in the spectial energy filter for making 2D filters.
 for pass=0:str2double(Data.passes)
     eval(['check = regexp(Data.PIV' num2str(pass) '.RPCd,''[,;]'');'])
-    if ~isempty(check)
+    if isempty(check)
         eval(['Data.PIV' num2str(pass) '.RPCd = [num2str(Data.PIV' num2str(pass) '.RPCd) '','' num2str(Data.PIV' num2str(pass) '.RPCd)];'])
     end
 end
