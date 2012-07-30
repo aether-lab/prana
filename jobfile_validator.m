@@ -82,8 +82,8 @@ end
 % This changes the RPC diameter form a 1 dimensional variable to a 2D one.
 % This will be used in the spectial energy filter for making 2D filters.
 for pass=0:str2double(Data.passes)
-    eval(['check = str2double(Data.PIV' num2str(pass) '.RPCd);'])
-    if ~isnan(check)
+    eval(['check = regexp(Data.PIV' num2str(pass) '.RPCd,''[,;]'');'])
+    if ~isempty(check)
         eval(['Data.PIV' num2str(pass) '.RPCd = [num2str(Data.PIV' num2str(pass) '.RPCd) '','' num2str(Data.PIV' num2str(pass) '.RPCd)];'])
     end
 end
