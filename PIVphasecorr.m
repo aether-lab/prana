@@ -44,6 +44,8 @@ else
     Sx=Nx;
 end
 
+lsqX = cell(size(im1,3),1);
+lsqY = cell(size(im1,3),1);
 for i=1:size(im1,3)
     if sum(Uin)==0 || sum(Vin)==0
         DT=dt(i);
@@ -55,7 +57,8 @@ for i=1:size(im1,3)
 end
 
 %window masking filter
-sfilt = windowmask([Nx Ny],[res(1) res(2)]);
+sfilt1 = windowmask([Sx Sy],[res(1, 1) res(1, 2)]);
+sfilt2 = windowmask([Sx Sy],[res(2, 1) res(2, 2)]);
 
 %fftshift indicies
 fftindy = [Sy/2+1:Sy 1:Sy/2];
@@ -100,8 +103,8 @@ for n=1:length(X)
         end
 
         %apply the image spatial filter
-        region1 = (zone1).*sfilt;
-        region2 = (zone2).*sfilt;
+        region1 = (zone1).*sfilt1;
+        region2 = (zone2).*sfilt2;
 
         %FFTs
         f1   = fftn(region1,[Sy Sx]);
