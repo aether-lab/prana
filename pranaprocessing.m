@@ -903,7 +903,7 @@ switch char(M)
                         if ~strcmpi(Corr{e},'SPC')
                             if q==1
                                 CCmdist=CC;
-                                cnvg_est = 0;
+                                %cnvg_est = 0;
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             else
                                 % % cnvg_est = norm((CCmdist(:)*length(I1)/(q-1))-((CCmdist(:)*length(I1)+CC(:))/q),2);
@@ -911,7 +911,7 @@ switch char(M)
                                 CCmdist=CCmdist+CC;% Now includes the current frame
                                 % ave_cur = ((CCmdist)/q);
                                 % ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zeros
-                                cnvg_est = 0;%nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
+                                %cnvg_est = 0;%nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                                 CC = []; %#ok% This clear is required for fine grids or big windows
                             end
                         else %if Corr(e)==4 %SPC processor
@@ -1104,7 +1104,7 @@ switch char(M)
                     if ~strcmpi(Corr{e},'SPC')   %SPC=4 %SCC or RPC 
                         if q==1
                             CCm=CC/length(I1);
-                            cnvg_est = 0;
+                            %cnvg_est = 0;
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         else
                             % cnvg_est = norm((CCm(:)*length(I1)/(q-1))-((CCm(:)*length(I1)+CC(:))/q),2);
@@ -1112,7 +1112,7 @@ switch char(M)
                             CCm=CCm+CC/length(I1);% Now adding the current pass
                             % ave_cur = ((CCm*length(I1))/q);
                             % ave_cur(ave_cur==0)=nan; %This makes sure you don't divide by zero.
-                            cnvg_est = 0;%nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
+                            %cnvg_est = 0;%nanmean(mean(mean(abs(ave_pre-ave_cur),1),2)./nanmean(nanmean(abs(ave_cur),1),2));
                             CC = []; %#ok% This clear is required for fine grids or big windows
                         end
                     else %if Corr(e)==4 %SPC processor, should this be just ELSE?
@@ -1123,7 +1123,7 @@ switch char(M)
                             CCm.V=[CCm.V,CC.V];
                             CCm.C=[CCm.C,CC.C];
                         end
-                        cnvg_est = 0;
+                        %cnvg_est = 0;
                     end
                     corrtime=toc(t1);
                     if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
