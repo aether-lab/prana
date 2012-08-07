@@ -3143,7 +3143,7 @@ else
     set(handles.gridres,'backgroundcolor',[1 1 1]);
     set(handles.winoverlap,'backgroundcolor',0.5*[1 1 1]);
 end
-if any(get(handles.correlationtype,'Value')==[2 5]) %check diameter if RPC, SPC
+if any(get(handles.correlationtype,'Value')==[2 6]) %check diameter if RPC, SPC
     if str2double(get(handles.rpcdiameter,'String'))<2
         if str2double(get(handles.rpcdiameter,'String'))==0
             set(handles.rpcdiameter,'backgroundcolor','r');
@@ -3155,7 +3155,7 @@ if any(get(handles.correlationtype,'Value')==[2 5]) %check diameter if RPC, SPC
     end
     set(handles.frac_filter_weight,'backgroundcolor',0.5.*[1 1 1]);
 else
-    if get(handles.correlationtype,'Value')==4
+    if get(handles.correlationtype,'Value')==5
         set(handles.frac_filter_weight,'backgroundcolor',[1 1 1]);
     else
         set(handles.frac_filter_weight,'backgroundcolor',0.5.*[1 1 1]);

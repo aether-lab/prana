@@ -178,8 +178,8 @@ switch upper(tcorr)
             end
             
             if Zeromean==1
-                zone1=zone1-mean(mean(zone1));
-                zone2=zone2-mean(mean(zone2));
+                zone1=zone1-mean(zone1(:));
+                zone2=zone2-mean(zone2(:));
             end
             
             %apply the image spatial filter
@@ -250,8 +250,8 @@ switch upper(tcorr)
             end
             
             if Zeromean==1
-                zone1=zone1-mean(mean(zone1));
-                zone2=zone2-mean(mean(zone2));
+                zone1=zone1-mean(zone1(:));
+                zone2=zone2-mean(zone2(:));
             end
 
             %apply the image spatial filter
@@ -325,8 +325,8 @@ switch upper(tcorr)
             end
             
             if Zeromean==1
-                zone1=zone1-mean(mean(zone1));
-                zone2=zone2-mean(mean(zone2));
+                zone1=zone1-mean(zone1(:));
+                zone2=zone2-mean(zone2(:));
             end
 
             %apply the image spatial filter
@@ -374,6 +374,8 @@ switch upper(tcorr)
         CC.U = zeros(3,Sx,length(X));
         CC.V = zeros(3,Sy,length(X));
         CC.C = zeros(3, 1,length(X));
+        u_unwrapped = zeros(Sy,3);
+        v_unwrapped = zeros(Sx,3);
         
         for n=1:length(X)
 
@@ -408,8 +410,8 @@ switch upper(tcorr)
             end
             
             if Zeromean==1
-                zone1=zone1-mean(mean(zone1));
-                zone2=zone2-mean(mean(zone2));
+                zone1=zone1-mean(zone1(:));
+                zone2=zone2-mean(zone2(:));
             end
 
             %apply the image spatial filter

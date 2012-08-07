@@ -24,16 +24,8 @@ end
 
 U = zeros(length(X),1);
 V = zeros(length(X),1);
-C = [];
+C = zeros(length(X),3);
 t_opt=zeros(length(X),1);
-
-%RPC cutoff weighting
-wt = energyfilt(Nx,Ny,D,0);
-wtX=wt(Nx/2+1,:);
-wtY=wt(:,Ny/2+1)';
-cutoff=2/pi/D;
-wtX(wtX<cutoff)=0;
-wtY(wtY<cutoff)=0;
 
 %sets up extended domain size
 if zpad~=0
@@ -43,6 +35,21 @@ else
     Sy=Ny;
     Sx=Nx;
 end
+
+%RPC cutoff weighting
+% wt = energyfilt(Nx,Ny,D,0);
+% wtX=wt(Nx/2+1,:);
+% wtY=wt(:,Ny/2+1)';
+% cutoff=2/pi/D;
+% wtX(wtX<cutoff)=0;
+% wtY(wtY<cutoff)=0;
+wt = energyfilt(Sx,Sy,D,0);
+wtX=wt(Sy/2+1,:);
+wtY=wt(:,Sx/2+1,:)';
+cutoff=2/pi/D(1);
+wtX(wtX<cutoff)=0;
+cutoff=2/pi/D(2);
+wtY(wtY<cutoff)=0;
 
 lsqX = cell(size(im1,3),1);
 lsqY = cell(size(im1,3),1);
@@ -65,7 +72,7 @@ fftindy = [Sy/2+1:Sy 1:Sy/2];
 fftindx = [Sx/2+1:Sx 1:Sx/2];
 
 for n=1:length(X)
-    S=[];um_cum=[];vm_cum=[];wtX_cum=[];wtY_cum=[];lsqX_cum=[];lsqY_cum=[];t_good=[];
+    S=zeros(2,size(im1,3));um_cum=[];vm_cum=[];wtX_cum=[];wtY_cum=[];lsqX_cum=[];lsqY_cum=[];t_good=[];
     for t=1:size(im1,3)     
         %apply the second order discrete window offset
         x1 = X(n) - floor(round(Uin(n))*dt(t)/2);
@@ -98,8 +105,8 @@ for n=1:length(X)
         end
         
         if Zeromean==1
-            zone1=zone1-mean(mean(zone1));
-            zone2=zone2-mean(mean(zone2));
+            zone1=zone1-mean(zone1(:));
+            zone2=zone2-mean(zone2(:));
         end
 
         %apply the image spatial filter
@@ -163,7 +170,7 @@ for n=1:length(X)
         fit=-wlsq(vm_cum,lsqY_cum,wtY_cum);
 %         vm_refined=unwrap_refine(vm_cum,lsqY_cum,fit);
 %         fit=-wlsq(vm_refined,lsqY_cum,wtY_cum).*Sy./2./pi;
-        V(n)=fit(1)*Sx/2/pi;
+        V(n)=fit(1)*Sy/2/pi;
 
         if t<size(im1,3)
             %Displacement cutoff

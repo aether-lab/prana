@@ -46,7 +46,7 @@ end
 %replacement
 for i=1:S(1)
     for j=1:S(2)
-        if Evalval(i,j)~=0
+        if Evalval(i,j)>0
             %initialize replacement search size
             q=0;
             s=0;

@@ -347,7 +347,7 @@ switch char(M)
                     
                 else                                    %either first pass, or not deform
                     if ~strcmpi(Corr{e},'SPC')
-                        if any(isnan(Ub(:)))
+                        if any(isnan(Ub(Eval>=0)))
                             keyboard
                         end
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -507,6 +507,8 @@ switch char(M)
                         %velocity interpolation
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+                        UI(mask==0) = NaN;
+                        VI(mask==0) = NaN;
 
                         if defloop == 1
                             interptime(e+1,defloop)=toc(t1);
@@ -804,9 +806,9 @@ switch char(M)
                                     for j=1:L(2)
                                         
                                         %image 1 interpolation
-                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmin=max([1    (round(YD1(i,j))-3)]);
                                         nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmin=max([1    (round(XD1(i,j))-3)]);
                                         mmax=min([L(2) (round(XD1(i,j))+3)]);
                                         for n=nmin:nmax
                                             for m=mmin:mmax
@@ -820,9 +822,9 @@ switch char(M)
                                         end
                                         
                                         %image 2 interpolation
-                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmin=max([1    (round(YD2(i,j))-3)]);
                                         nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmin=max([1    (round(XD2(i,j))-3)]);
                                         mmax=min([L(2) (round(XD2(i,j))+3)]);
                                         for n=nmin:nmax
                                             for m=mmin:mmax
@@ -846,9 +848,9 @@ switch char(M)
                                     for j=1:L(2)
                                         
                                         %image 1 interpolation
-                                        nmin=max([1 (round(YD1(i,j))-3)]);
+                                        nmin=max([1    (round(YD1(i,j))-3)]);
                                         nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1 (round(XD1(i,j))-3)]);
+                                        mmin=max([1    (round(XD1(i,j))-3)]);
                                         mmax=min([L(2) (round(XD1(i,j))+3)]);
                                         for n=nmin:nmax
                                             for m=mmin:mmax
@@ -863,9 +865,9 @@ switch char(M)
                                         end
                                         
                                         %image 2 interpolation
-                                        nmin=max([1 (round(YD2(i,j))-3)]);
+                                        nmin=max([1    (round(YD2(i,j))-3)]);
                                         nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1 (round(XD2(i,j))-3)]);
+                                        mmin=max([1    (round(XD2(i,j))-3)]);
                                         mmax=min([L(2) (round(XD2(i,j))+3)]);
                                         for n=nmin:nmax
                                             for m=mmin:mmax
@@ -926,10 +928,10 @@ switch char(M)
                     end
                 end
 %                 if Corr(e)<4 %SCC or RPC processor
-                    CCm=zeros(size(CCmdist{1}));
-                    for i=1:length(CCmdist)
-                        CCm=CCm+CCmdist{i}/length(I1);
-                    end
+                CCm=zeros(size(CCmdist{1}));
+                for i=1:length(CCmdist)
+                    CCm=CCm+CCmdist{i}/length(I1);
+                end
 %                 elseif Corr(e)==2 %SPC processor
 %                     CCm=zeros(size(CCmdist{1},1),size(CCmdist{1},2),size(CCmdist{1},3),length(I1));
 %                     ind=1;
@@ -1006,9 +1008,9 @@ switch char(M)
                                 for j=1:L(2)
                                     
                                     %image 1 interpolation
-                                    nmin=max([1 (round(YD1(i,j))-3)]);
+                                    nmin=max([1    (round(YD1(i,j))-3)]);
                                     nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                    mmin=max([1 (round(XD1(i,j))-3)]);
+                                    mmin=max([1    (round(XD1(i,j))-3)]);
                                     mmax=min([L(2) (round(XD1(i,j))+3)]);
                                     for n=nmin:nmax
                                         for m=mmin:mmax
@@ -1022,9 +1024,9 @@ switch char(M)
                                     end
                                     
                                     %image 2 interpolation
-                                    nmin=max([1 (round(YD2(i,j))-3)]);
+                                    nmin=max([1    (round(YD2(i,j))-3)]);
                                     nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                    mmin=max([1 (round(XD2(i,j))-3)]);
+                                    mmin=max([1    (round(XD2(i,j))-3)]);
                                     mmax=min([L(2) (round(XD2(i,j))+3)]);
                                     for n=nmin:nmax
                                         for m=mmin:mmax
@@ -1047,9 +1049,9 @@ switch char(M)
                                 for j=1:L(2)
                                     
                                     %image 1 interpolation
-                                    nmin=max([1 (round(YD1(i,j))-3)]);
+                                    nmin=max([1    (round(YD1(i,j))-3)]);
                                     nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                    mmin=max([1 (round(XD1(i,j))-3)]);
+                                    mmin=max([1    (round(XD1(i,j))-3)]);
                                     mmax=min([L(2) (round(XD1(i,j))+3)]);
                                     for n=nmin:nmax
                                         for m=mmin:mmax
@@ -1064,9 +1066,9 @@ switch char(M)
                                     end
                                     
                                     %image 2 interpolation
-                                    nmin=max([1 (round(YD2(i,j))-3)]);
+                                    nmin=max([1    (round(YD2(i,j))-3)]);
                                     nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                    mmin=max([1 (round(XD2(i,j))-3)]);
+                                    mmin=max([1    (round(XD2(i,j))-3)]);
                                     mmax=min([L(2) (round(XD2(i,j))+3)]);
                                     for n=nmin:nmax
                                         for m=mmin:mmax
@@ -1100,7 +1102,7 @@ switch char(M)
                     else
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     end
-                    
+
                     if ~strcmpi(Corr{e},'SPC')   %SPC=4 %SCC or RPC 
                         if q==1
                             CCm=CC/length(I1);
@@ -1158,12 +1160,13 @@ switch char(M)
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
             elseif strcmpi(Corr{e},'SPC') %SPC processor
-                    %RPC filter for weighting function
-                cutoff=2/pi/mean(D(e,:));
+                %RPC filter for weighting function
                 wt = energyfilt(Z(2),Z(1),D(e,:),0);
-                wtX=wt(:,Z(1)/2+1)';
+                wtX=wt(Z(1)/2+1,:)';
+                cutoff=2/pi/D(e,2);
                 wtX(wtX<cutoff)=0;
-                wtY=wt(Z(2)/2+1,:);
+                wtY=wt(:,Z(2)/2+1);
+                cutoff=2/pi/D(e,1);
                 wtY(wtY<cutoff)=0;
                 lsqX=(0:Z(2)-1)-Z(2)/2;
                 lsqY=(0:Z(1)-1)-Z(1)/2;
@@ -1171,10 +1174,10 @@ switch char(M)
                 lsqY=repmat(lsqY,[1 length(I1)]);               
                 Qp=squeeze(CCm.C(1,:,:)./CCm.C(2,:,:));
                 Qp_norm=(Qp-repmat(min(Qp),[length(I1) 1]))./repmat(max(Qp)-min(Qp),[length(I1) 1]);
-                
+
                 for s=1:Z(3) 
-                    wtX_cum=repmat(wtX,[1 length(I1)]);
-                    wtY_cum=repmat(wtY,[1 length(I1)]);
+                    wtX_cum=reshape(repmat(wtX,[1 length(I1)]),[1 numel(wtX)*length(I1)]);
+                    wtY_cum=reshape(repmat(wtY,[1 length(I1)]),[1 numel(wtY)*length(I1)]);
 
                     for q=1:length(I1)
                         indX=(1:Z(2))+Z(2)*(q-1);
@@ -1186,7 +1189,7 @@ switch char(M)
                     %Perform the weighted lsq regression
                     Uc(s)= wlsq(CCm.U(1,:,s),lsqX,wtX_cum)*Z(2)/2/pi;
                     Vc(s)=-wlsq(CCm.V(1,:,s),lsqY,wtY_cum)*Z(1)/2/pi;
-                    Cc(s)=max(max(CCm.C(:,:,s)'));
+                    Cc(s)=max(max(CCm.C(:,:,s)));
                     Dc(s)=0;
                 end
             end
@@ -1316,6 +1319,8 @@ switch char(M)
                 %velocity interpolation
                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+                UI(mask==0) = NaN;
+                VI(mask==0) = NaN;
 
                 interptime=toc(t1);
                 fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime/60),floor(rem(interptime,60)),rem(interptime,60)-floor(rem(interptime,60)))
@@ -1584,6 +1589,8 @@ switch char(M)
                     %velocity interpolation
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+                    UI(mask==0) = NaN;
+                    VI(mask==0) = NaN;
 
                     interptime(e)=toc(t1);
                 end
