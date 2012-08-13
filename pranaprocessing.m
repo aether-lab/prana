@@ -507,8 +507,6 @@ switch char(M)
                         %velocity interpolation
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-                        UI(mask==0) = NaN;
-                        VI(mask==0) = NaN;
 
                         if defloop == 1
                             interptime(e+1,defloop)=toc(t1);
@@ -1319,8 +1317,6 @@ switch char(M)
                 %velocity interpolation
                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-                UI(mask==0) = NaN;
-                VI(mask==0) = NaN;
 
                 interptime=toc(t1);
                 fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime/60),floor(rem(interptime,60)),rem(interptime,60)-floor(rem(interptime,60)))
@@ -1589,8 +1585,6 @@ switch char(M)
                     %velocity interpolation
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-                    UI(mask==0) = NaN;
-                    VI(mask==0) = NaN;
 
                     interptime(e)=toc(t1);
                 end
