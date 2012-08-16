@@ -266,7 +266,7 @@ switch upper(tcorr)
             %Phase Correlation
             W = ones(Sy,Sx);
             Wden = sqrt(P21.*conj(P21));
-            W(P21~=0) = Wden(P21~=0);
+            W(Wden~=0) = Wden(Wden~=0);
             if frac ~=1
                 R = P21./(W.^frac);%apply factional weighting to the normalization
             else
@@ -289,7 +289,9 @@ switch upper(tcorr)
             end
             %store correlation matrix
             CC(:,:,n) = mean(Gens,3);
-
+if any(isnan(CC(:)))
+    keyboard
+end
         end
         else
             for n=1:length(X)
@@ -341,7 +343,7 @@ switch upper(tcorr)
             %Phase Correlation
             W = ones(Sy,Sx);
             Wden = sqrt(P21.*conj(P21));
-            W(P21~=0) = Wden(P21~=0);
+            W(Wden~=0) = Wden(Wden~=0);
             if frac ~=1
                 R = P21./(W.^frac);%apply factional weighting to the normalization
             else
