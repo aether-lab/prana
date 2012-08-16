@@ -274,7 +274,7 @@ switch upper(tcorr)
                     %Phase Correlation
                     W = ones(Sy,Sx);
                     Wden = sqrt(P21.*conj(P21));
-                    W(P21~=0) = Wden(P21~=0);
+                    W(Wden~=0) = Wden(Wden~=0);
                     if frac ~= 1
                         R = P21./(W.^frac); %Apply fractional weighting to the normalization
                     else
@@ -357,7 +357,7 @@ switch upper(tcorr)
                 %Phase Correlation
                 W = ones(Sy,Sx);
                 Wden = sqrt(P21.*conj(P21));
-                W(P21~=0) = Wden(P21~=0);
+                W(Wden~=0) = Wden(Wden~=0);
                 if frac ~= 1
                     R = P21./(W.^frac);%apply factional weighting to the normalization
                 else
