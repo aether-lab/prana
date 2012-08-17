@@ -43,6 +43,9 @@ if Threshswitch || UODswitch
     end
 end
 
+%limit replacement search radius to largest region tested during UOD
+maxSearch = floor( (max(UODwinsize(:))-1)/2 );
+
 %replacement
 for i=1:S(1)
     for j=1:S(2)
@@ -51,7 +54,7 @@ for i=1:S(1)
             q=0;
             s=0;
 
-            %get replacement block with at least 8 valid points
+            %get replacement block with at least 8 valid points, but stop if region grows bigger than UOD test region
             while s==0
                 q=q+1;
                 Imin = max([i-q 1   ]);
@@ -61,7 +64,7 @@ for i=1:S(1)
                 Iind = Imin:Imax;
                 Jind = Jmin:Jmax;
                 Ublock = Uval(Iind,Jind);
-                if length(Ublock(~isnan(Ublock)))>=8
+                if q >= maxSearch || length(Ublock(~isnan(Ublock)))>=8 
                     Xblock = X(Iind,Jind)-X(i,j);
                     Yblock = Y(Iind,Jind)-Y(i,j);
                     Vblock = Vval(Iind,Jind);
@@ -79,6 +82,10 @@ for i=1:S(1)
         end
     end
 end
+
+%clean up any remaining NaNs
+Uval(isnan(Uval)) = 0;
+Vval(isnan(Vval)) = 0;
 
 %Bootstrapping
 if Bootswitch
