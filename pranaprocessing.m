@@ -1206,6 +1206,7 @@ switch char(M)
 
             %validation
             if Valswitch(e)
+                %keyboard
                 t1=tic;
 
                 [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
