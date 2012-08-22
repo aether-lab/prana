@@ -289,9 +289,7 @@ switch upper(tcorr)
             end
             %store correlation matrix
             CC(:,:,n) = mean(Gens,3);
-if any(isnan(CC(:)))
-    keyboard
-end
+
         end
         else
             for n=1:length(X)
