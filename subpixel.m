@@ -133,8 +133,8 @@ else
             %%%%%%%%%%%%%%%%%%%%%%%%%%
             
             %Find a suitable window around the peak (5x5 preferred)
-            x_min=shift_locx-round(d(1)/2); x_max=shift_locx+round(d(1)/2);
-            y_min=shift_locy-round(d(2)/2); y_max=shift_locy+round(d(2)/2);
+            x_min=shift_locx-ceil(sqrt(2).*d(1)/2); x_max=shift_locx+ceil(sqrt(2).*d(1)/2);
+            y_min=shift_locy-ceil(sqrt(2).*d(2)/2); y_max=shift_locy+ceil(sqrt(2).*d(2)/2);
             if x_min<1
                 x_min=1;
             end
