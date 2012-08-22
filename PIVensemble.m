@@ -124,8 +124,8 @@ switch upper(tcorr)
             region2 = (zone2).*sfilt2;
 
             %FFTs and Cross-Correlation
-            f1   = fftn(region1-mean(region1(:)),[Sy Sx]);
-            f2   = fftn(region2-mean(region2(:)),[Sy Sx]);
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
             P21  = f2.*conj(f1);
 
             %Standard Fourier Based Cross-Correlation
@@ -187,8 +187,8 @@ switch upper(tcorr)
             region2 = (zone2).*sfilt2;
 
             %FFTs and Cross-Correlation
-            f1   = fftn(region1-mean(region1(:)),[Sy Sx]);
-            f2   = fftn(region2-mean(region2(:)),[Sy Sx]);
+            f1   = fftn(region1,[Sy Sx]);
+            f2   = fftn(region2,[Sy Sx]);
             P21  = f2.*conj(f1);
 
             %Standard Fourier Based Cross-Correlation
@@ -289,9 +289,7 @@ switch upper(tcorr)
             end
             %store correlation matrix
             CC(:,:,n) = mean(Gens,3);
-if any(isnan(CC(:)))
-    keyboard
-end
+
         end
         else
             for n=1:length(X)
