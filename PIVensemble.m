@@ -267,7 +267,7 @@ switch upper(tcorr)
                     region1_std = std(region1(:));
                     region2_std = std(region2(:));
                     if region1_std == 0 || region2_std == 0
-                        G = zeros(Ny,Nx);
+                        G = zeros(Sy,Sx);
                     else
                         G = G/std(region1(:))/std(region2(:))/length(region1(:));
                     end
@@ -325,12 +325,11 @@ switch upper(tcorr)
                 region1_std = std(region1(:));
                 region2_std = std(region2(:));
                 if region1_std == 0 || region2_std == 0
-                    G = zeros(Ny,Nx);
+                    G = zeros(Sy,Sx);
                 else
                     G = G/std(region1(:))/std(region2(:))/length(region1(:));
                 end
                 CC(:,:,n) = G;
-                
                         
             end
         end

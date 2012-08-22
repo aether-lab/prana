@@ -1134,7 +1134,7 @@ switch char(M)
                 end
             end
 
-            Z=[size(CCm,2), size(CCm,1),length(X(Eval>=0))];
+            Z=[size(CCm,1), size(CCm,2),length(X(Eval>=0))];
             ZZ=ones(Z(1),Z(2));
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
