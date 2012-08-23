@@ -930,6 +930,11 @@ switch char(M)
                 for i=1:length(CCmdist)
                     CCm=CCm+CCmdist{i}/length(I1);
                 end
+                %Xloc and Yloc need to be extracted from the distributed 
+                %variable in case we want to use them outside the spmd loop
+                Xc = Xc{1};
+                Yc = Yc{1};
+                
 %                 elseif Corr(e)==2 %SPC processor
 %                     CCm=zeros(size(CCmdist{1},1),size(CCmdist{1},2),size(CCmdist{1},3),length(I1));
 %                     ind=1;
