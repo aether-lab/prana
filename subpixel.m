@@ -50,7 +50,7 @@ else
         shift_erry=[];
         %find subpixel displacement in x
         if ccsizex == 1
-            shift_locx = 1; method=1;
+            shift_errx = 1; method=1;
         elseif shift_locx == 1
             %boundary condition 1
             shift_errx =  G( shift_locy , shift_locx+1 )/M(i); method=1;
@@ -65,7 +65,7 @@ else
             shift_errx =  G( shift_locy , shift_locx+1 )/M(i); method=1;
         end
         if ccsizey == 1
-            shift_locy = 1; method=1;
+            shift_erry = 1; method=1;
         elseif shift_locy == 1
             %boundary condition 1
             shift_erry = -G( shift_locy+1 , shift_locx )/M(i); method=1;
