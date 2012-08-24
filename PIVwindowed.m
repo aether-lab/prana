@@ -52,8 +52,8 @@ cnorm = ones(Ny,Nx);
 spectral = fftshift(energyfilt(Sx,Sy,D,0));
 
 %fftshift indicies
-fftindy = [Sy/2+1:Sy 1:Sy/2];
-fftindx = [Sx/2+1:Sx 1:Sx/2];
+fftindy = [ceil(Sy/2)+1:Sy 1:ceil(Sy/2)];
+fftindx = [ceil(Sx/2)+1:Sx 1:ceil(Sx/2)];
 
 % This is a check for the fractionally weighted correlation.  We won't use
 % the spectral filter with FWC or GCC

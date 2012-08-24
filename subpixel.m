@@ -1,7 +1,7 @@
 function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
 %intialize indices
-cc_x = -ccsizex/2:ccsizex/2-1;
-cc_y = -ccsizey/2:ccsizey/2-1;
+cc_x = -floor(ccsizex/2):ceil(ccsizex/2)-1;
+cc_y = -floor(ccsizey/2):ceil(ccsizey/2)-1;
 
 %find maximum correlation value
 [M,I] = max(G(:));
