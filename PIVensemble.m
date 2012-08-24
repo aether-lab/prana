@@ -263,7 +263,10 @@ switch upper(tcorr)
                                     
                     %correlation done using xcorr2 which is faster then fft's
                     %for strongly uneven windows.
-                    G = xcorr2(region2,region1);
+                    %G = xcorr2(region2,region1);
+                    % This is a stripped out version of xcorr2
+                    G = conv2(region2, rot90(conj(region1),2));
+                    
                     region1_std = std(region1(:));
                     region2_std = std(region2(:));
                     if region1_std == 0 || region2_std == 0
@@ -321,7 +324,10 @@ switch upper(tcorr)
                 
                 %correlation done using xcorr2 which is faster then fft's
                 %for strongly uneven windows.
-                G = xcorr2(region2,region1);
+                %G = xcorr2(region2,region1);
+                % This is a stripped out version of xcorr2
+                G = conv2(region2, rot90(conj(region1),2));
+                
                 region1_std = std(region1(:));
                 region2_std = std(region2(:));
                 if region1_std == 0 || region2_std == 0
