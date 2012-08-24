@@ -93,14 +93,14 @@ switch upper(tcorr)
             y1 = Y(n) - floor(round(Vin(n))/2);
             y2 = Y(n) +  ceil(round(Vin(n))/2);
 
-            xmin1 = x1-Nx/2+1;
-            xmax1 = x1+Nx/2;
-            xmin2 = x2-Nx/2+1;
-            xmax2 = x2+Nx/2;
-            ymin1 = y1-Ny/2+1;
-            ymax1 = y1+Ny/2;
-            ymin2 = y2-Ny/2+1;
-            ymax2 = y2+Ny/2;
+            xmin1 = x1- ceil(Nx/2)+1;
+            xmax1 = x1+floor(Nx/2);
+            xmin2 = x2- ceil(Nx/2)+1;
+            xmax2 = x2+floor(Nx/2);
+            ymin1 = y1- ceil(Ny/2)+1;
+            ymax1 = y1+floor(Ny/2);
+            ymin2 = y2- ceil(Ny/2)+1;
+            ymax2 = y2+floor(Ny/2);
 
             for r=1:size(im1,3);
             %find the image windows
@@ -157,14 +157,14 @@ switch upper(tcorr)
             y1 = Y(n) - floor(round(Vin(n))/2);
             y2 = Y(n) +  ceil(round(Vin(n))/2);
 
-            xmin1 = x1-Nx/2+1;
-            xmax1 = x1+Nx/2;
-            xmin2 = x2-Nx/2+1;
-            xmax2 = x2+Nx/2;
-            ymin1 = y1-Ny/2+1;
-            ymax1 = y1+Ny/2;
-            ymin2 = y2-Ny/2+1;
-            ymax2 = y2+Ny/2;
+            xmin1 = x1- ceil(Nx/2)+1;
+            xmax1 = x1+floor(Nx/2);
+            xmin2 = x2- ceil(Nx/2)+1;
+            xmax2 = x2+floor(Nx/2);
+            ymin1 = y1- ceil(Ny/2)+1;
+            ymax1 = y1+floor(Ny/2);
+            ymin2 = y2- ceil(Ny/2)+1;
+            ymax2 = y2+floor(Ny/2);
 
             %find the image windows
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
@@ -228,14 +228,14 @@ switch upper(tcorr)
                 y1 = Y(n) - floor(round(Vin(n))/2);
                 y2 = Y(n) +  ceil(round(Vin(n))/2);
                 
-                xmin1 = x1-res(1,1)/2+1;
-                xmax1 = x1+res(1,1)/2;
-                xmin2 = x2-res(2,1)/2+1;
-                xmax2 = x2+res(2,1)/2;
-                ymin1 = y1-res(1,2)/2+1;
-                ymax1 = y1+res(1,2)/2;
-                ymin2 = y2-res(2,2)/2+1;
-                ymax2 = y2+res(2,2)/2;
+                xmin1 = x1- ceil(res(1,1)/2)+1;
+                xmax1 = x1+floor(res(1,1)/2);
+                xmin2 = x2- ceil(res(2,1)/2)+1;
+                xmax2 = x2+floor(res(2,1)/2);
+                ymin1 = y1- ceil(res(1,2)/2)+1;
+                ymax1 = y1+floor(res(1,2)/2);
+                ymin2 = y2- ceil(res(2,2)/2)+1;
+                ymax2 = y2+floor(res(2,2)/2);
                 
                 for r=1:size(im1,3);
                     %find the image windows
@@ -287,14 +287,14 @@ switch upper(tcorr)
                 y1 = Y(n) - floor(round(Vin(n))/2);
                 y2 = Y(n) +  ceil(round(Vin(n))/2);
                 
-                xmin1 = x1-res(1,1)/2+1;
-                xmax1 = x1+res(1,1)/2;
-                xmin2 = x2-res(2,1)/2+1;
-                xmax2 = x2+res(2,1)/2;
-                ymin1 = y1-res(1,2)/2+1;
-                ymax1 = y1+res(1,2)/2;
-                ymin2 = y2-res(2,2)/2+1;
-                ymax2 = y2+res(2,2)/2;
+                xmin1 = x1- ceil(res(1,1)/2)+1;
+                xmax1 = x1+floor(res(1,1)/2);
+                xmin2 = x2- ceil(res(2,1)/2)+1;
+                xmax2 = x2+floor(res(2,1)/2);
+                ymin1 = y1- ceil(res(1,2)/2)+1;
+                ymax1 = y1+floor(res(1,2)/2);
+                ymin2 = y2- ceil(res(2,2)/2)+1;
+                ymax2 = y2+floor(res(2,2)/2);
                 
                 %find the image windows
                 zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
@@ -351,14 +351,14 @@ switch upper(tcorr)
             y1 = Y(n) - floor(round(Vin(n))/2);
             y2 = Y(n) +  ceil(round(Vin(n))/2);
 
-            xmin1 = x1-Nx/2+1;
-            xmax1 = x1+Nx/2;
-            xmin2 = x2-Nx/2+1;
-            xmax2 = x2+Nx/2;
-            ymin1 = y1-Ny/2+1;
-            ymax1 = y1+Ny/2;
-            ymin2 = y2-Ny/2+1;
-            ymax2 = y2+Ny/2;
+            xmin1 = x1- ceil(Nx/2)+1;
+            xmax1 = x1+floor(Nx/2);
+            xmin2 = x2- ceil(Nx/2)+1;
+            xmax2 = x2+floor(Nx/2);
+            ymin1 = y1- ceil(Ny/2)+1;
+            ymax1 = y1+floor(Ny/2);
+            ymin2 = y2- ceil(Ny/2)+1;
+            ymax2 = y2+floor(Ny/2);
 
             for r=1:size(im1,3);
             %find the image windows
@@ -427,14 +427,14 @@ switch upper(tcorr)
             y1 = Y(n) - floor(round(Vin(n))/2);
             y2 = Y(n) +  ceil(round(Vin(n))/2);
 
-            xmin1 = x1-Nx/2+1;
-            xmax1 = x1+Nx/2;
-            xmin2 = x2-Nx/2+1;
-            xmax2 = x2+Nx/2;
-            ymin1 = y1-Ny/2+1;
-            ymax1 = y1+Ny/2;
-            ymin2 = y2-Ny/2+1;
-            ymax2 = y2+Ny/2;
+            xmin1 = x1- ceil(Nx/2)+1;
+            xmax1 = x1+floor(Nx/2);
+            xmin2 = x2- ceil(Nx/2)+1;
+            xmax2 = x2+floor(Nx/2);
+            ymin1 = y1- ceil(Ny/2)+1;
+            ymax1 = y1+floor(Ny/2);
+            ymin2 = y2- ceil(Ny/2)+1;
+            ymax2 = y2+floor(Ny/2);
 
             %find the image windows
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
@@ -512,14 +512,14 @@ switch upper(tcorr)
             y1 = Y(n) - floor(round(Vin(n))/2);
             y2 = Y(n) +  ceil(round(Vin(n))/2);
 
-            xmin1 = x1-Nx/2+1;
-            xmax1 = x1+Nx/2;
-            xmin2 = x2-Nx/2+1;
-            xmax2 = x2+Nx/2;
-            ymin1 = y1-Ny/2+1;
-            ymax1 = y1+Ny/2;
-            ymin2 = y2-Ny/2+1;
-            ymax2 = y2+Ny/2;
+            xmin1 = x1- ceil(Nx/2)+1;
+            xmax1 = x1+floor(Nx/2);
+            xmin2 = x2- ceil(Nx/2)+1;
+            xmax2 = x2+floor(Nx/2);
+            ymin1 = y1- ceil(Ny/2)+1;
+            ymax1 = y1+floor(Ny/2);
+            ymin2 = y2- ceil(Ny/2)+1;
+            ymax2 = y2+floor(Ny/2);
 
             %find the image windows
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
