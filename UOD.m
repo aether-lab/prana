@@ -10,6 +10,7 @@ S=size(U);
 for k=1:pass
     
     q = floor((t(k,:)-1)/2);
+    q0 = q;
     
     for i=1:S(1)
         for j=1:S(2)
@@ -24,7 +25,7 @@ for k=1:pass
                     Iind = Imin:Imax;
                     Jind = Jmin:Jmax;
                     Ublock = U(Iind,Jind);
-                    if length(Ublock(~isnan(Ublock)))>=8
+                    if length(Ublock(~isnan(Ublock)))>=8 || any(q >= 2*q0)
 %                         Xblock = X(Iind,Jind)-X(i,j);
 %                         Yblock = Y(Iind,Jind)-Y(i,j);
                         Vblock = V(Iind,Jind);
