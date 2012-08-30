@@ -218,7 +218,7 @@ switch upper(tcorr)
         CC = zeros(Sy,Sx,length(X));
         
         if size(im1,3) == 3
-            Gens=zeros(Ny,Nx,3);
+            Gens=zeros(res(1,2)+res(2,2)-1,res(1,1)+res(2,1)-1,3);
             for n=1:length(X)
                 
                 %apply the second order discrete window offset
@@ -242,13 +242,13 @@ switch upper(tcorr)
                     zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]),r );
                     zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]),r );
                     if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                        w1 = zeros(Ny,Nx);
-                        w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
+                        w1 = zeros(res(1,2),res(1,1));
+                        w1( 1+max([0 1-ymin1]):res(1,2)-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):res(1,1)-max([0 xmax1-L(2)]) ) = zone1;
                         zone1 = w1;
                     end
                     if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                        w2 = zeros(Ny,Nx);
-                        w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
+                        w2 = zeros(res(2,2),res(2,1));
+                        w2( 1+max([0 1-ymin2]):res(2,2)-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):res(2,1)-max([0 xmax2-L(2)]) ) = zone2;
                         zone2 = w2;
                     end
                     
