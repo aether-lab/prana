@@ -648,27 +648,27 @@ switch char(M)
             fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ') at %s \n'], datestr(now));
             fprintf('----------------------------------------------------\n')
             for e=1:P
-                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(sum(corrtime(e,:))/60),floor(rem(sum(corrtime(e,:)),60)),rem(sum(corrtime(e,:)),60)-floor(rem(sum(corrtime(e,:)),60)))
+                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(sum(corrtime(e,:))/60),floor(rem(sum(corrtime(e,:)),60)),(rem(sum(corrtime(e,:)),60)-floor(rem(sum(corrtime(e,:)),60)))*10)
                 if Valswitch(e)
-                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))
+                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),(rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))*10)
                 end
                 if strcmpi(M,'Deform') && mindefloop(e) ~= 1
-                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))
-                    fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))
+                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),(rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10)
+                    fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),(rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10)
                 end
                 if Writeswitch(e)
-                    fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),rem(savetime(e),60)-floor(rem(savetime(e),60)))
+                    fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),(rem(savetime(e),60)-floor(rem(savetime(e),60)))*10)
                 end
                 if strcmp(M,'Multigrid') || (strcmp(M,'Deform') && mindefloop(e) == 1)
                     if e~=P
-                        fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))
+                        fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),(rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10)
                         if strcmp(M,'Deform')
-                            fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))
+                            fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),(rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10)
                         end
                     end
                 end
             end
-            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),(rem(eltime,60)-floor(rem(eltime,60)))*10)
             frametime(q)=eltime;
             comptime=mean(frametime(1:q))*(length(I1)-q);
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
@@ -919,10 +919,10 @@ switch char(M)
                         end
                         corrtime=toc(t1);
                         if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
-                            fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))                        
+                            fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),(rem(deformtime,60)-floor(rem(deformtime,60)))*10)
                         end
 %                         fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
-                        fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
+                        fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),(rem(corrtime,60)-floor(rem(corrtime,60)))*10)
                     end
                 end
 %                 if Corr(e)<4 %SCC or RPC processor
@@ -1132,10 +1132,10 @@ switch char(M)
                     end
                     corrtime=toc(t1);
                     if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
-                        fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),rem(deformtime,60)-floor(rem(deformtime,60)))
+                        fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),(rem(deformtime,60)-floor(rem(deformtime,60)))*10)
                     end
 %                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
-                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)))
+                    fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),(rem(corrtime,60)-floor(rem(corrtime,60)))*10)
                 end
             end
 
@@ -1161,7 +1161,7 @@ switch char(M)
                     [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
                 end
                 peaktime=toc(t1);
-                fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),rem(peaktime,60)-floor(rem(peaktime,60)))
+                fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),(rem(peaktime,60)-floor(rem(peaktime,60)))*10)
             elseif strcmpi(Corr{e},'SPC') %SPC processor
                 %RPC filter for weighting function
                 wt = energyfilt(Z(2),Z(1),D(e,:),0);
@@ -1218,7 +1218,7 @@ switch char(M)
                     Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
 
                 valtime=toc(t1);
-                fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime/60),floor(rem(valtime,60)),rem(valtime,60)-floor(rem(valtime,60)))
+                fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime/60),floor(rem(valtime,60)),(rem(valtime,60)-floor(rem(valtime,60)))*10)
 
             else
                 Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
@@ -1302,7 +1302,7 @@ switch char(M)
                 X=Xval;Y=Yval;
 
                 savetime=toc(t1);
-                fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime/60),floor(rem(savetime,60)),rem(savetime,60)-floor(rem(savetime,60)))
+                fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime/60),floor(rem(savetime,60)),(rem(savetime,60)-floor(rem(savetime,60)))*10)
             end
             U=Uval; V=Vval;
         
@@ -1325,13 +1325,13 @@ switch char(M)
                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
                 interptime=toc(t1);
-                fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime/60),floor(rem(interptime,60)),rem(interptime,60)-floor(rem(interptime,60)))
+                fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime/60),floor(rem(interptime,60)),(rem(interptime,60)-floor(rem(interptime,60)))*10)
             end
             
             if defloop == 1
                 eltime=toc(tf);
                 %output text
-                fprintf('total pass time...               %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+                fprintf('total pass time...               %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),(rem(eltime,60)-floor(rem(eltime,60)))*10)
                 frametime(e)=eltime;
                 comptime=mean(frametime(1:e))*(P-e);
                 fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
@@ -1605,18 +1605,18 @@ switch char(M)
 %             fprintf(1, 'Frame completed at %s \n', datestr(now)); % Print the date and time at which frame was completed
             fprintf('----------------------------------------------------\n')
             for e=1:P
-                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime(e)/60),floor(rem(corrtime(e),60)),rem(corrtime(e),60)-floor(rem(corrtime(e),60)))
+                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(corrtime(e)/60),floor(rem(corrtime(e),60)),(rem(corrtime(e),60)-floor(rem(corrtime(e),60)))*10)
                 if Valswitch(e)
-                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime(e)/60),floor(rem(valtime(e),60)),rem(valtime(e),60)-floor(rem(valtime(e),60)))
+                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime(e)/60),floor(rem(valtime(e),60)),(rem(valtime(e),60)-floor(rem(valtime(e),60)))*10)
                 end
                 if Writeswitch(e)
-                    fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),rem(savetime(e),60)-floor(rem(savetime(e),60)))
+                    fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),(rem(savetime(e),60)-floor(rem(savetime(e),60)))*00)
                 end
                 if e~=P
-                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime(e)/60),floor(rem(interptime(e),60)),rem(interptime(e),60)-floor(rem(interptime(e),60)))
+                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(interptime(e)/60),floor(rem(interptime(e),60)),(rem(interptime(e),60)-floor(rem(interptime(e),60)))*10)
                 end
             end
-            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),rem(eltime,60)-floor(rem(eltime,60)))
+            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),(rem(eltime,60)-floor(rem(eltime,60)))*10)
             frametime(q+1-qstart)=eltime;
             comptime=nanmean(frametime(1:q+1-qstart))*(length(qstart:qend)-(q+1-qstart));
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
