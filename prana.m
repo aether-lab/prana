@@ -220,7 +220,7 @@ catch
     end
     
     defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
-
+    defaultdata.ptv_version=pranaPTVcode('version');
 end
 
 
@@ -712,6 +712,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imagedirectory_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -854,6 +855,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imageframestart_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -869,6 +871,7 @@ if str2double(handles.Njob)>0
     load_imlist(handles);
     guidata(hObject,handles)
 end
+
 function imageframestep_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
@@ -1581,9 +1584,11 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+
 % --- ? Button Next to Algorithm Drop-Down Menu ---
 function algorithmhelp_Callback(hObject, eventdata, handles)
 PIVhelp(8)
+
 
 % --- Window Resolution Text Box ---
 function windowres_Callback(hObject, eventdata, handles)
@@ -1612,6 +1617,17 @@ if str2double(handles.Njob) > 0
     % Set "window size" fields in "PIV pass" data structure to the window sizes calculated above
         eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(xbin) '','' num2str(ybin)];'])
         eval(['set(handles.windowsize,''String'', handles.data.PIV' handles.data.cpass '.winsize)']) 
+    end
+    
+    if get(handles.correlationtype,'Value') == 7 %if DCC
+        %Update "Actual Window Size" text box based on "Window Resolution"
+        Rx = wx1 + wx2 - 1;
+        Ry = wy1 + wy2 - 1;
+        %update the text on the GUI
+        set(handles.windowsize,'String',[num2str(Rx) ',' num2str(Ry)]);
+        % Update the "window size" field of the "PIV Pass" data structure to the value of the 
+        % string in the "Actual Window Size" text box
+        eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(Rx) '','' num2str(Ry)];']);    
     end
     
     % Alert user if window size is smaller than 256 pixels. Not sure why this is important.
@@ -1706,8 +1722,8 @@ if str2double(handles.Njob ) > 0
             set(hObject,'String',[num2str(Rx) ',' num2str(Ry)]);
         end
         
-        % If the x-dimension of the interrogation region is smaller than that of the effective window resolution,
-        % re-size the x-dimension of the interrogation regions to equal that of the effective window resolution
+        % If the y-dimension of the interrogation region is smaller than that of the effective window resolution,
+        % re-size the y-dimension of the interrogation regions to equal that of the effective window resolution
         if Ry < wyMax
             Ry = wyMax;
             set(hObject,'String',[num2str(Rx) ',' num2str(Ry)]);
@@ -1969,9 +1985,8 @@ end
 % --- Correlation Type Drop-Down Menu ---
 function correlationtype_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
-    ctype = {'SCC','RPC','DRPC','GCC','FWC','SPC'};
+    ctype = {'SCC','RPC','DRPC','GCC','FWC','SPC','DCC'};
     eval(['handles.data.PIV' handles.data.cpass '.corr = ctype{get(hObject,''Value'')};'])
-    guidata(hObject,handles)
     N=handles.data.cpass;
     A=eval(['handles.data.PIV' num2str(N)]);
     if any(strcmpi(A.corr,{'SCC','GCC','DRPC'}))%any(str2double(A.corr)== [1 3]) %2 and 5 are RPC and SPC, both need rpcdiameter
@@ -1985,7 +2000,30 @@ if str2double(handles.Njob)>0
     else
         set(handles.frac_filter_weight,'backgroundcolor',0.5*[1 1 1]);
     end
+    %For DCC, we don't allow windowing, and the actual window size is fixed based on the resolution
+    if strcmpi(A.corr,{'DCC'})
+        %disable windowing
+        set(handles.autowinsizecheckbox,'enable','off');
+        set(handles.autowinsizecheckbox,'value',0.0);
+        eval(['handles.data.PIV' handles.data.cpass '.winauto = num2str(get(handles.autowinsizecheckbox,''Value''));']);
+        %Update "Actual Window Size" text box based on "Window Resolution"
+        % Read the string in the window resolution textbox
+        A = get(handles.windowres,'String');
+        % Parse string in window resolution textbox to determine the resolutions of each window
+        [wx1 wy1 wx2 wy2] = parseNum(A);
+        Rx = wx1 + wx2 - 1;
+        Ry = wy1 + wy2 - 1;
+        %update the text on the GUI
+        set(handles.windowsize,'String',[num2str(Rx) ',' num2str(Ry)]);
+        % Update the "window size" field of the "PIV Pass" data structure to the value of the 
+        % string in the "Actual Window Size" text box
+        eval(['handles.data.PIV' handles.data.cpass '.winsize = [num2str(Rx) '','' num2str(Ry)];']);    
+    else
+        set(handles.autowinsizecheckbox,'enable','on');
+    end
     set(handles.correlationtype,'backgroundcolor',[1 1 1]);
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
 end
 function correlationtype_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
@@ -3011,6 +3049,8 @@ elseif strcmpi(A.corr,'FWC');
     corr = 5;
 elseif strcmpi(A.corr,'SPC');
     corr = 6;
+elseif strcmpi(A.corr,'DCC');
+    corr = 7;
 end
 set(handles.windowres,'string',A.winres);
 set(handles.windowsize,'string',A.winsize);
@@ -3162,6 +3202,17 @@ else
     end
     set(handles.rpcdiameter,'backgroundcolor',0.5*[1 1 1]);
 end
+%May need to check for DCC and disable checkbox, force windowres?
+if get(handles.correlationtype,'Value')==7 % check if DCC
+    set(handles.autowinsizecheckbox,'enable','off');
+    set(handles.windowsize,'backgroundcolor',0.5*[1 1 1]); %override color, because it's really off
+    %string value is set above
+else
+    %if it's not DCC, make sure the autowinsize checkbox works
+    set(handles.autowinsizecheckbox,'enable','on');
+    %state of winsize control is updated above based on value of autowin
+end
+
 % Grays out the smoothing filt size box when smoothing is not selected when
 % switching between passes.
 if str2double(A.velsmooth)  == 0
