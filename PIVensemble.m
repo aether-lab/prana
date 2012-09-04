@@ -211,7 +211,7 @@ switch upper(tcorr)
             end
         end
         
-        %Standard Cross Correlation
+        %Direct Cross Correlation
     case 'DCC'
         
         %initialize correlation tensor
