@@ -170,7 +170,9 @@ else
 %                 shift_erry=xvars(4)-shift_locy;
                 shift_errx=xvars(4)-shift_locx;
                 shift_erry=xvars(5)-shift_locy;
-                D(i) = sqrt(sigma^2/(2*sqrt(xvars(2).^2 + xvars(3).^2)));
+                sigma_x = sqrt(1/(2*xvars(2)));
+                sigma_y = sqrt(1/(2*xvars(3)));
+                D(i) = sigma*sqrt(sigma_x^2 + sigma_y^2);
             catch %#ok
                 method=1;
             end
