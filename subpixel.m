@@ -170,7 +170,13 @@ else
 %                 shift_erry=xvars(4)-shift_locy;
                 shift_errx=xvars(4)-shift_locx;
                 shift_erry=xvars(5)-shift_locy;
-                D(i) = sqrt(sigma^2/(2*sqrt(xvars(2).^2 + xvars(3).^2)));
+                % We want the manitude of the sigmas but we have beta as an output.
+                % This line shows now to combine the betas together corretly.
+                %sigma_x = sqrt(1/(2*abs(xvars(2))));
+                %sigma_y = sqrt(1/(2*abs(xvars(3))));
+                %D(i) = sigma*sqrt(sigma_x^2 + sigma_y^2);
+                % This is a faster version of the above lines.
+                D(i) = sigma*sqrt(1/(2*abs(xvars(2))) + 1/(2*abs(xvars(3))));
             catch %#ok
                 method=1;
             end
