@@ -9,14 +9,14 @@ S=size(U);
 %outlier searching
 for k=1:pass
     
-    q = floor((t(k,:)-1)/2);
-    q0 = q;
+    q0 = floor((t(k,:)-1)/2);
     
     for i=1:S(1)
         for j=1:S(2)
             if Eval(i,j)==0           
                 %get evaluation block with at least 8 valid points
                 s=0;
+                q = q0;
                 while s==0
                     Imin = max([i-q(2) 1   ]);
                     Imax = min([i+q(2) S(1)]);
