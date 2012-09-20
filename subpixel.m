@@ -135,52 +135,99 @@ else
             %%%%%%%%%%%%%%%%%%%%%%%%%%
             % Gaussian Least Squares %
             %%%%%%%%%%%%%%%%%%%%%%%%%%
+            %convert the particle diameter to diameter of equivalent correlation peak
+            D1 = sqrt(2).*d(1);
+            D2 = sqrt(2).*d(2);
+            goodSize = 0;  %gets set =1 after fit, but reset to 0 if betaX or betaY are bigger than 2*D1 or 2*D2
             
-            %Find a suitable window around the peak (5x5 preferred)
-            x_min=shift_locx-ceil(sqrt(2).*d(1)/2); x_max=shift_locx+ceil(sqrt(2).*d(1)/2);
-            y_min=shift_locy-ceil(sqrt(2).*d(2)/2); y_max=shift_locy+ceil(sqrt(2).*d(2)/2);
-            if x_min<1
-                x_min=1;
-            end
-            if x_max>ccsizex
-                x_max=ccsizex;
-            end
-            if y_min<1
-                y_min=1;
-            end
-            if y_max>ccsizey
-                y_max=ccsizey;
-            end
-            points=G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max);
-            
-            %Options for the lsqnonlin solver
-            options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',5e-6,'TolFun',5e-6,...
-                'LargeScale','off','Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
-                'Algorithm','levenberg-marquardt');
-            
-            %Initial values for the solver
-            x0=[M(i) 1 1 shift_locx shift_locy 0];
+            %keep trying while method not 1 (G.3pt.fit), and the search diameter (2x expected diam.) is less than half the window size
+            while ~goodSize && method~=1 && 2*D1<ccsizex/2 && 2*D2<ccsizey/2
+                %Find a suitable window around the peak (+/- D1,D2)
+                x_min=shift_locx-ceil(D1); x_max=shift_locx+ceil(D1);
+                y_min=shift_locy-ceil(D2); y_max=shift_locy+ceil(D2);
+                if x_min<1
+                    x_min=1;
+                end
+                if x_max>ccsizex
+                    x_max=ccsizex;
+                end
+                if y_min<1
+                    y_min=1;
+                end
+                if y_max>ccsizey
+                    y_max=ccsizey;
+                end
+                points=G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max);
 
-            [xloc yloc]=meshgrid(x_min:x_max,y_min:y_max);
+                %Options for the lsqnonlin solver using Levenberg-Marquardt solver
+                options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
+                    'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
+                    'Algorithm','levenberg-marquardt');
+                %xvars is [M,betaX,betaY,CX,CY,alpha]
+                LB = [];
+                UB = [];
 
-            %Run solver; default to 3-point gauss if it fails
-            try
-                xvars=lsqnonlin(@leastsquares2D,x0,[],[],options,points(:),[yloc(:),xloc(:)],method);
-%                 shift_errx=xvars(3)-shift_locx;
-%                 shift_erry=xvars(4)-shift_locy;
-                shift_errx=xvars(4)-shift_locx;
-                shift_erry=xvars(5)-shift_locy;
-                % We want the manitude of the sigmas but we have beta as an output.
-                % This line shows now to combine the betas together corretly.
-                %sigma_x = sqrt(1/(2*abs(xvars(2))));
-                %sigma_y = sqrt(1/(2*abs(xvars(3))));
-                %D(i) = sigma*sqrt(sigma_x^2 + sigma_y^2);
-                % This is a faster version of the above lines.
-                D(i) = sigma*sqrt(1/(2*abs(xvars(2))) + 1/(2*abs(xvars(3))));
-            catch %#ok
-                method=1;
-            end
-        end
+%                 %Options for the lsqnonlin solver using Trust Region Reflective solver
+%                 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
+%                     'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
+%                     'Algorithm','trust-region-reflective');
+%                 %xvars is [M,betaX,betaY,CX,CY,alpha]
+%                 LB = [0   0   0   x_min y_min -inf];
+%                 UB = [inf inf inf x_max y_max  inf];
+
+                %Initial values for the solver (have to convert D into Beta)
+                x0=[M(i) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
+
+                [xloc yloc]=meshgrid(x_min:x_max,y_min:y_max);
+
+                %Run solver; default to 3-point gauss if it fails
+                try
+                    %[xvars resnorm resid exitflag output]=lsqnonlin(@leastsquares2D,x0,LB,UB,options,points(:),[yloc(:),xloc(:)],method);
+                    [xvars]=lsqnonlin(@leastsquares2D,x0,LB,UB,options,points(:),[yloc(:),xloc(:)],method);
+                    shift_errx=xvars(4)-shift_locx;
+                    shift_erry=xvars(5)-shift_locy;
+                    %convert beta to diameter, diameter = 4*std.dev.
+                    dA = sigma/sqrt(2*abs(xvars(2)));    %diameter of axis 1
+                    dB = sigma/sqrt(2*abs(xvars(3)));    %diameter of axis 2
+                    %find the equivalent diameter for a circle with equal area and return that value
+                    %keyboard
+                    D(i) = sqrt(dA*dB);
+                    alpha = mod(xvars(6),2*pi);
+                    %figure out approximate width in X and Y of fitted Gaussian
+                    dX = max( abs(dA*cos(alpha)), abs(dB*sin(alpha)) );
+                    dY = max( abs(dA*sin(alpha)), abs(dB*cos(alpha)) );
+                    
+                    %LSqF didn't fail...
+                    goodSize = 1;
+                    
+                    % %this stuff is just a bunch of things to monitor performance on a single sizing
+                    % fprintf('D1=%g,D2=%g\n',D1,D2)
+                    % fprintf('I0=%g, dA=%g, dB=%g, cX=%g, cY=%g, alpha=%g\n',xvars(1),dA,dB,xvars(4),xvars(5),alpha)
+                    % fprintf('dX=%g, dY=%g\n',dX,dY)
+                    % % fprintf('resnorm=%g\n',resnorm);
+                    % % fprintf('residuals: I0=%g, b1=%g, b2=%g, cX=%g, cY=%g, alpha=%g\n',resid(1),resid(2),resid(3),resid(4),resid(5),resid(6))
+                    % % disp(output)
+                    % % disp(output.message)
+                    % fprintf('\n')
+                    
+                    %check if search region (+/-D1,D2) was large enough ...
+                    %our criterion is if the measured diameter was less than 
+                    %2x the search window (2D1,2D2), ie 4*D1,D2
+                    if dX > 4*D1
+                        D1 = 2*D1;      %make DX bigger
+                        goodSize = 0;   %window wasn't big enough, do it again
+                    end
+                    if dY > 4*D2
+                        D2 = 2*D2; %make DY bigger
+                        goodSize = 0;   %window wasn't big enough, do it again
+                    end
+                    
+                catch err%#ok
+                    %warning(err.message)
+                    method=1;
+                end
+            end %while trying to fit region
+        end %if method==2,3,4
         if method==1
 
             %%%%%%%%%%%%%%%%%%%%
