@@ -12,8 +12,8 @@ function F = leastsquares2D(x,mapint_i,locxy_i,method)
 %            for the gaussian fit.  [Max Value, Beta in the X direction, 
 %            Beta in the Y direction, Estimated Centroid for X, Estimated
 %            Centroid for Y, Estimated Orientation Angle]
-%  mapint_i: List of the points sampled.
-%  locxy_i:  Location of maximum pixel value for X and Y
+%  mapint_i: List of intensity values.
+%  locxy_i:  Location of intensity samples for X and Y
 %  method:   This switches between Standard Gaussian (3) and Continous
 %            Gaussian (4).
 %    
