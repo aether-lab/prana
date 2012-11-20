@@ -41,12 +41,14 @@ if any(strcmpi(PIVprops.PIVprops.extension,{'.plt' '.dat'}))
         PIVprops.PIVprops.frame1,PIVprops.PIVprops.frame1,PIVprops.Data.imzeros);
     PIV1={X,Y,flipud(U),-1.*flipud(V)};  clear X Y U V
 elseif strcmpi(PIVprops.PIVprops.extension,'.mat')
-    lname = sprintf('%%s%%s%%0%0.0fd',PIVprops.Data.imzeros);
-    PIV1t = load(sprintf(lname,PIVprops.Data.Track.PIVprops.load_dir,PIVprops.PIVprops.outbase,PIVprops.PIVprops.frame1,PIVprops.PIVprops.extension));
-%     PIV1 = {PIV1t.flowvarunsteady(end:-1:1,:,1,1),PIV1t.flowvarunsteady(end:-1:1,:,1,2),...
-%         PIV1t.flowvarunsteady(end:-1:1,:,1,3),PIV1t.flowvarunsteady(end:-1:1,:,1,4)};
-    PIV1 = {PIV1t.X(end:-1:1,:),PIV1t.Y(end:-1:1,:),PIV1t.U(end:-1:1,:),PIV1t.V(end:-1:1,:)};
+    % lname = sprintf('%%s%%s%%0%0.0fd',PIVprops.Data.imzeros);
+    % PIV1t = load(sprintf(lname,PIVprops.Data.Track.PIVprops.load_dir,PIVprops.Data.PIV.Data.outbase,PIVprops.PIVprops.frame1,PIVprops.PIVprops.extension));
+    
+    PIV1t = load(fullfile(PIVprops.Data.Track.PIVprops.load_dir,[PIVprops.Data.PIV.Data.outbase,num2str(PIVprops.PIVprops.frame1,['%0' num2str(PIVprops.Data.imzeros) 'd']),PIVprops.PIVprops.extension]));
 
+    % PIV1 = {PIV1t.flowvarunsteady(end:-1:1,:,1,1),PIV1t.flowvarunsteady(end:-1:1,:,1,2),...
+    % PIV1t.flowvarunsteady(end:-1:1,:,1,3),PIV1t.flowvarunsteady(end:-1:1,:,1,4)};
+    PIV1 = {PIV1t.X(end:-1:1,:),PIV1t.Y(end:-1:1,:),PIV1t.U(end:-1:1,:),PIV1t.V(end:-1:1,:)};
 else
     error('Unknown PIV extension')
 end

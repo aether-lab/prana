@@ -54,16 +54,6 @@ else
     Data.Size.s_name   = PTV_Data.Size.savebase;
     Data.Size.save_dir = PTV_Data.Size.save_dir;
     
-    % --- PIV Info ---
-    if str2double(PTV_Data.datout)
-        Data.Track.PIVprops.extension='.dat';
-    elseif str2double(PTV_Data.multiplematout)
-        Data.Track.PIVprops.extension='.mat';
-    end
-    Data.Track.PIVprops.load_dir = PTV_Data.outdirec;
-    Data.PIV.Data                = PTV_Data;
-    eval(['Data.PIV.Data.outbase = PTV_Data.PIV' PTV_Data.passes '.outbase;'])
-    
     % --- Tracking ---
     PTVmethod                 = {'none','ptv','piv','piv-ptv'};
     PTVpredict                = {'static','dynamic'};
@@ -82,6 +72,23 @@ else
     Data.Track.savemat        = str2double(PTV_Data.Track.trackmat);
     Data.Track.savedat        = str2double(PTV_Data.Track.trackdat);
     
+    % --- PIV Info ---
+    if str2double(PTV_Data.datout)
+        Data.Track.PIVprops.extension='.dat';
+    elseif str2double(PTV_Data.multiplematout)
+        Data.Track.PIVprops.extension='.mat';
+    end
+    Data.Track.PIVprops.load_dir = PTV_Data.outdirec;
+
+    if any(strcmpi(Data.Track.method,{'piv' 'piv-ptv'})) && strcmp(PTV_Data.method,'3')
+        for p = 1:str2double(PTV_Data.passes)
+            eval(['PTV_Data.PIV' num2str(p) '.outbase = [PTV_Data.PIV' num2str(p) '.outbase ''deform'' PTV_Data.PIV' num2str(p) '.deform_max ''_''];']);
+        end
+    end
+    Data.PIV.Data                = PTV_Data;
+    eval(['Data.PIV.Data.outbase = PTV_Data.PIV' PTV_Data.passes '.outbase;'])
+
+    % --- PTV Validation ---
     cutoff_commas = strfind(PTV_Data.Track.valprops.valcoef,',');
     radius_commas = strfind(PTV_Data.Track.valprops.valrad,',');
     MAD_U_commas  = strfind(PTV_Data.Track.valprops.MAD_U,',');
@@ -483,7 +490,7 @@ else
                 estlocprops.Data = Data;
                 
                 %compute location prediction for the particles in im1
-                if nnz( strcmpi(Data.Track.method,{'piv' 'piv-ptv'}) )
+                if any( strcmpi(Data.Track.method,{'piv' 'piv-ptv'}) )
                     estlocprops.PIVprops.frame1 = im_list(k);
                     if (k==1 && strcmpi(Data.Track.method,{'piv-ptv'}))
                         org_weight = Data.Track.PIV_PTV_weight;

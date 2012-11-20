@@ -44,19 +44,29 @@ else
     Sx=Nx;
 end
 
+%fftshift indicies
+fftindy = [ceil(Sy/2)+1:Sy 1:ceil(Sy/2)];
+fftindx = [ceil(Sx/2)+1:Sx 1:ceil(Sx/2)];
+
 %window masking filter
 sfilt1 = windowmask([Sx Sy],[res(1, 1) res(1, 2)]);
 sfilt2 = windowmask([Sx Sy],[res(2, 1) res(2, 2)]);
 
 %correlation plane normalization function (always off)
 cnorm = ones(Ny,Nx);
+% s1   = fftn(sfilt1,[Sy Sx]);
+% s2   = fftn(sfilt2,[Sy Sx]);
+% S21  = s2.*conj(s1);
+% 
+% %Standard Fourier Based Cross-Correlation
+% iS21 = ifftn(S21,'symmetric');
+% iS21 = iS21(fftindy,fftindx);
+% cnorm = 1./iS21;
+% cnorm(isinf(cnorm)) = 0;
+
 
 %RPC spectral energy filter
 spectral = fftshift(energyfilt(Sx,Sy,D,0));
-
-%fftshift indicies
-fftindy = [ceil(Sy/2)+1:Sy 1:ceil(Sy/2)];
-fftindx = [ceil(Sx/2)+1:Sx 1:ceil(Sx/2)];
 
 % This is a check for the fractionally weighted correlation.  We won't use
 % the spectral filter with FWC or GCC
