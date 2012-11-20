@@ -270,16 +270,39 @@ if nargout == 0 %Only write file if there is no output requested from the functi
     fid=fopen(fname,'w');
     if fid==-1
         try
-            mkdir(Data.outdirec)
-            fid=fopen(fname,'w');
-            if fid==-1
-                error(['error writing experiment summary ',fname])
+            % For PIV
+            if str2double(Data.runPIV)
+                mkdir(Data.outdirec)
+                fid=fopen(fname,'w');
+                if fid==-1
+                    error(['error writing experiment summary ',fname])
+                end
+            % For ID
+            elseif str2double(Data.ID.runid)
+                mkdir(Data.ID.save_dir)
+                fid=fopen(fname,'w');
+                if fid==-1
+                    error(['error writing experiment summary ',fname])
+                end
+            % For Sizing
+            elseif str2double(Data.Size.runsize)
+                mkdir(Data.Size.save_dir)
+                fid=fopen(fname,'w');
+                if fid==-1
+                    error(['error writing experiment summary ',fname])
+                end
+            % For Tracking
+            elseif str2double(Data.Track.runtrack)
+                mkdir(Data.Track.save_dir)
+                fid=fopen(fname,'w');
+                if fid==-1
+                    error(['error writing experiment summary ',fname])
+                end
             end
         catch ME
             error('Error writing experiment summary %s\n\n%s\n',fname,ME(1).message)
         end
     end
-    
     fprintf(fid,expsummary);
     
     fclose(fid);
