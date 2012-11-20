@@ -1140,8 +1140,9 @@ switch char(M)
             end
 
             Z=[size(CCm,1), size(CCm,2),length(X(Eval>=0))];
-            %cnorm=ones(Z(1),Z(2));
+            cnorm=ones(Z(1),Z(2));
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %{
             %fftshift indicies
             fftindy = [ceil(Wsize(e,2)/2)+1:Wsize(e,2) 1:ceil(Wsize(e,2)/2)];
             fftindx = [ceil(Wsize(e,1)/2)+1:Wsize(e,1) 1:ceil(Wsize(e,1)/2)];
@@ -1158,6 +1159,7 @@ switch char(M)
             iS21 = iS21(fftindy,fftindx);
             cnorm = 1./iS21;
             cnorm(isinf(cnorm)) = 0;
+            %}
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))

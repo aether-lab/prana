@@ -53,16 +53,16 @@ sfilt1 = windowmask([Sx Sy],[res(1, 1) res(1, 2)]);
 sfilt2 = windowmask([Sx Sy],[res(2, 1) res(2, 2)]);
 
 %correlation plane normalization function (always off)
-%cnorm = ones(Ny,Nx);
-s1   = fftn(sfilt1,[Sy Sx]);
-s2   = fftn(sfilt2,[Sy Sx]);
-S21  = s2.*conj(s1);
-
-%Standard Fourier Based Cross-Correlation
-iS21 = ifftn(S21,'symmetric');
-iS21 = iS21(fftindy,fftindx);
-cnorm = 1./iS21;
-cnorm(isinf(cnorm)) = 0;
+cnorm = ones(Ny,Nx);
+% s1   = fftn(sfilt1,[Sy Sx]);
+% s2   = fftn(sfilt2,[Sy Sx]);
+% S21  = s2.*conj(s1);
+% 
+% %Standard Fourier Based Cross-Correlation
+% iS21 = ifftn(S21,'symmetric');
+% iS21 = iS21(fftindy,fftindx);
+% cnorm = 1./iS21;
+% cnorm(isinf(cnorm)) = 0;
 
 
 %RPC spectral energy filter
