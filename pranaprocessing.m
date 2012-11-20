@@ -1140,7 +1140,25 @@ switch char(M)
             end
 
             Z=[size(CCm,1), size(CCm,2),length(X(Eval>=0))];
-            ZZ=ones(Z(1),Z(2));
+            %cnorm=ones(Z(1),Z(2));
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %fftshift indicies
+            fftindy = [ceil(Wsize(e,2)/2)+1:Wsize(e,2) 1:ceil(Wsize(e,2)/2)];
+            fftindx = [ceil(Wsize(e,1)/2)+1:Wsize(e,1) 1:ceil(Wsize(e,1)/2)];
+
+            %window masking filter
+            sfilt1 = windowmask([Wsize(e,1) Wsize(e,2)],[Wres(1, 1,e) Wres(1, 2,e)]);
+            sfilt2 = windowmask([Wsize(e,1) Wsize(e,2)],[Wres(2, 1,e) Wres(2, 2,e)]);
+            s1   = fftn(sfilt1,[Wsize(e,2) Wsize(e,1)]);
+            s2   = fftn(sfilt2,[Wsize(e,2) Wsize(e,1)]);
+            S21  = s2.*conj(s1);
+            
+            %Standard Fourier Based Cross-Correlation
+            iS21 = ifftn(S21,'symmetric');
+            iS21 = iS21(fftindy,fftindx);
+            cnorm = 1./iS21;
+            cnorm(isinf(cnorm)) = 0;
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                 Uc=zeros(Z(3),3);
@@ -1158,7 +1176,7 @@ switch char(M)
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
-                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),ZZ,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
+                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),floor((rem(peaktime,60)-floor(rem(peaktime,60)))*10))

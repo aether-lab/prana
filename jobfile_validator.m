@@ -11,6 +11,71 @@ if ~isfield(Data,'version')
         handles.data.version='1.9';
     end
 end
+if ~isfield(Data,'exp_date')
+    Data.exp_date = '';
+end
+if ~isfield(Data,'exp_wavelength')
+    Data.exp_wavelength = '';
+end
+if ~isfield(Data,'exp_pixelsize')
+    Data.exp_pixelsize = '';
+end
+if ~isfield(Data,'exp_lensfocal')
+    Data.exp_lensfocal = '';
+end
+if ~isfield(Data,'exp_micro')
+    Data.exp_micro = '0';
+end
+if ~isfield(Data,'exp_lensfnum')
+    Data.exp_lensfnum = '0';
+end
+if ~isfield(Data,'exp_partD')
+    Data.exp_partD = '';
+end
+if ~isfield(Data,'exp_partdensity')
+    Data.exp_partdensity = '';
+end
+if ~isfield(Data,'exp_density')
+    Data.exp_density = '';
+end
+if ~isfield(Data,'exp_viscosity')
+    Data.exp_viscosity = '';
+end
+if ~isfield(Data,'exp_surfacetension')
+    Data.exp_surfacetension = '';
+end
+if ~isfield(Data,'exp_L')
+    Data.exp_L = '';
+end
+if ~isfield(Data,'exp_v0')
+    Data.exp_v0 = '';
+end
+if ~isfield(Data,'exp_Re')
+    Data.exp_Re = '';
+end
+if ~isfield(Data,'exp_St')
+    Data.exp_St = '';
+end
+if ~isfield(Data,'exp_M')
+    Data.exp_M = '';
+end
+if ~isfield(Data,'exp_ROI')
+    Data.exp_ROI = '';
+end
+if ~isfield(Data,'exp_diffractiondiameter')
+    Data.exp_diffractiondiameter = '';
+end
+if ~isfield(Data,'exp_depthoffocus')
+    Data.exp_depthoffocus = '';
+end
+if ~isfield(Data,'exp_notes')
+    Data.exp_notes = '';
+end
+
+% If PIV0 doesn't exist, create it.
+if ~isfield(Data,'PIV0')
+    Data.PIV0 = Data.PIV1;
+end
 
 %does the job file have the zero mean option
 if ~isfield(Data.PIV0,'zeromean')
@@ -22,6 +87,12 @@ end
 %does the job file have infromation about the color channels
 if ~isfield(Data,'channel')
     Data.channel = '1';
+end
+%does the job file have a variable for window overlap
+if ~isfield(Data.PIV0,'winoverlap')
+    for pass=0:str2double(Data.passes)
+        eval(['Data.PIV',num2str(pass),'.winoverlap=''1'';']);
+    end
 end
 %does the job file have a variable for fractionally weighted correlations
 if ~isfield(Data.PIV0,'frac_filt')
