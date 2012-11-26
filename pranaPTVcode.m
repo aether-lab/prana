@@ -572,10 +572,11 @@ else
             else
                 fprintf('...SKIPPED Due to lack of particles!\n');
             end
-            
-            %save processing parameters
-            save(sprintf('%s%s%s',Data.Track.save_dir,'particle_TRACK_Val_PIV_parameters.mat'));
         end
+        
+        %save processing parameters
+        save(sprintf('%s%s%s',Data.Track.save_dir,'particle_TRACK_Val_PIV_parameters.mat'),'-v7.3');
+        
         fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
     end
 end
