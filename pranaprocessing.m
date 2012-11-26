@@ -429,6 +429,16 @@ switch char(M)
                         defloop = defloop+1;
                     end
                 end
+                
+                
+                %velocity smoothing
+                if Velsmoothswitch(e)==1
+                    U1=reshape(Uval(:,1),[S(1),S(2)]);
+                    V1=reshape(Vval(:,1),[S(1),S(2)]);
+                    [Us,Vs]=VELfilt(U1,V1,UODwinsize(e,:,:),Velsmoothfilt(e));
+                    Uval(:,1) = Us(:);
+                    Vval(:,1) = Vs(:);
+                end
 
                 %write output
                 if Writeswitch(e) && defloop == 1
@@ -499,10 +509,10 @@ switch char(M)
                     if strcmp(M,'Multigrid') || strcmp(M,'Deform')
                         t1=tic;
 
-                        %velocity smoothing
-                        if Velsmoothswitch(e)==1
-                            [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
-                        end
+                        % %velocity smoothing
+                        % if Velsmoothswitch(e)==1
+                        %     [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+                        % end
 
                         %velocity interpolation
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
@@ -1270,6 +1280,16 @@ switch char(M)
                 end
             end
 
+            %velocity smoothing
+            if Velsmoothswitch(e)==1
+                U1=reshape(Uval(:,1),[S(1),S(2)]);
+                V1=reshape(Vval(:,1),[S(1),S(2)]);
+                [Us,Vs]=VELfilt(U1,V1,UODwinsize(e,:,:),Velsmoothfilt(e));
+                Uval(:,1) = Us(:);
+                Vval(:,1) = Vs(:);
+            end
+                
+                
             %write output
             if Writeswitch(e) && defloop == 1
                 t1=tic;
@@ -1335,10 +1355,10 @@ switch char(M)
                 U=reshape(U(:,1),[S(1),S(2)]);
                 V=reshape(V(:,1),[S(1),S(2)]);
 
-                %velocity smoothing
-                if Velsmoothswitch(e)==1
-                    [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
-                end
+%                 %velocity smoothing
+%                 if Velsmoothswitch(e)==1
+%                     [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+%                 end
 
                 %velocity interpolation
                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
