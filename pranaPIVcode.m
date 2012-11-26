@@ -2,7 +2,7 @@ function varargout=pranaPIVcode(Data)
 
 if ischar(Data)
     if strcmpi(Data,'version')
-        varargout{1} = '2.0.beta.r2012.09.04';
+        varargout{1} = '2.0.beta.r2012.11.26';
     else
         error('Error: String request must be ''version''.')
     end

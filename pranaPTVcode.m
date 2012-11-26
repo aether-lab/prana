@@ -2,7 +2,7 @@ function varargout = pranaPTVcode(PTV_Data)
 
 if ischar(PTV_Data)
     if strcmpi(PTV_Data,'version')
-        varargout{1} = '2.0.beta.r2012.05.30';
+        varargout{1} = '2.0.beta.r2012.11.26';
     else
         error('Error: String request must be ''version''.')
     end
