@@ -48,7 +48,13 @@ elseif strcmpi(PIVprops.PIVprops.extension,'.mat')
 
     % PIV1 = {PIV1t.flowvarunsteady(end:-1:1,:,1,1),PIV1t.flowvarunsteady(end:-1:1,:,1,2),...
     % PIV1t.flowvarunsteady(end:-1:1,:,1,3),PIV1t.flowvarunsteady(end:-1:1,:,1,4)};
-    PIV1 = {PIV1t.X(end:-1:1,:),PIV1t.Y(end:-1:1,:),PIV1t.U(end:-1:1,:),PIV1t.V(end:-1:1,:)};
+    
+    
+%     PIV1 = {PIV1t.X(end:-1:1,:),PIV1t.Y(end:-1:1,:),PIV1t.U(end:-1:1,:,1),PIV1t.V(end:-1:1,:,1)};
+    
+    PIV1 = {PIV1t.X(end:-1:1,:),PIV1t.Y(end:-1:1,:),PIV1t.U(:,:,1),-PIV1t.V(:,:,1)};
+
+%     PIV1 = {PIV1t.X(:,:),PIV1t.Y(:,:),flipud(PIV1t.U(:,:,1)),flipud(PIV1t.V(:,:,1))};
 else
     error('Unknown PIV extension')
 end
