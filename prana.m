@@ -122,7 +122,7 @@ catch
     defaultdata.PIV0.corr='RPC';
     defaultdata.PIV0.RPCd='2.8,2.8';
     defaultdata.PIV0.frac_filt='1';
-    defaultdata.PIV0.zeromean='0';
+    defaultdata.PIV0.zeromean='1';
     defaultdata.PIV0.peaklocator='1';
     defaultdata.PIV0.velsmooth='0';
     defaultdata.PIV0.velsmoothfilt='2';
@@ -3251,9 +3251,9 @@ if str2double(handles.data.ID.runid)
     end
 else
     set(handles.idmethod,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.idimthresh,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.idsavebase,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.idsaveloc,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.idimthresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idsavebase,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.idsaveloc,'backgroundcolor',0.5*[1 1 1]);
 end
 if str2double(handles.data.Size.runsize)
     set(handles.runsizingcheckbox,'Value',str2double(handles.data.Size.runsize));
@@ -3269,10 +3269,10 @@ if str2double(handles.data.Size.runsize)
     end
 else
     set(handles.sizingmethod,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.sizing_min_area,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.sizingstd,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.sizingsavebase,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.sizingsaveloc,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.sizing_min_area,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingstd,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingsavebase,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.sizingsaveloc,'backgroundcolor',0.5*[1 1 1]);
 end
 if str2double(handles.data.Track.runtrack)
     set(handles.runtrackingcheckbox,'Value',str2double(handles.data.Track.runtrack));
@@ -3312,21 +3312,21 @@ if str2double(handles.data.Track.runtrack)
 else
     set(handles.trackingmethod,'backgroundcolor',0.5*[1 1 1]);
     set(handles.trackingprediction,'backgroundcolor',0.5*[1 1 1]);
-    set(handles.trackingPIVweight,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingradius,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingdistweight,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingsizeweight,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingintensityweight,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingestradius,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingestweight,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingvectors,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingiterations,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingsavebase,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingsaveloc,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1],'String','');
-    set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1],'String','');
+    set(handles.trackingPIVweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingradius,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingdistweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsizeweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingintensityweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingestradius,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingestweight,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvectors,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingiterations,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsavebase,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingsaveloc,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalcoefficient,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalradius,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalUthresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.trackingvalVthresh,'backgroundcolor',0.5*[1 1 1]);
     set(handles.trackingoutputdat,'Value',0);
     set(handles.trackingoutputmat,'Value',0);
 end
@@ -5096,6 +5096,11 @@ if str2double(handles.Njob)>0
     for i = 1:N
         eval(['handles.data.PIV' num2str(i) '.outbase=[''' passbase 'pass' num2str(i) '_''];']);
     end
+    % Rename the ID Size and Track base names as well.
+    handles.data.ID.savebase    = [passbase 'ID_'];
+    handles.data.Size.savebase  = [passbase 'Size_'];
+    handles.data.Track.savebase = [passbase 'Track_'];
+    
     cpass = get(handles.passlist,'Value'); % This grabs the currently selected pass number
     set(handles.outputbasename,'String',eval(['handles.data.PIV' num2str(cpass) '.outbase']));
     handles.data.outputpassbase = passbase;
