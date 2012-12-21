@@ -422,7 +422,8 @@ switch char(M)
                             % append the 'deform' and the pass number to
                             % the end of the file once the final number of
                             % iterations has been reached.
-                            wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
+                            %wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
+                            wbase{e,:} = wbase_org{e,:};
                         end
                         defloop = 1;
                     else
@@ -1271,7 +1272,8 @@ switch char(M)
                 end
                 if defloop == maxdefloop(e) || (defloop ~= 1 && defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
                     if maxdefloop(e) ~= 1
-                        wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
+                        %wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
+                        wbase{e,:} = wbase_org{e,:};
                     end
                     defloop = 1;
                 else
