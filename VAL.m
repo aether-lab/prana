@@ -36,9 +36,9 @@ if Threshswitch || UODswitch
             Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);Dtemp=D(:,:,i+1);
             Uval(Evalval>0)=Utemp(Evalval>0);
             Vval(Evalval>0)=Vtemp(Evalval>0);
-            Evalval(Evalval>0)=Evaltemp(Evalval>0);
             Cval(Evalval>0)=Ctemp(Evalval>0);
-            Dval(Evalval>0)=Dtemp(Evalval>0);            
+            Dval(Evalval>0)=Dtemp(Evalval>0); 
+            Evalval(Evalval>0)=Evaltemp(Evalval>0);
         end
     end
 end
