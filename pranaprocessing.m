@@ -124,6 +124,7 @@ mindefloop      = zeros(P,1); % variables for the deformation convergences
 maxdefloop      = zeros(P,1);
 condefloop      = zeros(P,1);
 saveplane       = zeros(P,1);
+numDefPasses    = zeros(P,1); % This stores the number of interative deform passes that are performed 
 
 %read data info for each pass
 for e=1:P
@@ -419,8 +420,8 @@ switch char(M)
                     if defloop == 1
                         Ud = Uval; Vd = Vval;
                     else
-                        defconvU(e,defloop) = norm(Uval - Ud,2);
-                        defconvV(e,defloop) = norm(Vval - Vd,2);
+                        defconvU(e,defloop) = norm(Uval - Ud,2)./sqrt(numel(Ud));
+                        defconvV(e,defloop) = norm(Vval - Vd,2)./sqrt(numel(Vd));
                         Ud = Uval; Vd = Vval;
                     end
                     if defloop == maxdefloop(e) || (defloop ~= 1 && defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
@@ -430,6 +431,7 @@ switch char(M)
                             % iterations has been reached.
                             %wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
                             wbase{e,:} = wbase_org{e,:};
+                            numDefPasses(e) = defloop;
                         end
                         defloop = 1;
                     else
@@ -486,11 +488,51 @@ switch char(M)
                     
                     if str2double(Data.datout)
                         time=I1(q)/Freq;
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
+                        if strcmpi(M,'Deform')
+                            
+                            % Here we are adding the information about the
+                            % number of deformation passes into the title
+                            % of the .dat file. 
+                            % First we convert the vector that contains the
+                            % number of interations performed on each pass
+                            % into a string
+                            defPassString = num2str(numDefPasses(1:e)');
+
+                            % Then we find all of the characters that are
+                            % not white space.
+                            % tokens = regexp(defPassString,'([a-z_A-Z1-9])','tokenextents');
+                            tokens = regexp(defPassString,'(\S)','tokenextents');
+                            
+                            % Next we reshape this cell into a matrix 2 by
+                            % the number of locations.
+                            tokens = cell2mat(tokens');
+                            
+                            % We will in the first part of our string with
+                            % the first number of interations.
+                            writeDefStr = defPassString(tokens(1,1):tokens(1,2));
+                            
+                            % Now we loop through the rest of the numbers
+                            % adding a comma between numbers.
+                            for sspaces = 2:size(tokens,1)
+                                writeDefStr = [writeDefStr ',' defPassString(tokens(sspaces,1):tokens(sspaces,2))];
+                            end
+                            
+                            % Now we append this information to the TITLE
+                            % of the dat file (NOTE this doesn't change the
+                            % file name only the title that is used in
+                            % tecplot).
+                            write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
+                        else                        
+                            write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
+                        end
                     end
                     
                     if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
+                        if strcmpi(M,'Deform')
+                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','numDefPasses')
+                        else
+                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
+                        end
                     end
                     % This saves the correlation planes if that selection
                     % has been made in the job file.
@@ -1049,14 +1091,15 @@ switch char(M)
                 if defloop == 1
                     Ud = Uval; Vd = Vval;
                 else
-                    defconvU(e,defloop) = norm(Uval - Ud,2);
-                    defconvV(e,defloop) = norm(Vval - Vd,2);
+                    defconvU(e,defloop) = norm(Uval - Ud,2)./sqrt(numel(Ud));
+                    defconvV(e,defloop) = norm(Vval - Vd,2)./sqrt(numel(Ud));
                     Ud = Uval; Vd = Vval;
                 end
                 if defloop == maxdefloop(e) || (defloop ~= 1 && defloop >= mindefloop(e) && defconvU(e,defloop) <= condefloop(e) && defconvV(e,defloop) <= condefloop(e))
                     if maxdefloop(e) ~= 1
                         %wbase{e,:} = sprintf([wbase_org{e,:} 'deform' num2str(defloop) '_']);
                         wbase{e,:} = wbase_org{e,:};
+                        numDefPasses(e) = defloop;
                     end
                     defloop = 1;
                 else
@@ -1112,11 +1155,51 @@ switch char(M)
 
                 if str2double(Data.datout)
                     time=I1(1)/Freq;
-                    %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
-                    write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
+                    if strcmpi(M,'Deform')
+                        
+                        % Here we are adding the information about the
+                        % number of deformation passes into the title
+                        % of the .dat file.
+                        % First we convert the vector that contains the
+                        % number of interations performed on each pass
+                        % into a string
+                        defPassString = num2str(numDefPasses(1:e)');
+                        
+                        % Then we find all of the characters that are
+                        % not white space.
+                        % tokens = regexp(defPassString,'([a-z_A-Z1-9])','tokenextents');
+                        tokens = regexp(defPassString,'(\S)','tokenextents');
+                        
+                        % Next we reshape this cell into a matrix 2 by
+                        % the number of locations.
+                        tokens = cell2mat(tokens');
+                        
+                        % We will in the first part of our string with
+                        % the first number of interations.
+                        writeDefStr = defPassString(tokens(1,1):tokens(1,2));
+                        
+                        % Now we loop through the rest of the numbers
+                        % adding a comma between numbers.
+                        for sspaces = 2:size(tokens,1)
+                            writeDefStr = [writeDefStr ',' defPassString(tokens(sspaces,1):tokens(sspaces,2))];
+                        end
+                        
+                        % Now we append this information to the TITLE
+                        % of the dat file (NOTE this doesn't change the
+                        % file name only the title that is used in
+                        % tecplot).
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
+                    else
+                        %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
+                    end
                 end
                 if str2double(Data.multiplematout)
-                    save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
+                    if strcmpi(M,'Deform')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses')
+                    else
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
+                    end
                 end
                 if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                     Xloc = Xc;Yloc=Yc;%#ok
