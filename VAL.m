@@ -73,7 +73,7 @@ for i=1:S(1)
             end
             
             %distance from erroneous vector
-            Dblock = (Xblock.^2+Yblock.^2).^0.5;
+            Dblock = (Xblock.^2+Yblock.^2).^-0.5;
             Dblock(isnan(Ublock))=nan;
 
             %validated vector
