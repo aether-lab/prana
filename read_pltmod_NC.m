@@ -181,6 +181,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 catch %#ok
     if fid==-1
+        nameformat = sprintf('%%s%%0.%ui.dat',numzeros);
+        picfilename=sprintf(nameformat,testname,startframe);
         error('%s does not exist',fullfile(direc,picfilename))
     else
         rethrow(lasterror)%#ok

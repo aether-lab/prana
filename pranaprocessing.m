@@ -153,10 +153,10 @@ for e=1:P
     ywin_im2 = ywin_im1;
     end
 
-%     Window resolution matrix
+    % Window resolution matrix
     Wres(:,:, e) = [xwin_im1 ywin_im1; xwin_im2 ywin_im2];
     
-%     Window size and grid resolution 
+    % Window size and grid resolution 
     Wsize(e,:) = [str2double(A.winsize(1:(strfind(A.winsize,',')-1))) str2double(A.winsize((strfind(A.winsize,',')+1):end))];
     Gres(e,:) = [str2double(A.gridres(1:(strfind(A.gridres,',')-1))) str2double(A.gridres((strfind(A.gridres,',')+1):end))];
     Gbuf(e,:) = [str2double(A.gridbuf(1:(strfind(A.gridbuf,',')-1))) str2double(A.gridbuf((strfind(A.gridbuf,',')+1):end))];
@@ -263,29 +263,34 @@ switch char(M)
                      im2=im2(:,:,1:3);
                  end
 
-             else
+            else
             %	Take only red channel
                 im1 =im1(:,:,1);
                 im2 =im2(:,:,1);
                 channel = 1;
-             end
+            end
 
-            %  Flip images
-            %flipud only works on 2D matices.  What about flipdim(im1,1) instead?
+            % Determine the number of channels in the image
+            % to be deformed. This should be 3 for color
+            % images or 1 for grayscale images.
+            nChannels = size(im1, 3);
+             
+            % Flip images
+            % flipud only works on 2D matices.  What about flipdim(im1,1) instead?
             im1 = im1(end:-1:1,:,:);%flipud(im1);
             im2 = im2(end:-1:1,:,:);%flipud(im2);
 
-            %   Determine size of images          
-            L = size(im1);
+            % Determine size of images. 
+            imageSize = size(im1);
             
-            %load dynamic mask and flip coordinates
+            % load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
                 mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
                 mask = flipud(mask);
             end
 
-            %initialize grid and evaluation matrix
-            [XI,YI]=IMgrid(L,[0 0]);
+            % initialize grid and evaluation matrix
+            [XI,YI]=IMgrid(imageSize,[0 0]);
 
             UI = BWO(1)*ones(size(XI));
             VI = BWO(2)*ones(size(YI));
@@ -299,17 +304,18 @@ switch char(M)
             defconvU = zeros(P,max(maxdefloop));
             defconvV = zeros(P,max(maxdefloop));
             
-            e = 0; defloop = 1;
+            e = 0; defloop = 1; % What is e? 
+            
             % This while statment is used to interatively move through the
             % deformations.  If the minimum number of loops hasn't been
             % reach it will keep iterating otherwise it should stop.
-            while (e<P && defloop == 1) || (e<=P && defloop~=1)%for e=1:P
+            while (e<P && defloop == 1) || (e<=P && defloop~=1)%
                 if defloop == 1
                     e=e+1;
                 end
                 
                 t1=tic;
-                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+                [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
                 
                 if strcmp(M,'Multipass')
@@ -431,14 +437,15 @@ switch char(M)
                     end
                 end
                 
-%                 %velocity smoothing
-%                 if Velsmoothswitch(e)==1
-%                     U1=reshape(Uval(:,1),[S(1),S(2)]);
-%                     V1=reshape(Vval(:,1),[S(1),S(2)]);
-%                     [Us,Vs]=VELfilt(U1,V1,UODwinsize(e,:,:),Velsmoothfilt(e));
-%                     Uval(:,1) = Us(:);
-%                     Vval(:,1) = Vs(:);
-%                 end
+                
+                %velocity smoothing
+                % if Velsmoothswitch(e)==1
+                %     U1=reshape(Uval(:,1),[S(1),S(2)]);
+                %     V1=reshape(Vval(:,1),[S(1),S(2)]);
+                %     [Us,Vs]=VELfilt(U1,V1,UODwinsize(e,:,:),Velsmoothfilt(e));
+                %     Uval(:,1) = Us(:);
+                %     Vval(:,1) = Vs(:);
+                % end
 
                 %write output
                 if Writeswitch(e) && defloop == 1
@@ -527,123 +534,42 @@ switch char(M)
                         if strcmp(M,'Deform')
                             t1=tic;
                             
-                            %translate pixel locations
-                            XD1 = XI+UI/2;
-                            YD1 = YI+VI/2;
-                            XD2 = XI-UI/2;
-                            YD2 = YI-VI/2;
+                            % translate pixel locations
+                            XD1 = XI-UI/2;
+                            YD1 = YI-VI/2;
+                            XD2 = XI+UI/2;
+                            YD2 = YI+VI/2;
 
-                            %preallocate deformed images
-                            im1d = zeros(L);
-                            im2d = zeros(L);
-
-                            %cardinal function interpolation
-                            if Iminterp==1
-                                for i=1:L(1)
-                                    for j=1:L(2)
-
-                                        %image 1 interpolation
-                                        nmin=max([1 (round(YD1(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1 (round(XD1(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                if channel ~= 6
-                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                                else
-                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
-                                                end
-                                            end
-                                        end
-
-                                        %image 2 interpolation
-                                        nmin=max([1 (round(YD2(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1 (round(XD2(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                if channel ~= 6
-                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                                else
-                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
-                                                end
-                                            end
-                                        end
-
-                                    end
-                                end
-
-                            %cardinal function interpolation with Blackman filter
-                            elseif Iminterp==2
-
-                                for i=1:L(1)
-                                    for j=1:L(2)
-
-                                        %image 1 interpolation
-                                        nmin=max([1 (round(YD1(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1 (round(XD1(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                if channel ~= 6
-                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                                else
-                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
-                                                end
-                                            end
-                                        end
-
-                                        %image 2 interpolation
-                                        nmin=max([1 (round(YD2(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1 (round(XD2(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                if channel ~= 6
-                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                                else
-                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
-                                                end
-                                            end
-                                        end
-
-                                    end
-                                end
-
-                            end
-
-                            %clip lower values of deformed images
-                            im1d(im1d<0)=0; im1d(isnan(im1d))=0;
-                            im2d(im2d<0)=0; im2d(isnan(im2d))=0;
-
-                            %JJC: don't want to do this, should deform windows from start each time
-                            % im1=im1d; im2=im2d;
+                            % Preallocate memory for deformed images.
+                            im1d = zeros(size(im1));
+                            im2d = zeros(size(im2));
                             
-%                             keyboard
-%                             figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
-%                             figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
-%                             figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
-%                             figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
-%                             pause
-%                             imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
-%                             imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
+                            % Deform images according to the interpolated velocity fields
+                            for k = 1:nChannels % Loop over all of the color channels in the image
+                                if Iminterp == 1 % Sinc interpolation (without blackman window)
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'sinc');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'sinc');
+
+                                elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'blackman');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'blackman');
+                                end
+                            end
+                            
+                            % keyboard
+                            % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
+                            % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
+                            % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
+                            % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
+                            % pause
+                            % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
+                            % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
                             
                             if defloop == 1
                                 deformtime(e+1,defloop)=toc(t1);
                             else
                                 deformtime(e,defloop)=toc(t1);
-                            end
-                                
+                            end                           
                         end
                     else
                         UI=U;VI=V;
@@ -690,9 +616,9 @@ switch char(M)
 
         %initialize grid and evaluation matrix
         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
-        L=size(im1);
-        L(3)=size(im1,3);
-        [XI,YI]=IMgrid(L,[0 0]);
+        imageSize=size(im1);
+        imageSize(3)=size(im1,3);
+        [XI,YI]=IMgrid(imageSize,[0 0]);
         UI = BWO(1)*ones(size(XI));
         VI = BWO(2)*ones(size(XI));
         
@@ -716,7 +642,7 @@ switch char(M)
             end
             tf=tic;
             
-            [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+            [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
             S=size(X);X=X(:);Y=Y(:);
             Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
@@ -784,6 +710,11 @@ switch char(M)
                             channel = 1;
                         end
                         
+                        % Determine the number of channels in the image
+                        % to be deformed. This should be 3 for color
+                        % images or 1 for grayscale images.
+                        nChannels = size(im1, 3);
+                        
                         %  Flip images
                         %flipud only works on 2D matices.
                         % im1=flipud(im1(:,:,1));
@@ -799,105 +730,31 @@ switch char(M)
                             
                             t1=tic;
                             %translate pixel locations
-                            XD1 = XI+UI/2;
-                            YD1 = YI+VI/2;
-                            XD2 = XI-UI/2;
-                            YD2 = YI-VI/2;
+                            XD1 = XI-UI/2;
+                            YD1 = YI-VI/2;
+                            XD2 = XI+UI/2;
+                            YD2 = YI+VI/2;
                             
-                            %preallocate deformed images
-                            im1d = zeros(L);
-                            im2d = zeros(L);
+                            % Preallocate memory for deformed images.
+                            im1d = zeros(size(im1));
+                            im2d = zeros(size(im2));
                             
-                            %cardinal function interpolation
-                            if Iminterp==1
-                                for i=1:L(1)
-                                    for j=1:L(2)
-                                        
-                                        %image 1 interpolation
-                                        nmin=max([1    (round(YD1(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1    (round(XD1(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                if channel ~=6 
-                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                                else
-                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
-                                                end
-                                            end
-                                        end
-                                        
-                                        %image 2 interpolation
-                                        nmin=max([1    (round(YD2(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1    (round(XD2(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                if channel ~= 6
-                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                                else
-                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
-                                                end
-                                            end
-                                            
-                                        end
-                                        
-                                    end
-                                end
+                            % Deform images according to the interpolated 
+                            % velocity fields. Each color channel is 
+                            % deformed separately. They could have been 
+                            % done all together but I'm trying to save 
+                            % memory at the expense of some speed here.
+                            for k = 1:nChannels % Loop over all of the color channels in the image
+                                if Iminterp == 1 % Sinc interpolation (without blackman window)
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'sinc');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'sinc');
 
-                                %cardinal function interpolation with Blackman filter
-                            elseif Iminterp==2
-                                
-                                for i=1:L(1)
-                                    for j=1:L(2)
-                                        
-                                        %image 1 interpolation
-                                        nmin=max([1    (round(YD1(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                        mmin=max([1    (round(XD1(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                                bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                                if channel ~= 6
-                                                    im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                                else
-                                                    im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
-                                                end
-                                            end
-                                        end
-                                        
-                                        %image 2 interpolation
-                                        nmin=max([1    (round(YD2(i,j))-3)]);
-                                        nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                        mmin=max([1    (round(XD2(i,j))-3)]);
-                                        mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                        for n=nmin:nmax
-                                            for m=mmin:mmax
-                                                wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                                bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                                if channel ~= 6
-                                                    im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                                else
-                                                    im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
-                                                end
-                                            end
-                                        end
-                                        
-                                    end
+                                elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'blackman');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'blackman');
                                 end
-                                
                             end
-                        
-                            %clip lower values of deformed images
-                            im1d(im1d<0)=0; im1d(isnan(im1d))=0;
-                            im2d(im2d<0)=0; im2d(isnan(im2d))=0;
-                        
+
                             deformtime=toc(t1);
                         end
                         
@@ -994,115 +851,41 @@ switch char(M)
                         channel = 1;
                     end
 
-                        %  Flip images
-                        %flipud only works on 2D matices.
-%                     im1=flipud(im1(:,:,1));
-%                     im2=flipud(im2(:,:,1));
+                    % Determine the number of channels in the image
+                    % to be deformed. This should be 3 for color
+                    % images or 1 for grayscale images.
+                    nChannels = size(im1, 3);
+                    
+                    %  Flip images. 
                     im1 = im1(end:-1:1,:,:);
                     im2 = im2(end:-1:1,:,:);
-%                     L=size(im1);
 
                     if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
                         t1=tic;
 
                         %translate pixel locations
-                        XD1 = XI+UI/2;
-                        YD1 = YI+VI/2;
-                        XD2 = XI-UI/2;
-                        YD2 = YI-VI/2;
-
-                        %preallocate deformed images
-                        im1d = zeros(L);
-                        im2d = zeros(L);
+                        XD1 = XI-UI/2;
+                        YD1 = YI-VI/2;
+                        XD2 = XI+UI/2;
+                        YD2 = YI+VI/2;
                         
-                        %cardinal function interpolation
-                        if Iminterp==1
-                            for i=1:L(1)
-                                for j=1:L(2)
-                                    
-                                    %image 1 interpolation
-                                    nmin=max([1    (round(YD1(i,j))-3)]);
-                                    nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                    mmin=max([1    (round(XD1(i,j))-3)]);
-                                    mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                    for n=nmin:nmax
-                                        for m=mmin:mmax
-                                            wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                            if channel ~= 6
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi;
-                                            else
-                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi;
-                                            end
-                                        end
-                                    end
-                                    
-                                    %image 2 interpolation
-                                    nmin=max([1    (round(YD2(i,j))-3)]);
-                                    nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                    mmin=max([1    (round(XD2(i,j))-3)]);
-                                    mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                    for n=nmin:nmax
-                                        for m=mmin:mmax
-                                            wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                            if channel ~= 6
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi;
-                                            else
-                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi;
-                                            end
-                                        end
-                                    end
-                                    
-                                end
-                            end
+                        % Preallocate memory for deformed images.
+                        im1d = zeros(size(im1));
+                        im2d = zeros(size(im2));
                             
-                            %cardinal function interpolation with Blackman filter
-                        elseif Iminterp==2
-                            
-                            for i=1:L(1)
-                                for j=1:L(2)
-                                    
-                                    %image 1 interpolation
-                                    nmin=max([1    (round(YD1(i,j))-3)]);
-                                    nmax=min([L(1) (round(YD1(i,j))+3)]);
-                                    mmin=max([1    (round(XD1(i,j))-3)]);
-                                    mmax=min([L(2) (round(XD1(i,j))+3)]);
-                                    for n=nmin:nmax
-                                        for m=mmin:mmax
-                                            wi = sin(pi*(m-XD1(i,j)))*sin(pi*(n-YD1(i,j)))/(pi^2*(m-XD1(i,j))*(n-YD1(i,j)));
-                                            bi = (0.42+0.5*cos(pi*(m-XD1(i,j))/3)+0.08*cos(2*pi*(m-XD1(i,j))/3))*(0.42+0.5*cos(pi*(n-YD1(i,j))/3)+0.08*cos(2*pi*(n-YD1(i,j))/3));
-                                            if channel ~= 6
-                                                im1d(n,m)=im1d(n,m)+im1(i,j)*wi*bi;
-                                            else
-                                                im1d(n,m,:)=im1d(n,m,:)+im1(i,j,:)*wi*bi;
-                                            end
-                                        end
-                                    end
-                                    
-                                    %image 2 interpolation
-                                    nmin=max([1    (round(YD2(i,j))-3)]);
-                                    nmax=min([L(1) (round(YD2(i,j))+3)]);
-                                    mmin=max([1    (round(XD2(i,j))-3)]);
-                                    mmax=min([L(2) (round(XD2(i,j))+3)]);
-                                    for n=nmin:nmax
-                                        for m=mmin:mmax
-                                            wi = sin(pi*(m-XD2(i,j)))*sin(pi*(n-YD2(i,j)))/(pi^2*(m-XD2(i,j))*(n-YD2(i,j)));
-                                            bi = (0.42+0.5*cos(pi*(m-XD2(i,j))/3)+0.08*cos(2*pi*(m-XD2(i,j))/3))*(0.42+0.5*cos(pi*(n-YD2(i,j))/3)+0.08*cos(2*pi*(n-YD2(i,j))/3));
-                                            if channel ~= 6
-                                                im2d(n,m)=im2d(n,m)+im2(i,j)*wi*bi;
-                                            else
-                                                im2d(n,m,:)=im2d(n,m,:)+im2(i,j,:)*wi*bi;
-                                            end
-                                        end
-                                    end
-                                    
-                                end
-                            end
+                        % Deform images according to the interpolated velocity fields. Each color
+                        % channel is deformed separately. They could have been done all together
+                        % but I'm trying to save memory at the expense of some speed here.
+                        for k = 1:nChannels % Loop over all of the color channels in the image
+                            if Iminterp == 1 % Sinc interpolation (without blackman window)
+                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'sinc');
+                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'sinc');
 
+                            elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'blackman');
+                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'blackman');
+                            end
                         end
-
-                        %clip lower values of deformed images
-                        im1d(im1d<0)=0; im1d(isnan(im1d))=0;
-                        im2d(im2d<0)=0; im2d(isnan(im2d))=0;
                         
                         deformtime=toc(t1);
                     end
@@ -1281,14 +1064,14 @@ switch char(M)
                 end
             end
 
-%             %velocity smoothing
-%             if Velsmoothswitch(e)==1
-%                 U1=reshape(Uval(:,1),[S(1),S(2)]);
-%                 V1=reshape(Vval(:,1),[S(1),S(2)]);
-%                 [Us,Vs]=VELfilt(U1,V1,UODwinsize(e,:,:),Velsmoothfilt(e));
-%                 Uval(:,1) = Us(:);
-%                 Vval(:,1) = Vs(:);
-%             end
+            %velocity smoothing
+            % if Velsmoothswitch(e)==1
+            %     U1=reshape(Uval(:,1),[S(1),S(2)]);
+            %     V1=reshape(Vval(:,1),[S(1),S(2)]);
+            %     [Us,Vs]=VELfilt(U1,V1,UODwinsize(e,:,:),Velsmoothfilt(e));
+            %     Uval(:,1) = Us(:);
+            %     Vval(:,1) = Vs(:);
+            % end
                 
                 
             %write output
@@ -1450,17 +1233,17 @@ switch char(M)
                 imind2= time_full(1,:)==I2(q)+(n-1);
                 Dt(n)=time_full(2,imind2)-time_full(2,imind1);
             end
-            L=size(im1);
+            imageSize=size(im1);
 
             %initialize grid and evaluation matrix
-            [XI,YI]=IMgrid(L,[0 0]);
+            [XI,YI]=IMgrid(imageSize,[0 0]);
 
             UI = zeros(size(XI));
             VI = zeros(size(YI));
 
             for e=1:P
                 t1=tic;
-                [X,Y]=IMgrid(L,Gres(e,:),Gbuf(e,:));
+                [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
                 S=size(X);X=X(:);Y=Y(:);
 
                 if ~strcmpi(Corr{e},'SPC')
