@@ -1155,7 +1155,7 @@ switch char(M)
 
                 if str2double(Data.datout)
                     time=I1(1)/Freq;
-                    if strcmpi(M,'Deform')
+                    if strcmpi(M,'EDeform')
                         
                         % Here we are adding the information about the
                         % number of deformation passes into the title
@@ -1188,14 +1188,14 @@ switch char(M)
                         % of the dat file (NOTE this doesn't change the
                         % file name only the title that is used in
                         % tecplot).
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
+                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
                     else
                         %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
                         write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
                     end
                 end
                 if str2double(Data.multiplematout)
-                    if strcmpi(M,'Deform')
+                    if strcmpi(M,'EDeform')
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses')
                     else
                         save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
