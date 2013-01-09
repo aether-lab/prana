@@ -48,7 +48,7 @@ XIv = reshape(xi, nInterpPoints, 1);
 YIv = reshape(yi, nInterpPoints, 1);
 
 % Mirror the border of the image so that the kernel doesn't reach outside of the valid image
-zPadded = padarray(uint16(Z), [KERNELRADIUS KERNELRADIUS], 'symmetric');
+zPadded = padarray(uint16(Z), [KERNELRADIUS KERNELRADIUS], 0);
 
 % Calculate size of padded image
 [paddedHeight paddedWidth] = size(zPadded);
