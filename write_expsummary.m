@@ -82,7 +82,9 @@ if strcmp(Data.masktype,'static')
     else
         slshind=strfind(Data.staticmaskname,'/');
     end
-    expsummary = [expsummary sprintf(['Static\nMask File: ',Data.staticmaskname(slshind(end)+1:end),'\n'])];
+    expsummary = [expsummary sprintf('Static\n')];
+    expsummary = [expsummary sprintf(['Mask Directory:                ',Data.staticmaskname(  1:slshind(end))  ,'\n'])];
+    expsummary = [expsummary sprintf(['Mask File:                     ',Data.staticmaskname(slshind(end)+1:end),'\n'])];
 elseif strcmp(Data.masktype,'dynamic')
     expsummary = [expsummary sprintf('Dynamic\n')];
     expsummary = [expsummary sprintf(['Mask Directory:               ',Data.maskdirec,'\n'])];
