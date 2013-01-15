@@ -1202,7 +1202,7 @@ if str2double(handles.Njob)>0
         end
 
     %   Flip and normalize image
-    im1 = im(end:-1:1,:,:)./imageInfo.MaxSampleValue;
+    im1 = im(end:-1:1,:,:)./max(imageInfo.MaxSampleValue);
 
         try
             if strcmp(handles.data.masktype,'static')
