@@ -1307,10 +1307,10 @@ switch char(M)
                 im2_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
                 im1(:,:,n)=flipud(im1_temp(:,:,1));
                 im2(:,:,n)=flipud(im2_temp(:,:,1));
-                if Zeromean(e)==1
-                    im1(:,:,n)=im1(:,:,n)-mean(mean(im1(:,:,n)));
-                    im2(:,:,n)=im2(:,:,n)-mean(mean(im2(:,:,n)));
-                end
+%                 if Zeromean(e)==1
+%                     im1(:,:,n)=im1(:,:,n)-mean(mean(im1(:,:,n)));
+%                     im2(:,:,n)=im2(:,:,n)-mean(mean(im2(:,:,n)));
+%                 end
                 
                 imind1= time_full(1,:)==I1(q)-(n-1);
                 imind2= time_full(1,:)==I2(q)+(n-1);

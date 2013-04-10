@@ -2,7 +2,7 @@ function [ZI]=VFinterp(X,Y,Z,XI,YI,M)
 % --- Velocity Interpolation Subfunction
 
 %find grid sizes
-Method={'nearest','linear','cubic'};
+Method={'nearest','linear','spline'};
 L=[max(max(YI)) max(max(XI))];
 S=size(X);
 
