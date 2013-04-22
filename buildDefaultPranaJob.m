@@ -5,9 +5,11 @@ defaultdata.clientversion='2.0';
 if ispc
     defaultdata.imdirec='C:\';
     defaultdata.outdirec='C:\';
+    defaultdata.maskdirec='C:\';
 else
     defaultdata.imdirec='/';
     defaultdata.outdirec='/';
+    defaultdata.maskdirec='/';
 end
 defaultdata.imbase='Img_';
 defaultdata.imzeros='6';
