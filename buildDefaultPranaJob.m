@@ -23,8 +23,8 @@ defaultdata.wrmag='1';
 defaultdata.wrsamp='1';
 defaultdata.wrsep='1';
 defaultdata.batchname='Proc1';
-defaultdata.datout='1';
-defaultdata.multiplematout='0';
+defaultdata.datout='0';
+defaultdata.multiplematout='1';
 
 defaultdata.exp_date='';
 defaultdata.exp_L='';

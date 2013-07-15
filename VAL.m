@@ -75,6 +75,7 @@ for i=1:S(1)
             %distance from erroneous vector
             Dblock = (Xblock.^2+Yblock.^2).^-0.5;
             Dblock(isnan(Ublock))=nan;
+            Dblock(isinf(Dblock))=nan;
 
             %validated vector
             Uval(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));

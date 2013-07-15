@@ -1531,7 +1531,7 @@ switch char(M)
 end
 
 %signal job complete
-beep,pause(0.2),beep
+%beep,pause(0.2),beep
 
 end
 

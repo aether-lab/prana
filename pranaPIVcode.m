@@ -31,11 +31,18 @@ else
         % the users requests all of the machines processors this code will
         % not stop the user.  Only if a request is made OVER the avialable
         % number.
-        compinfo=findResource('scheduler','configuration','local');
-        avail_parprocs=num2str(compinfo.clustersize);
-        if str2double(Data.parprocessors) > avail_parprocs
-            fprintf('Job file requested %s processors while the machine only contains %s processors\n Updating job file to request %s processors',Data.parprocessors,num2str(avail_parprocs),num2str(avail_parprocs-1))
-            Data.parprocessors = num2str(avail_parprocs-1);
+        if exist('parcluster','file')
+            compinfo=parcluster;
+            if str2double(Data.parprocessors) > compinfo.NumWorkers
+            Data.parprocessors = compinfo.NumWorkers-1;
+            end
+        else
+            compinfo=findResource('scheduler','configuration','local');
+            avail_parprocs=num2str(compinfo.clustersize);
+            if str2double(Data.parprocessors) > avail_parprocs
+                fprintf('Job file requested %s processors while the machine only contains %s processors\n Updating job file to request %s processors',Data.parprocessors,num2str(avail_parprocs),num2str(avail_parprocs-1))
+                Data.parprocessors = num2str(avail_parprocs-1);
+            end
         end
         
         %Don't open more processors than there are image pairs
