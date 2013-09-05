@@ -948,16 +948,26 @@ if str2double(handles.Njob)>0
             im =im(:,:,1);
          end
          
-        mask=ones(size(im,1),size(im,2));
-        roiwindow = CROIEditor(im./max(im(:)));
-        while isempty(roiwindow.labels)
-        addlistener(roiwindow,'MaskDefined',@your_roi_defined_callback);
-        drawnow
-        end
-        
-        mask(roiwindow.labels==0) = 0;
+         
         handles.data.staticmaskname=fullfile(handles.data.imdirec,'staticmask.tif');
-        imwrite(mask,handles.data.staticmaskname,'tif')
+         
+        createStaticMask(uint8(im), handles.data.staticmaskname);
+         
+%          mask=ones(size(im,1),size(im,2));
+%         roiwindow = CROIEditor(im./max(im(:)));
+%         while isempty(roiwindow.labels)
+%         addlistener(roiwindow,'MaskDefined',@your_roi_defined_callback);
+%         drawnow
+%         end
+%         
+%         mask(roiwindow.labels==0) = 0;
+%         
+%         
+%         
+%         
+%         
+%         imwrite(mask,handles.data.staticmaskname,'tif')
+
         set(handles.staticmaskfile,'String',handles.data.staticmaskname);
         handles.data.masktype='static';
         set(handles.staticmaskbutton,'Value',1)
@@ -968,7 +978,7 @@ if str2double(handles.Njob)>0
         handles=update_data(handles);
         guidata(hObject,handles)
 
-        close('Analyzer - ROI Editor')
+%         close('Analyzer - ROI Editor')
         
 %         stillmasking='Yes';mask=ones(size(im,1),size(im,2));h=figure;
 %         while strcmp(stillmasking,'Yes')
@@ -996,14 +1006,16 @@ if str2double(handles.Njob)>0
 %             msgbox('Masking Cancelled')
 %         end
     catch ME
+        disp(ME.message);
         msgbox('Image Frame Not Found');
         e=-1;
     end
 
 end
-function your_roi_defined_callback(h,e)
-[mask, labels, n] = roiwindow.getROIData;
-delete(roiwindow);
+
+% function your_roi_defined_callback(h,e)
+% [mask, labels, n] = roiwindow.getROIData;
+% delete(roiwindow);
 
 % --- Preview Image + Mask Button ---
 function impreview_Callback(hObject, eventdata, handles)
@@ -1044,7 +1056,8 @@ if str2double(handles.Njob)>0
         end
 
     %   Flip and normalize image
-    im1 = im(end:-1:1,:,:)./max(imageInfo.MaxSampleValue);
+    im1 = im(end:-1:1,:,:) ./ max(im(:));
+%     im1 = im(end:-1:1,:,:)./max(imageInfo.MaxSampleValue);
 
         try
             if strcmp(handles.data.masktype,'static')
@@ -1067,7 +1080,8 @@ if str2double(handles.Njob)>0
             msgbox('Mask Not Found');
             e=-1;
         end
-    catch
+    catch ER
+        disp(ER.message);
         msgbox('Image Frame Not Found');
         e=-1;
     end
@@ -5025,3 +5039,8 @@ if str2double(handles.Njob) > 0
     fprintf(expsummary);
     fprintf('\n\n');
 end
+
+
+
+
+
