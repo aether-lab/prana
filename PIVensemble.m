@@ -32,9 +32,24 @@ else
     Sx=Nx;
 end
 
+%fftshift indices
+fftindy = [ceil(Sy/2)+1:Sy 1:ceil(Sy/2)];
+fftindx = [ceil(Sx/2)+1:Sx 1:ceil(Sx/2)];
+
 %window masking filter
 sfilt1 = windowmask([Nx Ny],[res(1, 1) res(1, 2)]);
 sfilt2 = windowmask([Nx Ny],[res(2, 1) res(2, 2)]);
+
+% bigfilt1 = zeros(2*Ny, 2*Nx);
+% bigfilt2 = zeros(2*Ny, 2*Nx);
+% bigfilt1(1:Ny,1:Nx) = sfilt1;
+% bigfilt2(1:Ny,1:Nx) = sfilt2;
+% 
+% sfilt12 = ifft2(fft2(bigfilt2).*conj(fft2(bigfilt1)));
+% sfilt12 = ifftshift(sfilt12);
+% sfilt12 = sfilt12( (Ny/2+1):(3*Ny/2) , (Nx/2+1):(3*Nx/2) ) / sum(sfilt1(:).*sfilt2(:));
+% % keyboard
+
 
 %correlation plane normalization function (always off).  
 % This is only used in the DRPC code.
@@ -49,10 +64,6 @@ Peaklocator = 1;
 
 %RPC spectral energy filter
 spectral = fftshift(energyfilt(Sx,Sy,D,0));
-
-%fftshift indices
-fftindy = [ceil(Sy/2)+1:Sy 1:ceil(Sy/2)];
-fftindx = [ceil(Sx/2)+1:Sx 1:ceil(Sx/2)];
 
 % This is a check for the fractionally weighted correlation.  We won't use
 % the spectral filter with FWC or GCC
@@ -146,6 +157,7 @@ switch upper(tcorr)
             %store correlation matrix
             end
             CC(:,:,n) = mean(Gens,3);
+%             CC(:,:,n) = mean(Gens,3)./sfilt12;
         end
         else
             for n=1:length(X)
@@ -208,6 +220,7 @@ switch upper(tcorr)
             
             %store correlation matrix
             CC(:,:,n) = G;
+%             CC(:,:,n) = G./sfilt12;
             end
         end
         
@@ -279,6 +292,7 @@ switch upper(tcorr)
                     %store correlation matrix
                 end
                 CC(:,:,n) = mean(Gens,3);
+%                 CC(:,:,n) = mean(Gens,3)./sfilt12;
             end
         else
             for n=1:length(X)
@@ -421,6 +435,7 @@ switch upper(tcorr)
             end
             %store correlation matrix
             CC(:,:,n) = mean(Gens,3);
+%             CC(:,:,n) = mean(Gens,3)./sfilt12;
 
         end
         else
@@ -495,6 +510,7 @@ switch upper(tcorr)
             
             %store correlation matrix
             CC(:,:,n) = G;
+%             CC(:,:,n) = G./sfilt12;
 
             end
         end

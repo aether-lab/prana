@@ -52,6 +52,10 @@ fftindx = [ceil(Sx/2)+1:Sx 1:ceil(Sx/2)];
 sfilt1 = windowmask([Sx Sy],[res(1, 1) res(1, 2)]);
 sfilt2 = windowmask([Sx Sy],[res(2, 1) res(2, 2)]);
 
+% sfilt12 = ifft2(fft2(sfilt2).*conj(fft2(sfilt1)));
+% 
+% keyboard
+
 %correlation plane normalization function (always off)
 cnorm = ones(Ny,Nx);
 % s1   = fftn(sfilt1,[Sy Sx]);
