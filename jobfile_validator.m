@@ -130,6 +130,13 @@ if ~isfield(Data,'outputpassbase')
     eval(['Data.outputpassbase = Data.PIV' Data.passes '.outbase;']);
 end
 
+if ~isfield(Data,'input_vel_type')
+    Data.input_vel_type = 'none';
+end
+if ~isfield(Data,'input_velocity')
+    Data.input_velocity = '';
+end
+
 % Check to see if the job file is using the old version of correlation
 % names with numbers.  The code now uses string names which make it easier
 % to add features in the future.
