@@ -290,7 +290,7 @@ switch char(M)
                 mask = flipud(mask);
             end
 
-            % initialize grid and evaluation matrix
+            % initialize grid and evaluation matrix for every pixel in image
             [XI,YI]=IMgrid(imageSize,[0 0]);
 
             UI = BWO(1)*ones(size(XI));
@@ -364,7 +364,10 @@ switch char(M)
                     end
                 end
 
-                if ~strcmpi(Corr{e},'SPC') %SPC=4
+                %Where Eval<0, no correlation was performed and Uc, etc are
+                %missing values.  Use Eval to fill in complete matrices U,V
+                %over all grid points X,Y.  
+                if ~strcmpi(Corr{e},'SPC') %was not SPC=4
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                         U=zeros(size(X,1),3);
                         V=zeros(size(X,1),3);
@@ -377,7 +380,7 @@ switch char(M)
                         U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
                         U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     end
-                else
+                else %Corr was SPC=4
                     U=zeros(size(X));V=zeros(size(X));
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     if Peakswitch(e)
@@ -548,6 +551,10 @@ switch char(M)
                 end
                 U=Uval; V=Vval;
 
+                %If it isn't the lass pass, or the last pass hasn't
+                %converged yet for iterative deform, we need to prepare U
+                %and V from this pass for use as a predictor in the next
+                %pass
                 if e~=P || (strcmpi(M,'Deform') && defloop ~=1)
                     %reshape from list of grid points to matrix
                     X=reshape(X,[S(1),S(2)]);
@@ -555,6 +562,8 @@ switch char(M)
                     U=reshape(U(:,1),[S(1),S(2)]);
                     V=reshape(V(:,1),[S(1),S(2)]);
                     
+                    %Multigrid and Deform need to interpolate this pass's displacements
+                    %onto a different grid
                     if strcmp(M,'Multigrid') || strcmp(M,'Deform')
                         t1=tic;
 
@@ -563,7 +572,11 @@ switch char(M)
                             [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                         end
 
-                        %velocity interpolation
+                        %velocity interpolation -
+                        %resample U(X,Y) and V(X,Y) onto UI(XI,YI) and
+                        %VI(XI,YI) where XI and YI are a list of every
+                        %pixel in the image plane. Velinterp is the type of
+                        %interpolation to use.
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
@@ -573,6 +586,11 @@ switch char(M)
                             interptime(e,defloop)=toc(t1);
                         end
                         
+                        %For deform, UI and VI will be used to deform the images, and
+                        %then downsampled in the next pass to the new grid 
+                        %for addition to the next pass's displacement.
+                        %If not deform, then UI and VI just get downsampled
+                        %next pass and used for DWO.
                         if strcmp(M,'Deform')
                             t1=tic;
                             
@@ -613,7 +631,7 @@ switch char(M)
                                 deformtime(e,defloop)=toc(t1);
                             end                           
                         end
-                    else
+                    else %must be Multipass - grid is same on every pass, no resampling needed
                         UI=U;VI=V;
                     end
                 end
