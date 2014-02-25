@@ -434,6 +434,7 @@ if isnumeric(f)==0
         handles=update_data(handles);
         guidata(hObject,handles)
         beep,disp('ERROR: Invalid Data Format, Reloading Previous Settings')
+        keyboard
     end
 end
 
@@ -948,16 +949,26 @@ if str2double(handles.Njob)>0
             im =im(:,:,1);
          end
          
-        mask=ones(size(im,1),size(im,2));
-        roiwindow = CROIEditor(im./max(im(:)));
-        while isempty(roiwindow.labels)
-        addlistener(roiwindow,'MaskDefined',@your_roi_defined_callback);
-        drawnow
-        end
-        
-        mask(roiwindow.labels==0) = 0;
+         
         handles.data.staticmaskname=fullfile(handles.data.imdirec,'staticmask.tif');
-        imwrite(mask,handles.data.staticmaskname,'tif')
+         
+        createStaticMask(uint8(im), handles.data.staticmaskname);
+         
+%          mask=ones(size(im,1),size(im,2));
+%         roiwindow = CROIEditor(im./max(im(:)));
+%         while isempty(roiwindow.labels)
+%         addlistener(roiwindow,'MaskDefined',@your_roi_defined_callback);
+%         drawnow
+%         end
+%         
+%         mask(roiwindow.labels==0) = 0;
+%         
+%         
+%         
+%         
+%         
+%         imwrite(mask,handles.data.staticmaskname,'tif')
+
         set(handles.staticmaskfile,'String',handles.data.staticmaskname);
         handles.data.masktype='static';
         set(handles.staticmaskbutton,'Value',1)
@@ -968,7 +979,7 @@ if str2double(handles.Njob)>0
         handles=update_data(handles);
         guidata(hObject,handles)
 
-        close('Analyzer - ROI Editor')
+%         close('Analyzer - ROI Editor')
         
 %         stillmasking='Yes';mask=ones(size(im,1),size(im,2));h=figure;
 %         while strcmp(stillmasking,'Yes')
@@ -996,14 +1007,16 @@ if str2double(handles.Njob)>0
 %             msgbox('Masking Cancelled')
 %         end
     catch ME
+        disp(ME.message);
         msgbox('Image Frame Not Found');
         e=-1;
     end
 
 end
-function your_roi_defined_callback(h,e)
-[mask, labels, n] = roiwindow.getROIData;
-delete(roiwindow);
+
+% function your_roi_defined_callback(h,e)
+% [mask, labels, n] = roiwindow.getROIData;
+% delete(roiwindow);
 
 % --- Preview Image + Mask Button ---
 function impreview_Callback(hObject, eventdata, handles)
@@ -1044,7 +1057,8 @@ if str2double(handles.Njob)>0
         end
 
     %   Flip and normalize image
-    im1 = im(end:-1:1,:,:)./max(imageInfo.MaxSampleValue);
+    im1 = im(end:-1:1,:,:) ./ max(im(:));
+%     im1 = im(end:-1:1,:,:)./max(imageInfo.MaxSampleValue);
 
         try
             if strcmp(handles.data.masktype,'static')
@@ -1067,7 +1081,8 @@ if str2double(handles.Njob)>0
             msgbox('Mask Not Found');
             e=-1;
         end
-    catch
+    catch ER
+        disp(ER.message);
         msgbox('Image Frame Not Found');
         e=-1;
     end
@@ -2749,6 +2764,12 @@ else
         set(handles.parprocessors,'string','','backgroundcolor',0.5*[1 1 1])
     end
     
+    if strcmpi(handles.data.input_vel_type,'static')
+        set(handles.input_velocity,'String','','backgroundcolor',[1 1 1]);
+    else
+        set(handles.input_velocity,'String','','backgroundcolor',0.5*[1 1 1]);
+    end
+    
     if strcmp(handles.data.masktype,'static')
         set(handles.staticmaskfile,'String','','backgroundcolor',[1 1 1]);
     else
@@ -3194,6 +3215,8 @@ set(handles.imagecorrelationstep,'String',handles.data.imcstep);
 set(handles.imageframestep,'String',handles.data.imfstep);
 set(handles.imageframestart,'String',handles.data.imfstart);
 set(handles.imageframeend,'String',handles.data.imfend);
+
+set(handles.input_velocity,'String',handles.data.input_velocity)
 
 set(handles.staticmaskfile,'String',handles.data.staticmaskname)
 set(handles.maskdirectory,'String',handles.data.maskdirec);
@@ -5024,4 +5047,67 @@ if str2double(handles.Njob) > 0
     expsummary = write_expsummary(handles.data);
     fprintf(expsummary);
     fprintf('\n\n');
+end
+
+
+
+function input_velocity_Callback(hObject, eventdata, handles)
+% hObject    handle to input_velocity (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of input_velocity as text
+%        str2double(get(hObject,'String')) returns contents of input_velocity as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function input_velocity_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to input_velocity (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in browse_input_vel.
+function browse_input_vel_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.static_input_vel_button,'Value')==1
+    D = handles.data.input_velocity;
+    
+    [a,b] = uigetfile([handles.data.imdirec '/*.*'], 'Select static mask file...');
+    handles.data.input_velocity = [b a];
+    if handles.data.input_velocity==0
+        handles.data.input_velocity = D;
+    end
+    guidata(hObject,handles)
+    set(handles.input_velocity,'string',handles.data.input_velocity);
+end
+
+
+% --- Executes on button press in no_input_vel_button.
+function no_input_vel_button_Callback(hObject, eventdata, handles)
+handles.data.input_vel_type='none';
+set(hObject,'Value',1)
+set(handles.static_input_vel_button,'Value',0)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    handles=update_data(handles);
+    guidata(hObject,handles)
+end
+
+% --- Executes on button press in static_input_vel_button.
+function static_input_vel_button_Callback(hObject, eventdata, handles)
+handles.data.input_vel_type='static';
+set(hObject,'Value',1)
+set(handles.no_input_vel_button,'Value',0)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    handles=update_data(handles);
+    guidata(hObject,handles)
 end

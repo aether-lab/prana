@@ -215,6 +215,21 @@ for e=1:P
     wbase(e,:)={A.outbase};
     
 end
+
+
+maskSize=size(mask);
+maskSize(3)=size(mask,3);
+[XI,YI]=IMgrid(maskSize,[0 0]);
+if strcmpi(Data.input_vel_type,'static')
+    Vel0 = load(Data.input_velocity);
+    Vel0.U = VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp);
+    Vel0.V = VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp);
+else
+    Vel0.X = XI;
+    Vel0.Y = YI;
+    Vel0.U = BWO(1)*ones(size(XI));
+    Vel0.V = BWO(2)*ones(size(XI));
+end
 wbase_org=wbase;
 
 %% --- Evaluate Image Sequence ---
@@ -679,8 +694,10 @@ switch char(M)
         imageSize=size(im1);
         imageSize(3)=size(im1,3);
         [XI,YI]=IMgrid(imageSize,[0 0]);
-        UI = BWO(1)*ones(size(XI));
-        VI = BWO(2)*ones(size(XI));
+        UI = Vel0.U;
+        VI = Vel0.V;
+        %UI = BWO(1)*ones(size(XI));
+        %VI = BWO(2)*ones(size(XI));
         
         defconvU = zeros(P,max(maxdefloop));
         defconvV = zeros(P,max(maxdefloop));
