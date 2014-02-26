@@ -224,11 +224,13 @@ if strcmpi(Data.input_vel_type,'static')
     Vel0 = load(Data.input_velocity);
     Vel0.U = VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp);
     Vel0.V = VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp);
+    VelInputFile = 1;
 else
     Vel0.X = XI;
     Vel0.Y = YI;
     Vel0.U = BWO(1)*ones(size(XI));
     Vel0.V = BWO(2)*ones(size(XI));
+    VelInputFile = 0;
 end
 wbase_org=wbase;
 
@@ -803,7 +805,7 @@ switch char(M)
                         % The deformation for ensemble must be done before
                         % the correlation unlike in the instantanious
                         % images where it is done after correlation
-                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                             
                             t1=tic;
                             %translate pixel locations
@@ -838,7 +840,7 @@ switch char(M)
                         t1=tic;
                         %correlate image pair and average correlations
 %                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1  || VelInputFile)
                             [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         else
                             [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -862,7 +864,7 @@ switch char(M)
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop~=1 || VelInputFile)
                             fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),floor((rem(deformtime,60)-floor(rem(deformtime,60)))*10))
                         end
 %                         fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
@@ -937,7 +939,7 @@ switch char(M)
                     im1 = im1(end:-1:1,:,:);
                     im2 = im2(end:-1:1,:,:);
 
-                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                         t1=tic;
 
                         %translate pixel locations
@@ -970,7 +972,7 @@ switch char(M)
                     t1=tic;
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                         [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                     else
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -1001,7 +1003,7 @@ switch char(M)
                         %cnvg_est = 0;
                     end
                     corrtime=toc(t1);
-                    if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop~=1 || VelInputFile)
                         fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),floor((rem(deformtime,60)-floor(rem(deformtime,60)))*10))
                     end
 %                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
@@ -1087,7 +1089,7 @@ switch char(M)
                 end
             end
 
-            if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+            if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                 U(Eval>=0)=Uc(:)+Ub(Eval>=0);
                 V(Eval>=0)=Vc(:)+Vb(Eval>=0);
             else
