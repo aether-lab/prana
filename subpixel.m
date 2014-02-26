@@ -28,6 +28,10 @@ else
         u=zeros(1,3);
         v=zeros(1,3);
         D=zeros(1,3);
+        DX=zeros(1,3);
+        DY=zeros(1,3);
+        ALPHA=zeros(1,3);
+
         %Locate peaks using imregionalmax
         A=imregionalmax(G);
         peakmat=G.*A;
@@ -40,6 +44,7 @@ else
         u=zeros(1,1);
         v=zeros(1,1);
         D=zeros(1,1);
+        DX=0; DY=0; ALPHA=0;
         j=1;    
     end
     
@@ -182,7 +187,7 @@ else
                 %Initial values for the solver (have to convert D into Beta)
                 x0=[M(i) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
 
-                [xloc yloc]=meshgrid(x_min:x_max,y_min:y_max);
+                [xloc, yloc]=meshgrid(x_min:x_max,y_min:y_max);
 
                 %Run solver; default to 3-point gauss if it fails
                 try
@@ -249,14 +254,14 @@ else
                 lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
                 if (2*(lCm1+lCp1-2*lC00)) == 0
                     shift_errx = 0;
-                    Dx = nan;
+                    dX = nan;
                 else
                     shift_errx = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
                     betax = abs(lCm1-lC00)/((-1-shift_errx)^2-(shift_errx)^2);
-                    Dx = sigma./sqrt((2*betax));
+                    dX = sigma./sqrt((2*betax));
                 end
             else
-                Dx = nan;
+                dX = nan;
             end
             
             if isempty(shift_erry)
@@ -265,17 +270,17 @@ else
                 lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
                 if (2*(lCm1+lCp1-2*lC00)) == 0
                     shift_erry = 0;
-                    Dy = nan;
+                    dY = nan;
                 else
                     shift_erry = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
                     betay = abs(lCm1-lC00)/((-1-shift_erry)^2-(shift_erry)^2);
-                    Dy = sigma./sqrt((2*betay));
+                    dY = sigma./sqrt((2*betay));
                 end
             else
-                Dy = nan;
+                dY = nan;
             end
             
-            D(i) = nanmean([Dx Dy]);
+            D(i) = nanmean([dX dY]);
             
                     
             DX(i) = dX;

@@ -6,7 +6,6 @@ else
     j=1;
 end
 
-[X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
 
 if exist('DX','var')
     [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
@@ -15,6 +14,9 @@ else
     DY    = zeros(size(D));
     ALPHA = zeros(size(D));
 end
+
+[X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
+
 
 Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
 if ~isempty(C)

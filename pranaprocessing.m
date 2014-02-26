@@ -222,8 +222,16 @@ maskSize(3)=size(mask,3);
 [XI,YI]=IMgrid(maskSize,[0 0]);
 if strcmpi(Data.input_vel_type,'static')
     Vel0 = load(Data.input_velocity);
-    Vel0.U = VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp);
-    Vel0.V = VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp);
+    
+    %velocity smoothing
+    if Velsmoothswitch(1)==1
+        [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
+        Vel0.U = VFinterp(Vel0.X,Vel0.Y,U,XI,YI,Velinterp);
+        Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
+    else
+        Vel0.U = VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp);
+        Vel0.V = VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp);
+    end
     VelInputFile = 1;
 else
     Vel0.X = XI;
@@ -700,7 +708,13 @@ switch char(M)
         frametime=zeros(P,1);
 
         %initialize grid and evaluation matrix
-        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+        if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]);
+            im1 = loaddata.I;
+            loaddata =[];
+        else
+            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+        end
         imageSize=size(im1);
         imageSize(3)=size(im1,3);
         [XI,YI]=IMgrid(imageSize,[0 0]);
@@ -1158,7 +1172,7 @@ switch char(M)
                     Cval=[];
                     Dval=[];
                 end
-                DXval=DX(:,1);DYval=DY(:,1);ALPHAval(:,1);
+                DXval=DX(:,1);DYval=DY(:,1);ALPHAval=ALPHA(:,1);
             end
 
             % --- Iterative Deformation Check ---
@@ -1229,8 +1243,8 @@ switch char(M)
 
                 %convert to matrix if necessary
                 if size(X,2)==1
-                    [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
                     [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
+                    [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
                 end
 
                 %remove nans from data, replace with zeros
