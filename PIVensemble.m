@@ -342,13 +342,15 @@ switch upper(tcorr)
                 % This is a stripped out version of xcorr2
                 G = conv2(region2, rot90(conj(region1),2));
                 
-                region1_std = std(region1(:));
-                region2_std = std(region2(:));
-                if region1_std == 0 || region2_std == 0
-                    G = zeros(Sy,Sx);
-                else
-                    G = G/std(region1(:))/std(region2(:))/length(region1(:));
-                end
+%                 % Comment out this section because it will mess up single
+%                 % pixel correlation methods.
+%                region1_std = std(region1(:));
+%                region2_std = std(region2(:));
+%                if region1_std == 0 || region2_std == 0
+%                    G = zeros(Sy,Sx);
+%                else
+%                    G = G/std(region1(:))/std(region2(:))/length(region1(:));
+%                end
                 CC(:,:,n) = G;
                         
             end

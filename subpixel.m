@@ -1,4 +1,4 @@
-function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
+function [u,v,M,D,DX,DY,ALPHA]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
 %intialize indices
 cc_x = -floor(ccsizex/2):ceil(ccsizex/2)-1;
 cc_y = -floor(ccsizey/2):ceil(ccsizey/2)-1;
@@ -16,8 +16,12 @@ if M==0
         v=zeros(1,3);
         M=zeros(1,3);
         D=zeros(1,3);
+        DX=zeros(1,3);
+        DY=zeros(1,3);
+        ALPHA=zeros(1,3);
+        
     else
-        u=0; v=0; M=0; D=0; 
+        u=0; v=0; M=0; D=0; DX=0; DY=0; ALPHA=0;
     end
 else
     if Peakswitch
@@ -197,6 +201,10 @@ else
                     dX = max( abs(dA*cos(alpha)), abs(dB*sin(alpha)) );
                     dY = max( abs(dA*sin(alpha)), abs(dB*cos(alpha)) );
                     
+                    DX(i) = dX;
+                    DY(i) = dY;
+                    ALPHA(i) = alpha;
+                    
                     %LSqF didn't fail...
                     goodSize = 1;
                     
@@ -268,6 +276,12 @@ else
             end
             
             D(i) = nanmean([Dx Dy]);
+            
+                    
+            DX(i) = dX;
+            DY(i) = dY;
+            %ALPHA(i) = 0;  %initialized to 0 anyway
+            
         end
         
         u(i)=cc_x(shift_locx)+shift_errx;

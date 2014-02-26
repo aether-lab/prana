@@ -246,8 +246,16 @@ switch char(M)
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
 
             %load image pair and flip coordinates
-            im1 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+                loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
+                im1 = loaddata.I;
+                loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                im2 = loaddata.I;
+                loaddata =[];
+            else
+                im1 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+                im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            end
             
             % Specify which color channel(s) to consider
             % This was changed to greater then 2 because John had images
@@ -734,8 +742,11 @@ switch char(M)
                 V=zeros(size(X,1),3);
                 C=zeros(size(X,1),3);
                 Di=zeros(size(X,1),3);
+                DX=zeros(size(X,1),3);
+                DY=zeros(size(X,1),3);
+                ALPHA=zeros(size(X,1),3);
             else
-                U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
+                U=zeros(size(X));V=zeros(size(X));C=[];Di=[];DX=[];DY=[];ALPHA=[];
             end
 
             if str2double(Data.par) && matlabpool('size')>1
@@ -753,8 +764,17 @@ switch char(M)
                     for q=1:length(I1dist)
                         
                         %load image pair and flip coordinates
-                        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
-                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
+                        if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+                            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]);
+                            im1 = loaddata.I;
+                            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
+                            im2 = loaddata.I;
+                            loaddata =[];
+                        else
+                            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
+                            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
+                        end
+                        
                         if size(im1, 3) > 2
                             %Extract only red channel
                             if channel == 1;
@@ -894,8 +914,17 @@ switch char(M)
                 for q=1:length(I1)
 
                     %load image pair and flip coordinates
-                    im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-                    im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                    if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+                        loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
+                        im1 = loaddata.I;
+                        loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                        im2 = loaddata.I;
+                        loaddata =[];
+                    else
+                        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                    end
+                    
                     if size(im1, 3) > 2
                         %Extract only red channel
                         if channel == 1;
@@ -1039,18 +1068,22 @@ switch char(M)
                 Vc=zeros(Z(3),3);
                 Cc=zeros(Z(3),3);
                 Dc=zeros(Z(3),3);
+                DXc=zeros(Z(3),3);
+                DYc=zeros(Z(3),3);
+                ALPHAc=zeros(Z(3),3);
                 Ub=repmat(Ub,[1 3]);
                 Vb=repmat(Vb,[1 3]);
                 Eval=repmat(Eval,[1 3]);
             else
-                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
+                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];DXc=[];DYc=[];ALPHAc=[];
+
             end
 
             if ~strcmpi(Corr{e},'SPC')
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
-                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
+                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:),DXc(s,:),DYc(s,:),ALPHAc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),floor((rem(peaktime,60)-floor(rem(peaktime,60)))*10))
@@ -1099,6 +1132,9 @@ switch char(M)
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))%~isempty(Cc)
                 C(Eval>=0)=Cc(:);
                 Di(Eval>=0)=Dc(:);
+                DX(Eval>=0)=DXc(:);
+                DY(Eval>=0)=DYc(:);
+                ALPHA(Eval>=0)=ALPHAc(:);
             end
 
             %validation
@@ -1106,8 +1142,9 @@ switch char(M)
                 %keyboard
                 t1=tic;
 
-                [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
+                [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e),...
+                    DX,DY,ALPHA);
 
                 valtime=toc(t1);
                 fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime/60),floor(rem(valtime,60)),floor((rem(valtime,60)-floor(rem(valtime,60)))*10))
@@ -1121,6 +1158,7 @@ switch char(M)
                     Cval=[];
                     Dval=[];
                 end
+                DXval=DX(:,1);DYval=DY(:,1);ALPHAval(:,1);
             end
 
             % --- Iterative Deformation Check ---
@@ -1169,12 +1207,19 @@ switch char(M)
                     if PeakMag(e)
                         C=[Cval,C(:,1:PeakNum(e))];
                         Di=[Dval,Di(:,1:PeakNum(e))];
+                        DX=[DXval,DX(:,1:PeakNum(e))];
+                        DY=[DYval,DY(:,1:PeakNum(e))];
+                        ALPHA=[ALPHAval,ALPHA(:,1:PeakNum(e))];
                     else
                         C=Cval;
                         Di=Dval;
+                        DX=DXval;
+                        DY=DYval;
+                        ALPHA=ALPHAval;
                     end
                 else
                     U=Uval; V=Vval; Eval=Evalval; C=Cval; Di=Dval;
+                    DX=DXval;DY=DYval;ALPHA=ALPHAval;
                 end
 
                 %convert to physical units
@@ -1185,6 +1230,7 @@ switch char(M)
                 %convert to matrix if necessary
                 if size(X,2)==1
                     [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
+                    [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
                 end
 
                 %remove nans from data, replace with zeros
@@ -1233,9 +1279,9 @@ switch char(M)
                 end
                 if str2double(Data.multiplematout)
                     if strcmpi(M,'EDeform')
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses','DX','DY','ALPHA')
                     else
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','DX','DY','ALPHA')
                     end
                 end
                 if saveplane(e) && ~strcmpi(Corr{e},'SPC')
