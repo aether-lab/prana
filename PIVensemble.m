@@ -1,9 +1,10 @@
 function [X,Y,CC]=PIVensemble(im1,im2,tcorr,window,res,zpad,D,Zeromean,fracval,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
+imClass = 'single';
 
 %convert input parameters
-im1=double(im1);
-im2=double(im2);
+im1=cast(im1,imClass);
+im2=cast(im2,imClass);
 L = size(im1);
 
 %convert to gridpoint list
@@ -14,8 +15,8 @@ Y=Y(:);
 Nx = window(1);
 Ny = window(2);
 if nargin <=12
-    Uin = zeros(length(X),1);
-    Vin = zeros(length(X),1);
+    Uin = zeros(length(X),1,imClass);
+    Vin = zeros(length(X),1,imClass);
 end
 Uin = Uin(:);
 Vin = Vin(:);
@@ -53,7 +54,7 @@ sfilt2 = windowmask([Nx Ny],[res(2, 1) res(2, 2)]);
 
 %correlation plane normalization function (always off).  
 % This is only used in the DRPC code.
-cnorm = ones(Ny,Nx);
+cnorm = ones(Ny,Nx,imClass);
 %#####################################
 % This is for the Dynamic RPC.  The DRPC requires a call to the subpixel
 % function which requires infromation about which peak located the user
@@ -91,10 +92,10 @@ switch upper(tcorr)
     case 'SCC'
 
         %initialize correlation tensor
-        CC = zeros(Sy,Sx,length(X));
+        CC = zeros(Sy,Sx,length(X),imClass);
 
         if size(im1,3) == 3
-        Gens=zeros(Ny,Nx,3);
+        Gens=zeros(Ny,Nx,3,imClass);
         for n=1:length(X)
 
             %apply the second order discrete window offset
@@ -118,12 +119,12 @@ switch upper(tcorr)
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]),r );
             zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]),r );
             if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
+                w1 = zeros(Ny,Nx,imClass);
                 w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
                 zone1 = w1;
             end
             if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
+                w2 = zeros(Ny,Nx,imClass);
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
@@ -182,12 +183,12 @@ switch upper(tcorr)
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
             zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
             if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
+                w1 = zeros(Ny,Nx,imClass);
                 w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
                 zone1 = w1;
             end
             if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
+                w2 = zeros(Ny,Nx,imClass);
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
@@ -213,7 +214,7 @@ switch upper(tcorr)
             region1_std = std(region1(:));
             region2_std = std(region2(:));
             if region1_std == 0 || region2_std == 0
-                G = zeros(Ny,Nx);
+                G = zeros(Ny,Nx,imClass);
             else
                 G = G/std(region1(:))/std(region2(:))/length(region1(:));
             end
@@ -228,10 +229,10 @@ switch upper(tcorr)
     case 'DCC'
         
         %initialize correlation tensor
-        CC = zeros(Sy,Sx,length(X));
+        CC = zeros(Sy,Sx,length(X),imClass);
         
         if size(im1,3) == 3
-            Gens=zeros(res(1,2)+res(2,2)-1,res(1,1)+res(2,1)-1,3);
+            Gens=zeros(res(1,2)+res(2,2)-1,res(1,1)+res(2,1)-1,3,imClass);
             for n=1:length(X)
                 
                 %apply the second order discrete window offset
@@ -255,12 +256,12 @@ switch upper(tcorr)
                     zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]),r );
                     zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]),r );
                     if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                        w1 = zeros(res(1,2),res(1,1));
+                        w1 = zeros(res(1,2),res(1,1),imClass);
                         w1( 1+max([0 1-ymin1]):res(1,2)-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):res(1,1)-max([0 xmax1-L(2)]) ) = zone1;
                         zone1 = w1;
                     end
                     if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                        w2 = zeros(res(2,2),res(2,1));
+                        w2 = zeros(res(2,2),res(2,1),imClass);
                         w2( 1+max([0 1-ymin2]):res(2,2)-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):res(2,1)-max([0 xmax2-L(2)]) ) = zone2;
                         zone2 = w2;
                     end
@@ -319,12 +320,12 @@ switch upper(tcorr)
                 zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
                 zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
                 if size(zone1,1)~=res(1,2) || size(zone1,2)~=res(1,1)
-                    w1 = zeros(res(1,2),res(1,1));
+                    w1 = zeros(res(1,2),res(1,1),imClass);
                     w1( 1+max([0 1-ymin1]):res(1,2)-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):res(1,1)-max([0 xmax1-L(2)]) ) = zone1;
                     zone1 = w1;
                 end
                 if size(zone2,1)~=res(2,2) || size(zone2,2)~=res(2,1)
-                    w2 = zeros(res(2,2),res(2,1));
+                    w2 = zeros(res(2,2),res(2,1),imClass);
                     w2( 1+max([0 1-ymin2]):res(2,2)-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):res(2,1)-max([0 xmax2-L(2)]) ) = zone2;
                     zone2 = w2;
                 end
@@ -362,10 +363,10 @@ switch upper(tcorr)
     case {'RPC','DRPC','GCC','FWC'}
 
         %initialize correlation tensor
-        CC = zeros(Sy,Sx,length(X));
+        CC = zeros(Sy,Sx,length(X),imClass);
         
         if size(im1,3) == 3
-        Gens=zeros(Ny,Nx,3);     %matrix for storing each color correlation for color ensemble      
+        Gens=zeros(Ny,Nx,3,imClass);     %matrix for storing each color correlation for color ensemble      
         for n=1:length(X)
 
             %apply the second order discrete window offset
@@ -389,12 +390,12 @@ switch upper(tcorr)
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]),r );
             zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]),r );
             if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
+                w1 = zeros(Ny,Nx,imClass);
                 w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
                 zone1 = w1;
             end
             if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
+                w2 = zeros(Ny,Nx,imClass);
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
@@ -414,7 +415,7 @@ switch upper(tcorr)
             P21  = f2.*conj(f1);
 
             %Phase Correlation
-            W = ones(Sy,Sx);
+            W = ones(Sy,Sx,imClass);
             Wden = sqrt(P21.*conj(P21));
             W(Wden~=0) = Wden(Wden~=0);
             if frac ~=1
@@ -465,12 +466,12 @@ switch upper(tcorr)
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
             zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
             if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
+                w1 = zeros(Ny,Nx,imClass);
                 w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
                 zone1 = w1;
             end
             if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
+                w2 = zeros(Ny,Nx,imClass);
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end
@@ -490,7 +491,7 @@ switch upper(tcorr)
             P21  = f2.*conj(f1);
 
             %Phase Correlation
-            W = ones(Sy,Sx);
+            W = ones(Sy,Sx,imClass);
             Wden = sqrt(P21.*conj(P21));
             W(Wden~=0) = Wden(Wden~=0);
             if frac ~=1
@@ -523,11 +524,11 @@ switch upper(tcorr)
     case 'SPC'
         
         %initialize correlation tensor
-        CC.U = zeros(3,Sx,length(X));
-        CC.V = zeros(3,Sy,length(X));
-        CC.C = zeros(3, 1,length(X));
-        u_unwrapped = zeros(Sy,3);
-        v_unwrapped = zeros(Sx,3);
+        CC.U = zeros(3,Sx,length(X),imClass);
+        CC.V = zeros(3,Sy,length(X),imClass);
+        CC.C = zeros(3, 1,length(X),imClass);
+        u_unwrapped = zeros(Sy,3,imClass);
+        v_unwrapped = zeros(Sx,3,imClass);
         
         for n=1:length(X)
 
@@ -551,12 +552,12 @@ switch upper(tcorr)
             zone1 = im1( max([1 ymin1]):min([L(1) ymax1]),max([1 xmin1]):min([L(2) xmax1]) );
             zone2 = im2( max([1 ymin2]):min([L(1) ymax2]),max([1 xmin2]):min([L(2) xmax2]) );
             if size(zone1,1)~=Ny || size(zone1,2)~=Nx
-                w1 = zeros(Ny,Nx);
+                w1 = zeros(Ny,Nx,imClass);
                 w1( 1+max([0 1-ymin1]):Ny-max([0 ymax1-L(1)]),1+max([0 1-xmin1]):Nx-max([0 xmax1-L(2)]) ) = zone1;
                 zone1 = w1;
             end
             if size(zone2,1)~=Ny || size(zone2,2)~=Nx
-                w2 = zeros(Ny,Nx);
+                w2 = zeros(Ny,Nx,imClass);
                 w2( 1+max([0 1-ymin2]):Ny-max([0 ymax2-L(1)]),1+max([0 1-xmin2]):Nx-max([0 xmax2-L(2)]) ) = zone2;
                 zone2 = w2;
             end

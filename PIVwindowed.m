@@ -1,9 +1,10 @@
 function [X,Y,U,V,C,Dia,Corrplanes]=PIVwindowed(im1,im2,tcorr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,fracval,saveplane,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
+imClass = 'single';
 
 %convert input parameters
-im1=double(im1);
-im2=double(im2);
+im1=cast(im1,imClass);
+im2=cast(im2,imClass);
 L=size(im1);
 
 %convert to gridpoint list
@@ -14,22 +15,22 @@ Y=Y(:);
 Nx = window(1);
 Ny = window(2);
 if nargin <=15
-    Uin = zeros(length(X),1);
-    Vin = zeros(length(X),1);
+    Uin = zeros(length(X),1,imClass);
+    Vin = zeros(length(X),1,imClass);
 end
 
 if Peakswitch
     Uin=repmat(Uin(:,1),[1 3]);
     Vin=repmat(Vin(:,1),[1 3]);
-    U = zeros(length(X),3);
-    V = zeros(length(X),3);
-    C = zeros(length(X),3);
-    Dia = zeros(length(X),3);
+    U = zeros(length(X),3,imClass);
+    V = zeros(length(X),3,imClass);
+    C = zeros(length(X),3,imClass);
+    Dia = zeros(length(X),3,imClass);
 else
-    U = zeros(length(X),1);
-    V = zeros(length(X),1);
-    C = [];
-    Dia = [];
+    U = zeros(length(X),1,imClass);
+    V = zeros(length(X),1,imClass);
+    C = zeros(length(X),1,imClass);
+    Dia = zeros(length(X),1,imClass);
 end
 
 %sets up extended domain size
@@ -57,7 +58,7 @@ sfilt2 = windowmask([Sx Sy],[res(2, 1) res(2, 2)]);
 % keyboard
 
 %correlation plane normalization function (always off)
-cnorm = ones(Ny,Nx);
+cnorm = ones(Ny,Nx,imClass);
 % s1   = fftn(sfilt1,[Sy Sx]);
 % s2   = fftn(sfilt2,[Sy Sx]);
 % S21  = s2.*conj(s1);
@@ -93,7 +94,7 @@ else
 end
 
 if saveplane
-    Corrplanes=zeros(Sy,Sx,length(X));
+    Corrplanes=zeros(Sy,Sx,length(X),imClass);
 else
     Corrplanes = 0;
 end
@@ -104,7 +105,7 @@ switch upper(tcorr)
     case 'SCC'
         
         if size(im1,3) == 3
-            Gens=zeros(Sy,Sx,3);
+            Gens=zeros(Sy,Sx,3,imClass);
             for n=1:length(X)
                 
                 %apply the second order discrete window offset
@@ -240,10 +241,10 @@ switch upper(tcorr)
     case 'DCC'
         
         %initialize correlation tensor
-        CC = zeros(Sy,Sx,length(X));
+        CC = zeros(Sy,Sx,length(X),imClass);
         
         if size(im1,3) == 3
-            Gens=zeros(res(1,2)+res(2,2)-1,res(1,1)+res(2,1)-1,3);
+            Gens=zeros(res(1,2)+res(2,2)-1,res(1,1)+res(2,1)-1,3,imClass);
             for n=1:length(X)
                 
                 %apply the second order discrete window offset
@@ -390,7 +391,7 @@ switch upper(tcorr)
     case {'RPC','DRPC','GCC','FWC'}
         
         if size(im1,3) == 3
-            Gens=zeros(Sy,Sx,3);
+            Gens=zeros(Sy,Sx,3,imClass);
             for n=1:length(X)
                 
                 %apply the second order discrete window offset

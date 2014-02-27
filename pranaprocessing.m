@@ -1,4 +1,5 @@
 function pranaprocessing(Data,I1,I2,maskname)
+imClass = 'single';
 %% --- Read Formatted Parameters ---
 %input/output directory
 if ispc
@@ -220,24 +221,28 @@ end
 maskSize=size(mask);
 maskSize(3)=size(mask,3);
 [XI,YI]=IMgrid(maskSize,[0 0]);
+XI = cast(XI,imClass);
+YI = cast(YI,imClass);
 if strcmpi(Data.input_vel_type,'static')
     Vel0 = load(Data.input_velocity);
     
     %velocity smoothing
     if Velsmoothswitch(1)==1
         [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
+        U = cast(U,imClass);
+        V = cast(V,imClass);
         Vel0.U = VFinterp(Vel0.X,Vel0.Y,U,XI,YI,Velinterp);
         Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
     else
-        Vel0.U = VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp);
-        Vel0.V = VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp);
+        Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),'single');
+        Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),'single');
     end
     VelInputFile = 1;
 else
     Vel0.X = XI;
     Vel0.Y = YI;
-    Vel0.U = BWO(1)*ones(size(XI));
-    Vel0.V = BWO(2)*ones(size(XI));
+    Vel0.U = BWO(1)*ones(size(XI),imClass);
+    Vel0.V = BWO(2)*ones(size(XI),imClass);
     VelInputFile = 0;
 end
 wbase_org=wbase;
@@ -256,13 +261,13 @@ switch char(M)
             %load image pair and flip coordinates
             if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                 loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
-                im1 = loaddata.I;
+                im1 = cast(loaddata.I,imClass);
                 loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
-                im2 = loaddata.I;
+                im2 = cast(loaddata.I,imClass);
                 loaddata =[];
             else
-                im1 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-                im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                im1 = cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
+                im2 = cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
             end
             
             % Specify which color channel(s) to consider
@@ -319,15 +324,17 @@ switch char(M)
             
             % load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = cast(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]),imClass);
                 mask = flipud(mask);
             end
 
             % initialize grid and evaluation matrix for every pixel in image
             [XI,YI]=IMgrid(imageSize,[0 0]);
+            XI = cast(XI,imClass);
+            YI = cast(YI,imClass);
 
-            UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(YI));
+            UI = BWO(1)*ones(size(XI),imClass);
+            VI = BWO(2)*ones(size(YI),imClass);
             
             % Preallocating variables
             corrtime=zeros(P,max(maxdefloop));
@@ -379,7 +386,7 @@ switch char(M)
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
                         %[Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
-                        Dc = zeros(size(Cc));
+                        Dc = zeros(size(Cc),imClass);
  
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
@@ -393,7 +400,7 @@ switch char(M)
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        Dc = zeros(size(Cc));
+                        Dc = zeros(size(Cc),imClass);
                     end
                 end
 
@@ -402,29 +409,29 @@ switch char(M)
                 %over all grid points X,Y.  
                 if ~strcmpi(Corr{e},'SPC') %was not SPC=4
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                        U=zeros(size(X,1),3);
-                        V=zeros(size(X,1),3);
+                        U=zeros(size(X,1),3,imClass);
+                        V=zeros(size(X,1),3,imClass);
                         U(repmat(Eval>=0,[1 3]))=Uc;V(repmat(Eval>=0,[1 3]))=Vc;
-                        C=zeros(size(X,1),3);
-                        Di=zeros(size(X,1),3);
+                        C=zeros(size(X,1),3,imClass);
+                        Di=zeros(size(X,1),3,imClass);
                         C(repmat(Eval>=0,[1 3]))=Cc;
                         Di(repmat(Eval>=0,[1 3]))=Dc;
                     else
-                        U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
+                        U=zeros(size(X),imClass);V=zeros(size(X),imClass);C=zeros(size(X),imClass);Di=zeros(size(X),imClass);
                         U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     end
                 else %Corr was SPC=4
-                    U=zeros(size(X));V=zeros(size(X));
+                    U=zeros(size(X),imClass);V=zeros(size(X),imClass);
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     if Peakswitch(e)
-                        C=zeros(size(X,1),3);
-                        Di=zeros(size(X,1),3);
+                        C=zeros(size(X,1),3,imClass);
+                        Di=zeros(size(X,1),3,imClass);
                         C(repmat(Eval>=0,[1 3]))=Cc;
                         Di(repmat(Eval>=0,[1 3]))=Dc;
                         
                     else 
-                        C=[];
-                        Di=[];
+                        C=zeros(size(X),imClass);
+                        Di=zeros(size(X),imClass);
                     end
                 end
                 
@@ -634,8 +641,8 @@ switch char(M)
                             YD2 = YI+VI/2;
 
                             % Preallocate memory for deformed images.
-                            im1d = zeros(size(im1));
-                            im2d = zeros(size(im2));
+                            im1d = zeros(size(im1),imClass);
+                            im2d = zeros(size(im2),imClass);
                             
                             % Deform images according to the interpolated velocity fields
                             for k = 1:nChannels % Loop over all of the color channels in the image
@@ -710,10 +717,10 @@ switch char(M)
         %initialize grid and evaluation matrix
         if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
             loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]);
-            im1 = loaddata.I;
+            im1 = cast(loaddata.I,imClass);
             loaddata =[];
         else
-            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+            im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]),imClass);
         end
         imageSize=size(im1);
         imageSize(3)=size(im1,3);
@@ -752,15 +759,16 @@ switch char(M)
             Eval(Eval>0)=0;
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                U=zeros(size(X,1),3);
-                V=zeros(size(X,1),3);
-                C=zeros(size(X,1),3);
-                Di=zeros(size(X,1),3);
-                DX=zeros(size(X,1),3);
-                DY=zeros(size(X,1),3);
-                ALPHA=zeros(size(X,1),3);
+                U=zeros(size(X,1),3,imClass);
+                V=zeros(size(X,1),3,imClass);
+                C=zeros(size(X,1),3,imClass);
+                Di=zeros(size(X,1),3,imClass);
+                DX=zeros(size(X,1),3,imClass);
+                DY=zeros(size(X,1),3,imClass);
+                ALPHA=zeros(size(X,1),3,imClass);
             else
-                U=zeros(size(X));V=zeros(size(X));C=[];Di=[];DX=[];DY=[];ALPHA=[];
+                U=zeros(size(X),imClass);V=zeros(size(X),imClass);C=zeros(size(X),imClass);Di=zeros(size(X),imClass);
+                DX=zeros(size(X),imClass);DY=zeros(size(X),imClass);ALPHA=zeros(size(X),imClass);
             end
 
             if str2double(Data.par) && matlabpool('size')>1
@@ -780,13 +788,13 @@ switch char(M)
                         %load image pair and flip coordinates
                         if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                             loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]);
-                            im1 = loaddata.I;
+                            im1 = cast(loaddata.I,imClass);
                             loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
-                            im2 = loaddata.I;
+                            im2 = cast(loaddata.I,imClass);
                             loaddata =[];
                         else
-                            im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
-                            im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
+                            im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]),imClass);
+                            im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]),imClass);
                         end
                         
                         if size(im1, 3) > 2
@@ -849,8 +857,8 @@ switch char(M)
                             YD2 = YI+VI/2;
                             
                             % Preallocate memory for deformed images.
-                            im1d = zeros(size(im1));
-                            im2d = zeros(size(im2));
+                            im1d = zeros(size(im1),imClass);
+                            im2d = zeros(size(im2),imClass);
                             
                             % Deform images according to the interpolated 
                             % velocity fields. Each color channel is 
@@ -906,7 +914,7 @@ switch char(M)
                     end
                 end
 %                 if Corr(e)<4 %SCC or RPC processor
-                CCm=zeros(size(CCmdist{1}));
+                CCm=zeros(size(CCmdist{1}),imClass);
                 for i=1:length(CCmdist)
                     CCm=CCm+CCmdist{i}/length(I1);
                 end
@@ -930,13 +938,13 @@ switch char(M)
                     %load image pair and flip coordinates
                     if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                         loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
-                        im1 = loaddata.I;
+                        im1 = cast(loaddata.I,imClass);
                         loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
-                        im2 = loaddata.I;
+                        im2 = cast(loaddata.I,imClass);
                         loaddata =[];
                     else
-                        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                        im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
+                        im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
                     end
                     
                     if size(im1, 3) > 2
@@ -992,8 +1000,8 @@ switch char(M)
                         YD2 = YI+VI/2;
                         
                         % Preallocate memory for deformed images.
-                        im1d = zeros(size(im1));
-                        im2d = zeros(size(im2));
+                        im1d = zeros(size(im1),imClass);
+                        im2d = zeros(size(im2),imClass);
                             
                         % Deform images according to the interpolated velocity fields. Each color
                         % channel is deformed separately. They could have been done all together
@@ -1055,7 +1063,7 @@ switch char(M)
             end
 
             Z=[size(CCm,1), size(CCm,2),length(X(Eval>=0))];
-            cnorm=ones(Z(1),Z(2));
+            cnorm=ones(Z(1),Z(2),imClass);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %{
             %fftshift indicies
@@ -1078,18 +1086,19 @@ switch char(M)
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                Uc=zeros(Z(3),3);
-                Vc=zeros(Z(3),3);
-                Cc=zeros(Z(3),3);
-                Dc=zeros(Z(3),3);
-                DXc=zeros(Z(3),3);
-                DYc=zeros(Z(3),3);
-                ALPHAc=zeros(Z(3),3);
+                Uc=zeros(Z(3),3,imClass);
+                Vc=zeros(Z(3),3,imClass);
+                Cc=zeros(Z(3),3,imClass);
+                Dc=zeros(Z(3),3,imClass);
+                DXc=zeros(Z(3),3,imClass);
+                DYc=zeros(Z(3),3,imClass);
+                ALPHAc=zeros(Z(3),3,imClass);
                 Ub=repmat(Ub,[1 3]);
                 Vb=repmat(Vb,[1 3]);
                 Eval=repmat(Eval,[1 3]);
             else
-                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];DXc=[];DYc=[];ALPHAc=[];
+                Uc=zeros(Z(3),1,imClass);Vc=zeros(Z(3),1,imClass);Cc=zeros(Z(3),1,imClass);Dc=zeros(Z(3),1,imClass);
+                DXc=zeros(Z(3),1,imClass);DYc=zeros(Z(3),1,imClass);ALPHAc=zeros(Z(3),1,imClass);
 
             end
 
@@ -1384,7 +1393,7 @@ switch char(M)
             
             %load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = cast(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]),imClass);
                 mask = flipud(mask);
             end
             
@@ -1398,10 +1407,10 @@ switch char(M)
             else
                 N=Nmax+1;
             end
-            im1=zeros(size(mask,1),size(mask,2),N); im2=im1;Dt=zeros(N,1);
+            im1=zeros(size(mask,1),size(mask,2),N,imClass); im2=im1;Dt=zeros(N,1,imClass);
             for n=1:N
-                im1_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]));
-                im2_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
+                im1_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]),imClass);
+                im2_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]),imClass);
                 im1(:,:,n)=flipud(im1_temp(:,:,1));
                 im2(:,:,n)=flipud(im2_temp(:,:,1));
 %                 if Zeromean(e)==1
@@ -1418,8 +1427,8 @@ switch char(M)
             %initialize grid and evaluation matrix
             [XI,YI]=IMgrid(imageSize,[0 0]);
 
-            UI = zeros(size(XI));
-            VI = zeros(size(YI));
+            UI = zeros(size(XI),imClass);
+            VI = zeros(size(YI),imClass);
 
             for e=1:P
                 t1=tic;
@@ -1427,22 +1436,22 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
 
                 if ~strcmpi(Corr{e},'SPC')
-                    U=zeros(size(X,1),3,N);
-                    V=zeros(size(X,1),3,N);
-                    C=zeros(size(X,1),3,N);
-                    Di=zeros(size(X,1),3,N);
-                    Cp=zeros(Wsize(e,1),Wsize(e,2),size(X,1),N);
-                    Uval=zeros(size(X,1),3);
-                    Vval=zeros(size(X,1),3);
-                    Cval=zeros(size(X,1),3);
-                    Dval=zeros(size(X,1),3);
+                    U=zeros(size(X,1),3,N,imClass);
+                    V=zeros(size(X,1),3,N,imClass);
+                    C=zeros(size(X,1),3,N,imClass);
+                    Di=zeros(size(X,1),3,N,imClass);
+                    Cp=zeros(Wsize(e,1),Wsize(e,2),size(X,1),N,imClass);
+                    Uval=zeros(size(X,1),3,imClass);
+                    Vval=zeros(size(X,1),3,imClass);
+                    Cval=zeros(size(X,1),3,imClass);
+                    Dval=zeros(size(X,1),3,imClass);
                     Eval=repmat(reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1),[1 3]);
                     Eval(Eval==0)=-1;
                     Eval(Eval>0)=0;
-                    Uc=zeros(sum(Eval(:,1)>=0),3,N);
-                    Vc=zeros(sum(Eval(:,1)>=0),3,N);
-                    Cc=zeros(sum(Eval(:,1)>=0),3,N);
-                    Dc=zeros(sum(Eval(:,1)>=0),3,N);
+                    Uc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    Vc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    Cc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    Dc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
                     
                     for t=1:N
                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
@@ -1488,10 +1497,10 @@ switch char(M)
 %                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:), Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
-                        C=zeros(length(X),3);
-                        Di=zeros(length(X),3);
+                        C=zeros(length(X),3,imClass);
+                        Di=zeros(length(X),3,imClass);
                         C(repmat(Eval,[1 3])>=0)=Cc;
-                        t_opt=zeros(size(X));
+                        t_opt=zeros(size(X),imClass);
                         t_opt(Eval>=0)=t_optc;
                     else
                         C=[];t_opt=[];Di=[];

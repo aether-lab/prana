@@ -6,13 +6,14 @@ else
     j=1;
 end
 
+imClass = 'single';
 
 if exist('DX','var')
     [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
 else
-    DX    = zeros(size(D));
-    DY    = zeros(size(D));
-    ALPHA = zeros(size(D));
+    DX    = zeros(size(D),imClass);
+    DY    = zeros(size(D),imClass);
+    ALPHA = zeros(size(D),imClass);
 end
 
 [X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);

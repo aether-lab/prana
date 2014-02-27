@@ -1,5 +1,8 @@
-function [X,Y]=IMgrid(L,S,G)
+function [X,Y]=IMgrid(L,S,G,imClass)
 % --- Grid Generation Subfunction ---
+if nargin<4
+    imClass = 'single';
+end
 
 %grid buffer
 if nargin<3
@@ -32,8 +35,8 @@ else
 end
 
 %vector2matrix conversion
-X=x(ones(length(y),1),:);
-Y=y(:,ones(1,length(x)));
+X=cast(x(ones(length(y),1),:),imClass);
+Y=cast(y(:,ones(1,length(x))),imClass);
 
 
 end
