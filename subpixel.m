@@ -223,17 +223,17 @@ else
                     % % disp(output.message)
                     % fprintf('\n')
                     
-                    %check if search region (+/-D1,D2) was large enough ...
-                    %our criterion is if the measured diameter was less than 
-                    %2x the search window (2D1,2D2), ie 4*D1,D2
-                    if dX > 4*D1
-                        D1 = 2*D1;      %make DX bigger
-                        goodSize = 0;   %window wasn't big enough, do it again
-                    end
-                    if dY > 4*D2
-                        D2 = 2*D2; %make DY bigger
-                        goodSize = 0;   %window wasn't big enough, do it again
-                    end
+%                     %check if search region (+/-D1,D2) was large enough ...
+%                     %our criterion is if the measured diameter was less than 
+%                     %2x the search window (2D1,2D2), ie 4*D1,D2
+%                     if dX > 4*D1
+%                         D1 = 2*D1;      %make DX bigger
+%                         goodSize = 0;   %window wasn't big enough, do it again
+%                     end
+%                     if dY > 4*D2
+%                         D2 = 2*D2; %make DY bigger
+%                         goodSize = 0;   %window wasn't big enough, do it again
+%                     end
                     
                 catch err%#ok
                     %warning(err.message)
