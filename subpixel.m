@@ -150,7 +150,7 @@ else
             goodSize = 0;  %gets set =1 after fit, but reset to 0 if betaX or betaY are bigger than 2*D1 or 2*D2
             
             %keep trying while method not 1 (G.3pt.fit), and the search diameter (2x expected diam.) is less than half the window size
-            while ~goodSize && method~=1 && 2*D1<ccsizex/2 && 2*D2<ccsizey/2
+            while ~goodSize && method~=1
                 %Find a suitable window around the peak (+/- D1,D2)
                 x_min=shift_locx-ceil(D1); x_max=shift_locx+ceil(D1);
                 y_min=shift_locy-ceil(D2); y_max=shift_locy+ceil(D2);
@@ -185,7 +185,8 @@ else
 %                 UB = [inf inf inf x_max y_max  inf];
 
                 %Initial values for the solver (have to convert D into Beta)
-                x0=[M(i) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
+                %x0 must be double for lsqnonlin, so convert M
+                x0=[double(M(i)) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
 
                 [xloc, yloc]=meshgrid(x_min:x_max,y_min:y_max);
 
@@ -234,6 +235,14 @@ else
 %                         D2 = 2*D2; %make DY bigger
 %                         goodSize = 0;   %window wasn't big enough, do it again
 %                     end
+
+                      %if D1 or D2 are already too big, just quit - it's
+                      %the best we're going to do.
+                      %Have to check in loop, if check at while statement,
+                      %might never size it at all.
+                      if 2*D1<ccsizex/2 && 2*D2<ccsizey/2
+                          goodSize = 1;
+                      end
                     
                 catch err%#ok
                     %warning(err.message)
@@ -288,7 +297,6 @@ else
             %ALPHA(i) = 0;  %initialized to 0 anyway
             
         end
-        
         u(i)=cc_x(shift_locx)+shift_errx;
         v(i)=cc_y(shift_locy)+shift_erry;
         
