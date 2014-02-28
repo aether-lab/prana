@@ -166,7 +166,7 @@ else
                 if y_max>ccsizey
                     y_max=ccsizey;
                 end
-                points=G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max);
+                points=double(G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max));
 
                 %Options for the lsqnonlin solver using Levenberg-Marquardt solver
                 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
@@ -246,6 +246,8 @@ else
                     
                 catch err%#ok
                     %warning(err.message)
+                    disp(err.message)
+                    %keyboard
                     method=1;
                 end
             end %while trying to fit region
