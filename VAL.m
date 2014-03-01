@@ -1,4 +1,4 @@
-function [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,D,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax)
+function [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,D,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax,DX,DY,ALPHA)
 % --- Validation Subfunction ---
 if extrapeaks
     j=3;
@@ -6,7 +6,19 @@ else
     j=1;
 end
 
+imClass = 'single';
+
+if exist('DX','var')
+    [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
+else
+    DX    = zeros(size(D),imClass);
+    DY    = zeros(size(D),imClass);
+    ALPHA = zeros(size(D),imClass);
+end
+
 [X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
+
+
 Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
 if ~isempty(C)
     Cval=C(:,:,1);
@@ -15,6 +27,13 @@ else
     Cval=[];
     Dval= [];
 end
+
+    DXval    = DX(:,:,1);
+    DYval    = DY(:,:,1);
+    ALPHAval = ALPHA(:,:,1);
+    
+    
+    
 S=size(X);
 
 if Threshswitch || UODswitch
@@ -34,11 +53,16 @@ if Threshswitch || UODswitch
         %Try additional peaks where validation failed
         if i<j
             Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);Dtemp=D(:,:,i+1);
+            DXtemp=DX(:,:,i+1);DYtemp=DY(:,:,i+1);ALPHAtemp=ALPHA(:,:,i+1);
             Uval(Evalval>0)=Utemp(Evalval>0);
             Vval(Evalval>0)=Vtemp(Evalval>0);
             Cval(Evalval>0)=Ctemp(Evalval>0);
             Dval(Evalval>0)=Dtemp(Evalval>0); 
             Evalval(Evalval>0)=Evaltemp(Evalval>0);
+            
+            DXval(Evalval>0)=DXtemp(Evalval>0); 
+            DYval(Evalval>0)=DYtemp(Evalval>0); 
+            ALPHAval(Evalval>0)=ALPHAtemp(Evalval>0); 
         end
     end
 end
@@ -95,5 +119,6 @@ end
 
 %convert back to vector
 [Uval,Vval,Evalval,Cval,Dval]=vectorform(X,Y,Uval,Vval,Evalval,Cval,Dval);
+[DXval,DYval,ALPHAval]=vectorform(X,Y,DXval,DYval,ALPHAval,[],[]);
 
 end

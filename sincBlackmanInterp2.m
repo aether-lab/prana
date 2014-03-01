@@ -24,6 +24,9 @@ if nargin < 5
     METHOD = 'blackman';
 end
 
+%find type of Z so we can make the output match
+Zclass = class(Z);
+
 % Image height (number of rows) and width (number of columns)
 [height width] = size(Z);
 
@@ -180,8 +183,7 @@ clear sourceRows sourceColumns
 % evaluated at each pixel. Doing this as an array operation is faster than
 % doing it in a loop because it takes a long time to loop over a million
 % goddamn pixels. 
-% Zinterp = uint8( sum( Weights .* single(sourcePixels) , 2 ) );
-Zinterp = single( sum( Weights .* single(sourcePixels) , 2 ) );
+Zinterp = cast( sum( Weights .* single(sourcePixels) , 2 ) , Zclass );
 
 % Clear a variable to save space
 clear sourcePixels

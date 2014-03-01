@@ -6,14 +6,16 @@ a=sort(unique(x));
 b=sort(unique(y));
 N=length(x(:));
 
+imClass = 'single';
+
 %initialize vectors
 S=size(x(:));
-u    = zeros(S);
-v    = zeros(S);
-eval = zeros(S);
+u    = zeros(S,imClass);
+v    = zeros(S,imClass);
+eval = zeros(S,imClass);
 if ~isempty(C)
-    c = zeros(S);
-    d = zeros(S);
+    c = zeros(S,imClass);
+    d = zeros(S,imClass);
 else
     c = [];
     d = [];

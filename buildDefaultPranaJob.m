@@ -49,6 +49,9 @@ defaultdata.exp_ROI='';
 defaultdata.exp_diffractiondiameter='';
 defaultdata.exp_depthoffocus='';
 
+defaultdata.input_vel_type = 'none';
+defaultdata.input_velocity = '';
+
 defaultdata.masktype='none';
 defaultdata.staticmaskname='';
 defaultdata.maskbase='maskfor_Img_';
