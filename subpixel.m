@@ -1,4 +1,4 @@
-function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
+function [u,v,M,D,DX,DY,ALPHA]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
 %intialize indices
 cc_x = -floor(ccsizex/2):ceil(ccsizex/2)-1;
 cc_y = -floor(ccsizey/2):ceil(ccsizey/2)-1;
@@ -16,14 +16,23 @@ if M==0
         v=zeros(1,3);
         M=zeros(1,3);
         D=zeros(1,3);
+        DX=zeros(1,3);
+        DY=zeros(1,3);
+        ALPHA=zeros(1,3);
+
     else
         u=0; v=0; M=0; D=0; 
+        DX=0; DY=0;ALPHA=0;
     end
 else
     if Peakswitch
         u=zeros(1,3);
         v=zeros(1,3);
         D=zeros(1,3);
+        DX=zeros(1,3);
+        DY=zeros(1,3);
+        ALPHA=zeros(1,3);
+        
         %Locate peaks using imregionalmax
         A=imregionalmax(G);
         peakmat=G.*A;
@@ -36,6 +45,8 @@ else
         u=zeros(1,1);
         v=zeros(1,1);
         D=zeros(1,1);
+        DX=0; DY=0; ALPHA=0;
+
         j=1;    
     end
     
@@ -159,10 +170,10 @@ else
                 end
                 points=G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max);
 
-                %Options for the lsqnonlin solver using Levenberg-Marquardt solver
-                options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
-                    'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
-                    'Algorithm','levenberg-marquardt');
+%                 %Options for the lsqnonlin solver using Levenberg-Marquardt solver
+%                 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
+%                     'Display','off','DiffMinChange',1e-7,'DiffMaxChange',1,...
+%                     'Algorithm','levenberg-marquardt');
                 %xvars is [M,betaX,betaY,CX,CY,alpha]
                 LB = [];
                 UB = [];
@@ -222,6 +233,11 @@ else
                         goodSize = 0;   %window wasn't big enough, do it again
                     end
                     
+                    DX(i) = dX;
+                    DY(i) = dY;
+                    ALPHA(i) = alpha;
+                    
+                    
                 catch err%#ok
                     %warning(err.message)
                     method=1;
@@ -270,6 +286,10 @@ else
             D(i) = nanmean([Dx Dy]);
         end
         
+        DX(i) = Dx;
+        DY(i) = Dy;
+        ALPHA(i) = 0;
+
         u(i)=cc_x(shift_locx)+shift_errx;
         v(i)=cc_y(shift_locy)+shift_erry;
         
