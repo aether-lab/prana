@@ -10,13 +10,14 @@ imClass = 'single';
 
 if exist('DX','var')
     [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
+    [X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
 else
+    [X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
     DX    = zeros(size(D),imClass);
     DY    = zeros(size(D),imClass);
     ALPHA = zeros(size(D),imClass);
 end
 
-[X,Y,U,V,Eval,C,D]=matrixform(X,Y,U,V,Eval,C,D);
 
 
 Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
