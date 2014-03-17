@@ -221,8 +221,19 @@ end
 maskSize=size(mask);
 maskSize(3)=size(mask,3);
 [XI,YI]=IMgrid(maskSize,[0 0]);
-XI = cast(XI,imClass);
-YI = cast(YI,imClass);
+%cast the pixel coordinates to imClass for reduced memory
+%index-based pixel coordinates are integers on center, but we need XI and YI to
+%correspond to vector locations, which are centered on pixel edges for even sized
+%windows.  This means the center of pixel index 1 is actually at coordinate
+%0.5 from image edge, etc.
+% We need to do this because the vector positions we will use
+% for interpolation and deformation will be on the physical
+% grid, but will will need to know where the pixels are located
+% relative to them, not their indices.
+%BUT they are pixel centered for ODD sized windows.  (FIX) but
+%for now will ignore since even windows are more common.
+XI = cast(XI,imClass) - 0.5;
+YI = cast(YI,imClass) - 0.5;
 if strcmpi(Data.input_vel_type,'static')
     Vel0 = load(Data.input_velocity);
     
@@ -231,9 +242,19 @@ if strcmpi(Data.input_vel_type,'static')
         [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
         U = cast(U,imClass);
         V = cast(V,imClass);
+        %when interpolating, assume saved coordinate system consistent with
+        %vector locations (i.e. they are in vector grid positions, not
+        %pixel-centered)
+        
+        %resample U, V and W from vector grid coordinates
+        %V(X,Y,Z) onto UI,VI, and WI on pixel coordinates
+        %[XI,YI] where XI and YI are a list of every
+        %pixel centers in the image plane. Velinterp is the type of
+        %interpolation to use.
         Vel0.U = VFinterp(Vel0.X,Vel0.Y,U,XI,YI,Velinterp);
         Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
     else
+        %see above note about coordinate systems
         Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),'single');
         Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),'single');
     end
@@ -329,6 +350,17 @@ switch char(M)
             end
 
             % initialize grid and evaluation matrix for every pixel in image
+            %cast the pixel coordinates to imClass for reduced memory
+            %index-based pixel coordinates are integers on center, but we need XI and YI to
+            %correspond to vector locations, which are centered on pixel edges for even sized
+            %windows.  This means the center of pixel index 1 is actually at coordinate
+            %0.5 from image edge, etc.
+            % We need to do this because the vector positions we will use
+            % for interpolation and deformation will be on the physical
+            % grid, but will will need to know where the pixels are located
+            % relative to them, not their indices.
+            %BUT they are pixel centered for ODD sized windows.  (FIX) but
+            %for now will ignore since even windows are more common.
             [XI,YI]=IMgrid(imageSize,[0 0]);
             XI = cast(XI,imClass);
             YI = cast(YI,imClass);
@@ -589,6 +621,8 @@ switch char(M)
                     
                     savetime(e,defloop)=toc(t1);
                 end
+                
+                %reset any changes or scaling back to pixels
                 U=Uval; V=Vval;
 
                 %If it isn't the lass pass, or the last pass hasn't
@@ -617,6 +651,9 @@ switch char(M)
                         %VI(XI,YI) where XI and YI are a list of every
                         %pixel in the image plane. Velinterp is the type of
                         %interpolation to use.
+                        % We have previously made sure XI and YI correspond
+                        % to the vector positions of the pixel centers by
+                        % shifting by -0.5.
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
@@ -634,11 +671,15 @@ switch char(M)
                         if strcmp(M,'Deform')
                             t1=tic;
                             
-                            % translate pixel locations
-                            XD1 = XI-UI/2;
-                            YD1 = YI-VI/2;
-                            XD2 = XI+UI/2;
-                            YD2 = YI+VI/2;
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            XD1 = XI-UI/2 +0.5;
+                            YD1 = YI-VI/2 +0.5;
+                            XD2 = XI+UI/2 +0.5;
+                            YD2 = YI+VI/2 +0.5;
 
                             % Preallocate memory for deformed images.
                             im1d = zeros(size(im1),imClass);
@@ -725,6 +766,18 @@ switch char(M)
         imageSize=size(im1);
         imageSize(3)=size(im1,3);
         [XI,YI]=IMgrid(imageSize,[0 0]);
+        %index-based pixel coordinates are integers on center, but we need XI and YI to
+        %correspond to vector locations, which are centered on pixel edges for even sized
+        %windows.  This means the center of pixel index 1 is actually at coordinate
+        %0.5 from image edge, etc.
+        % We need to do this because the vector positions we will use
+        % for interpolation and deformation will be on the physical
+        % grid, but will will need to know where the pixels are located
+        % relative to them, not their indices.
+        %BUT they are pixel centered for ODD sized windows.  (FIX) but
+        %for now will ignore since even windows are more common.
+        XI = XI - 0.5;
+        YI = YI - 0.5;
         UI = Vel0.U;
         VI = Vel0.V;
         %UI = BWO(1)*ones(size(XI));
@@ -845,16 +898,22 @@ switch char(M)
                         % L=size(im1);
                         
                         % The deformation for ensemble must be done before
-                        % the correlation unlike in the instantanious
+                        % the correlation unlike in the instantaneous
                         % images where it is done after correlation
                         if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                             
                             t1=tic;
-                            %translate pixel locations
-                            XD1 = XI-UI/2;
-                            YD1 = YI-VI/2;
-                            XD2 = XI+UI/2;
-                            YD2 = YI+VI/2;
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            % Here this seems to be redundant ... Where is
+                            % VFInterp called?
+                            XD1 = XI-UI/2 + 0.5;
+                            YD1 = YI-VI/2 + 0.5;
+                            XD2 = XI+UI/2 + 0.5;
+                            YD2 = YI+VI/2 + 0.5;
                             
                             % Preallocate memory for deformed images.
                             im1d = zeros(size(im1),imClass);
@@ -931,7 +990,7 @@ switch char(M)
 %                         ind=ind+size(CCmdist{i},4);
 %                     end
 %                 end
-            else
+            else %Not running in parallel
                 
                 for q=1:length(I1)
 
@@ -993,11 +1052,17 @@ switch char(M)
                     if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                         t1=tic;
 
-                        %translate pixel locations
-                        XD1 = XI-UI/2;
-                        YD1 = YI-VI/2;
-                        XD2 = XI+UI/2;
-                        YD2 = YI+VI/2;
+                        % translate pixel locations, but
+                        % since sincBlackmanInterp2 assumes
+                        % coordinate system is pixel-centered, we need
+                        % to convert back to index-coordinates for the
+                        % deform.
+                        % Here this seems to be redundant ... Where is
+                        % VFInterp called?
+                        XD1 = XI-UI/2 + 0.5;
+                        YD1 = YI-VI/2 + 0.5;
+                        XD2 = XI+UI/2 + 0.5;
+                        YD2 = YI+VI/2 + 0.5;
                         
                         % Preallocate memory for deformed images.
                         im1d = zeros(size(im1),imClass);
@@ -1334,6 +1399,12 @@ switch char(M)
                 end
 
                 %velocity interpolation
+                %resample U, V and W from vector grid coordinates
+                %V(X,Y,Z) onto UI,VI, and WI on pixel coordinates
+                %[XI,YI] where XI and YI are a list of every
+                %pixel centers in the image plane. We adjusted XI and YI
+                %previously.
+                %Velinterp is the type of interpolation to use.
                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
@@ -1424,8 +1495,20 @@ switch char(M)
             end
             imageSize=size(im1);
 
-            %initialize grid and evaluation matrix
+            % initialize grid and evaluation matrix for every pixel in image
             [XI,YI]=IMgrid(imageSize,[0 0]);
+            %index-based pixel coordinates are integers on center, but we need XI and YI to
+            %correspond to vector locations, which are centered on pixel edges for even sized
+            %windows.  This means the center of pixel index 1 is actually at coordinate
+            %0.5 from image edge, etc.
+            % We need to do this because the vector positions we will use
+            % for interpolation and deformation will be on the physical
+            % grid, but will will need to know where the pixels are located
+            % relative to them, not their indices.
+            %BUT they are pixel centered for ODD sized windows.  (FIX) but
+            %for now will ignore since even windows are more common.
+            XI = XI - 0.5;
+            YI = YI - 0.5;
 
             UI = zeros(size(XI),imClass);
             VI = zeros(size(YI),imClass);
@@ -1601,7 +1684,14 @@ switch char(M)
                         [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                     end
                     
-                    %velocity interpolation
+                    %velocity interpolation -
+                    %resample U(X,Y) and V(X,Y) onto UI(XI,YI) and
+                    %VI(XI,YI) where XI and YI are a list of every
+                    %pixel in the image plane. Velinterp is the type of
+                    %interpolation to use.
+                    % We have previously made sure XI and YI correspond
+                    % to the vector positions of the pixel centers by
+                    % shifting by -0.5.
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
