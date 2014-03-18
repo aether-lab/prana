@@ -34,7 +34,7 @@ end
 
 %method and passes
 P = str2double(Data.passes);
-Method = {'Multipass','Multigrid','Deform','Ensemble','EDeform','Multiframe'};
+Method = {'Multipass','Multigrid','Deform','Ensemble','EDeform','Multiframe','FowardDeform'};
 M = Method(str2double(Data.method));
 % Color channel
 try
@@ -271,7 +271,7 @@ wbase_org=wbase;
 %% --- Evaluate Image Sequence ---
 switch char(M)
     
-    case {'Multipass','Multigrid','Deform'}
+    case {'Multipass','Multigrid','Deform','FowardDeform'}
         %% --- Multipass, Multigrid, Deform
         frametime=zeros(length(I1),1);
         for q=1:length(I1)
@@ -392,9 +392,13 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
                 
                 if strcmp(M,'Multipass')
+                    %UI and VI are already only defined on the grid points,
+                    %which are the same at every iteration
                     Ub=UI(:);
                     Vb=VI(:);
                 else
+                    %resample UI(XI,YI) and VI at every pixel down to just
+                    %the subset of interrogation points defined by Gres(e,:)
                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 end
@@ -403,17 +407,142 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                if (e~=1 || defloop~=1) && strcmp(M,'Deform')         %then don't offset windows, images already deformed
+                if (e~=1 || defloop~=1) && regexpi(M,'Deform','once')         %then don't offset windows, images already deformed
                     %if Corr(e)<4
                     if ~strcmpi(Corr{e},'SPC')
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
-                        if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                            Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   %reincorporate deformation as velocity for next pass
+                        if strcmpi(M,'FowardDeform')
+                            % use coordinate system for deformed second
+                            % frame to estimate deformation tensor and
+                            % transform of subpixel corrector at t0 to
+                            % deformed direction at t1.
+                            
+%                             %OPTION 1: 
+%                             % use the local deformation field in XD2 and  
+%                             % YD2 to estimate using central differences the 
+%                             % local strain rate tensor and use that to 
+%                             % transform Uc and Vc @ t0 to t1.
+%                             %Question: what grid should the derivatives be
+%                             % calculated over - at the pixel level, or the
+%                             % vector level?
+%                             
+%                             % Need to figure out which XD2 and YD2, defined
+%                             % over every pixel, correspond to the subset
+%                             % embodied by Xc and Yc.  Don't forget to
+%                             % make sure both use either pixel or grid
+%                             % coordinate systems, not mixed!
+%                             
+%                             %loop over something similar to this for all
+%                             %vectors positions Xc and Yc:
+%                             
+%                             %could substitute XD1 for XI here?
+%                             Rest = [ (XD2(1,2)-XD2(1,1))/(XI(1,2)-XI(1,1)) , (XD2(2,1)-XD2(1,1))/(YI(2,1)-YI(1,1)) ; ...
+%                                      (YD2(1,2)-YD2(1,1))/(XI(1,2)-XI(1,1)) , (YD2(2,1)-YD2(1,1))/(YI(2,1)-YI(1,1)) ];
+%                             
+%                             %this assumes Uc and Vc are column vectors
+%                             UcVc = Rest*[Uc.';Vc.'];
+%                             Uc = UcVc(1,:).';
+%                             Vc = UcVc(2,:).';
+                            
+                            
+                        %elseif strcmpi(M,'FowardDeformInterp')
+                            % use coordinate system for deformed second
+                            % frame to estimate deformation tensor and
+                            % transform of subpixel corrector at t0 to
+                            % deformed direction at t1.
+                            
+                            %OPTION 2: 
+                            % use interpolation to predict where a point
+                            % shifted by (Uc,Vc) in (XD1,YD1) would fall in
+                            % a deformed (XD2,YD2) system
+                            
+                            %first, figure out where vector centers are in (XD2,YD2)
+                            XDc = interp2(XI,YI,XD2,Xc,Yc,'linear');
+                            YDc = interp2(XI,YI,YD2,Xc,Yc,'linear');
+                            %if shift takes us outside image domain, just
+                            %return a NaN, we don't know where that point
+                            %will go
+                            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                                %there will be 3 velocity fields in Uc and Vc, so repmat vector origins
+                                U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(XDc,[1,3]);
+                                V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(YDc,[1,3]);
+                            else
+                                %only 1 velocity field is returned, use origins directly
+                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - XDc;
+                                V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - YDc;
+                            end
+                            
+                            %if we have NaN values, we don't know how to
+                            %correct the shift, so just use the raw value.
+                            Uc(~isnan(U2)) = U2(~isnan(U2));
+                            Vc(~isnan(V2)) = V2(~isnan(V2));
+                            
+                            clear U2 V2
+                            
+                            %Not sure what do with central difference
+                            %deform correction yet - probably this section
+                            %needs to be moved down to right before the
+                            %deformation actually occurs?
+%                         elseif strcmpi(M,'Deform')
+%                             % use coordinate system for deformed 1st & 2nd
+%                             % frames to estimate deformation tensor and
+%                             % transform of subpixel corrector at t1/2 to
+%                             % deformed direction at t0 and t1.
+%                             
+%                             %OPTION 2: 
+%                             % use interpolation to predict where a point
+%                             % shifted by +/-(Uc/2,Vc/2) from (XI,YI) would fall in
+%                             % a deformed (XD1,YD1) and (XD2,YD2) systems
+%                             
+%                             %first, figure out where vector centers are in (XD2,YD2)
+%                             XDc1 = interp2(XI,YI,XD1,Xc,Yc,'linear');
+%                             YDc1 = interp2(XI,YI,YD1,Xc,Yc,'linear');
+%                             XDc2 = interp2(XI,YI,XD2,Xc,Yc,'linear');
+%                             YDc2 = interp2(XI,YI,YD2,Xc,Yc,'linear');
+%                             %if shift takes us outside image domain, just
+%                             %return a NaN, we don't know where that point
+%                             %will go
+%                             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+%                                 %there will be 3 velocity fields in Uc and Vc, so repmat vector origins
+%                                 U1 = interp2(XI,YI,XD1,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(XDc1,[1,3]);
+%                                 V1 = interp2(XI,YI,YD1,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(YDc1,[1,3]);
+%                                 U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(XDc2,[1,3]);
+%                                 V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(YDc2,[1,3]);
+%                             else
+%                                 %only 1 velocity field is returned, use origins directly
+%                                 U1 = interp2(XI,YI,YD1,Xc+Uc,Yc+Vc,'linear',NaN) - XDc1;
+%                                 V1 = interp2(XI,YI,YD1,Xc+Uc,Yc+Vc,'linear',NaN) - YDc1;
+%                                 U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - XDc2;
+%                                 V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - YDc2;
+%                             end
+%                             
+%                             %if we have NaN values, we don't know how to
+%                             %correct the shift, so just use the raw value.
+%                             U1(isnan(U1)) = Uc(isnan(U1));
+%                             V1(isnan(V1)) = Vc(isnan(V1));
+%                             U2(isnan(U2)) = Uc(isnan(U2));
+%                             V2(isnan(V2)) = Vc(isnan(V2));
+%                             
+%                             %clear U2 V2
+
+                        else
+                            %other methods just add bulk offset predictor
+                            %back to calculated subpixel corrector
+                            % do nothing to Uc and Vc
+                        end
+                        
+                        %reincorporate deformation as velocity for next pass
+                        if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))  
+                            %there will be 3 velocity fields in Uc an Vc, so repmat bulk offset
+                            Uc = Uc + repmat(Ub(Eval>=0),[1 3]);   
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
                         else
-                            Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
+                            %only 1 velocity field is returned, use bulk offset directly
+                            Uc = Uc + Ub(Eval>=0);   
                             Vc = Vc + Vb(Eval>=0);
                         end
+
+                        
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
@@ -424,7 +553,7 @@ switch char(M)
                         Vc = Vc + Vb(Eval>=0);
                     end
                     
-                else                                    %either first pass, or not deform
+                else  %either first pass, or not deform
                     if ~strcmpi(Corr{e},'SPC')
                         if any(isnan(Ub(Eval>=0)))
                             keyboard
@@ -629,7 +758,7 @@ switch char(M)
                 %converged yet for iterative deform, we need to prepare U
                 %and V from this pass for use as a predictor in the next
                 %pass
-                if e~=P || (strcmpi(M,'Deform') && defloop ~=1)
+                if e~=P || (regexpi(M,'Deform','once') && defloop ~=1)
                     %reshape from list of grid points to matrix
                     X=reshape(X,[S(1),S(2)]);
                     Y=reshape(Y,[S(1),S(2)]);
@@ -638,7 +767,7 @@ switch char(M)
                     
                     %Multigrid and Deform need to interpolate this pass's displacements
                     %onto a different grid
-                    if strcmp(M,'Multigrid') || strcmp(M,'Deform')
+                    if strcmpi(M,'Multigrid') || regexpi(M,'Deform','once')
                         t1=tic;
 
                         %velocity smoothing
@@ -668,7 +797,7 @@ switch char(M)
                         %for addition to the next pass's displacement.
                         %If not deform, then UI and VI just get downsampled
                         %next pass and used for DWO.
-                        if strcmp(M,'Deform')
+                        if strcmpi(M,'Deform')
                             t1=tic;
                             
                             % translate pixel locations, but
@@ -676,10 +805,14 @@ switch char(M)
                             % coordinate system is pixel-centered, we need
                             % to convert back to index-coordinates for the
                             % deform.
-                            XD1 = XI-UI/2 +0.5;
-                            YD1 = YI-VI/2 +0.5;
-                            XD2 = XI+UI/2 +0.5;
-                            YD2 = YI+VI/2 +0.5;
+                            %HOWEVER: we need to use these shifted
+                            %coordinates later in vector coordinates, so
+                            %move the -0.5 pixel correction to the call to
+                            %the sincBlackmanInterp2 function
+                            XD1 = XI-UI/2 ;
+                            YD1 = YI-VI/2;
+                            XD2 = XI+UI/2;
+                            YD2 = YI+VI/2;
 
                             % Preallocate memory for deformed images.
                             im1d = zeros(size(im1),imClass);
@@ -688,12 +821,12 @@ switch char(M)
                             % Deform images according to the interpolated velocity fields
                             for k = 1:nChannels % Loop over all of the color channels in the image
                                 if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'sinc');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'sinc');
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'sinc');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
 
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'blackman');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'blackman');
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'blackman');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
                                 end
                             end
                             
@@ -710,8 +843,54 @@ switch char(M)
                                 deformtime(e+1,defloop)=toc(t1);
                             else
                                 deformtime(e,defloop)=toc(t1);
-                            end                           
+                            end
+                        elseif strcmpi(M,'ForwardDeform') %only the 2nd image is deformed   
+                            t1=tic;
+                            
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            %HOWEVER: we need to use these shifted
+                            %coordinates later in vector coordinates, so
+                            %move the -0.5 pixel correction to the call to
+                            %the sincBlackmanInterp2 function
+                            XD1 = XI   ;
+                            YD1 = YI   ;
+                            XD2 = XI+UI;
+                            YD2 = YI+VI;
+
+                            % Preallocate memory for deformed images.
+                            im1d = im1;
+                            im2d = zeros(size(im2),imClass);
+                            
+                            % Deform images according to the interpolated velocity fields
+                            for k = 1:nChannels % Loop over all of the color channels in the image
+                                if Iminterp == 1 % Sinc interpolation (without blackman window)
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                                elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                                end
+                            end
+                            
+                            % keyboard
+                            % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
+                            % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
+                            % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
+                            % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
+                            % pause
+                            % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
+                            % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
+                            
+                            if defloop == 1
+                                deformtime(e+1,defloop)=toc(t1);
+                            else
+                                deformtime(e,defloop)=toc(t1);
+                            end
+                            
                         end
+                        
                     else %must be Multipass - grid is same on every pass, no resampling needed
                         UI=U;VI=V;
                     end
@@ -729,14 +908,14 @@ switch char(M)
                 if Valswitch(e)
                     fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),floor((rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))*10))
                 end
-                if strcmpi(M,'Deform') && mindefloop(e) ~= 1
+                if regexpi(M,'Deform','once') && mindefloop(e) ~= 1
                     fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
                     fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
                 end
                 if Writeswitch(e)
                     fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),floor((rem(savetime(e),60)-floor(rem(savetime(e),60)))*10))
                 end
-                if strcmp(M,'Multigrid') || (strcmp(M,'Deform') && mindefloop(e) == 1)
+                if strcmp(M,'Multigrid') || (regexpi(M,'Deform','once') && mindefloop(e) == 1)
                     if e~=P
                         fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
                         if strcmp(M,'Deform')
