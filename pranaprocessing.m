@@ -364,9 +364,11 @@ switch char(M)
             [XI,YI]=IMgrid(imageSize,[0 0]);
             XI = cast(XI,imClass) - 0.5;
             YI = cast(YI,imClass) - 0.5;
-
-            UI = BWO(1)*ones(size(XI),imClass);
-            VI = BWO(2)*ones(size(YI),imClass);
+            
+            UI = Vel0.U;
+            VI = Vel0.V;
+%             UI = BWO(1)*ones(size(XI),imClass);
+%             VI = BWO(2)*ones(size(YI),imClass);
             
             % Preallocating variables
             corrtime=zeros(P,max(maxdefloop));
@@ -1688,9 +1690,11 @@ switch char(M)
             %for now will ignore since even windows are more common.
             XI = XI - 0.5;
             YI = YI - 0.5;
-
-            UI = zeros(size(XI),imClass);
-            VI = zeros(size(YI),imClass);
+            
+            UI = Vel0.U;
+            VI = Vel0.V;
+%             UI = BWO(1).*ones(size(XI),imClass);
+%             VI = BWO(2).*ones(size(YI),imClass);
 
             for e=1:P
                 t1=tic;
@@ -1732,21 +1736,27 @@ switch char(M)
                     Qp=C(:,1,:)./C(:,2,:).*(1-ds./velmag);
 %                     Qp=1-2.*exp(-0.5)./velmag.*(C(:,1,:)./C(:,2,:)-1).^(-1);
                     [Qmax,t_opt]=max(Qp,[],3);%#ok
+%                     for i=1:size(U,1)
+%                         Uval(i,:)=U(i,:,t_opt(i));
+%                         Vval(i,:)=V(i,:,t_opt(i));
+%                         Cval(i,:)=C(i,:,t_opt(i));
+%                         Dval(i,:)=Di(i,:,t_opt(i));
+%                     end
+% 
+%                     try
+%                         U=Uval./repmat(Dt(t_opt)',[1 3]);
+%                         V=Vval./repmat(Dt(t_opt)',[1 3]);
+%                     catch
+%                         U=Uval./repmat(Dt(t_opt),[1 3]);
+%                         V=Vval./repmat(Dt(t_opt),[1 3]);
+%                     end
                     for i=1:size(U,1)
-                        Uval(i,:)=U(i,:,t_opt(i));
-                        Vval(i,:)=V(i,:,t_opt(i));
-                        Cval(i,:)=C(i,:,t_opt(i));
-                        Dval(i,:)=Di(i,:,t_opt(i));
+                        Uval(i,:)=sum( (squeeze(U(i,1,:))./Dt).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
+                        Vval(i,:)=sum( (squeeze(V(i,1,:))./Dt).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
+                        Cval(i,:)=sum( (squeeze(C(i,1,:))    ).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
+                        Dval(i,:)=sum( (squeeze(Di(i,1,:))   ).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
                     end
 
-                    try
-                        U=Uval./repmat(Dt(t_opt)',[1 3]);
-                        V=Vval./repmat(Dt(t_opt)',[1 3]);
-                    catch
-                        U=Uval./repmat(Dt(t_opt),[1 3]);
-                        V=Vval./repmat(Dt(t_opt),[1 3]);
-                    end
-                    
                 else
                     U=zeros(length(X),1);
                     V=zeros(length(X),1);

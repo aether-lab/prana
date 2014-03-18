@@ -3373,7 +3373,7 @@ if strcmpi(handles.data.masktype,'static')
         set(handles.staticmaskfile,'backgroundcolor',[1 1 1]);
     end
 elseif strcmpi(handles.data.masktype,'dynamic')
-	if isempty(dir(handles.data.maskdirec))
+    if isempty(dir(handles.data.maskdirec))
         set(handles.maskdirectory,'backgroundcolor','r');
     else
         set(handles.maskdirectory,'backgroundcolor',[1 1 1]);
