@@ -2623,6 +2623,7 @@ if str2double(handles.Njob) == 0
     set(handles.subpixelinterp,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     set(handles.velocityinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);    
     set(handles.staticmaskfile,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.input_velocity,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskzeros,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -3245,6 +3246,19 @@ elseif strcmp(handles.data.masktype,'dynamic')
     set(handles.dynamicmaskbutton,'Value',1)
 end
 
+if strcmpi(handles.data.input_vel_type,'none')
+    set(handles.no_input_vel_button,'Value',1)
+    set(handles.static_input_vel_button,'Value',0)
+    set(handles.input_velocity,'backgroundcolor',0.5*[1 1 1])
+elseif strcmpi(handles.data.input_vel_type,'static')
+    set(handles.no_input_vel_button,'Value',0)
+    set(handles.static_input_vel_button,'Value',1)
+    set(handles.input_velocity,'string',handles.data.input_velocity,'backgroundcolor',[1 1 1]);
+else
+    error('Unknown input velocity type')
+end
+
+
 set(handles.magnification,'String',handles.data.wrmag);
 set(handles.pulseseparation,'String',handles.data.wrsep);
 set(handles.samplingrate,'String',handles.data.wrsamp);
@@ -3359,7 +3373,7 @@ if strcmpi(handles.data.masktype,'static')
         set(handles.staticmaskfile,'backgroundcolor',[1 1 1]);
     end
 elseif strcmpi(handles.data.masktype,'dynamic')
-	if isempty(dir(handles.data.maskdirec))
+    if isempty(dir(handles.data.maskdirec))
         set(handles.maskdirectory,'backgroundcolor','r');
     else
         set(handles.maskdirectory,'backgroundcolor',[1 1 1]);
@@ -5058,13 +5072,10 @@ end
 
 
 function input_velocity_Callback(hObject, eventdata, handles)
-% hObject    handle to input_velocity (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of input_velocity as text
-%        str2double(get(hObject,'String')) returns contents of input_velocity as a double
-
+if str2double(handles.Njob)>0
+    handles.data.input_velocity = get(handles.input_velocity,'String');
+    guidata(hObject,handles)
+end
 
 % --- Executes during object creation, after setting all properties.
 function input_velocity_CreateFcn(hObject, eventdata, handles)
