@@ -1735,7 +1735,7 @@ switch char(M)
                     velmag=sqrt(U(:,1,:).^2+V(:,1,:).^2);
                     Qp=C(:,1,:)./C(:,2,:).*(1-ds./velmag);
 %                     Qp=1-2.*exp(-0.5)./velmag.*(C(:,1,:)./C(:,2,:)-1).^(-1);
-                    [Qmax,t_opt]=max(Qp,[],3);%#ok
+                    [Qmax,t_opt]=max(Qp,[],3); %#ok<ASGLU>
 %                     for i=1:size(U,1)
 %                         Uval(i,:)=U(i,:,t_opt(i));
 %                         Vval(i,:)=V(i,:,t_opt(i));
@@ -1751,8 +1751,8 @@ switch char(M)
 %                         V=Vval./repmat(Dt(t_opt),[1 3]);
 %                     end
                     for i=1:size(U,1)
-                        Uval(i,:)=sum( (squeeze(U(i,1,:))./Dt).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
-                        Vval(i,:)=sum( (squeeze(V(i,1,:))./Dt).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
+                        U(i,:)=sum( (squeeze(U(i,1,:))./Dt).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
+                        V(i,:)=sum( (squeeze(V(i,1,:))./Dt).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
                         Cval(i,:)=sum( (squeeze(C(i,1,:))    ).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
                         Dval(i,:)=sum( (squeeze(Di(i,1,:))   ).*squeeze(Qp(i,1,:)./sum(Qp(i,1,:))) );
                     end
@@ -1788,7 +1788,7 @@ switch char(M)
                     
                     [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
                         Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
-                    
+
                     valtime(e)=toc(t1);
                 else
                     Uval=U(:,1);Vval=V(:,1);Evalval=Eval(:,1);
