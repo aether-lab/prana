@@ -24,6 +24,9 @@ if nargin < 5
     METHOD = 'blackman';
 end
 
+%find type of Z so we can make the output match
+Zclass = class(Z);
+
 % Image height (number of rows) and width (number of columns)
 [height, width] = size(Z);
 
@@ -51,7 +54,7 @@ XIv = reshape(xi, nInterpPoints, 1);
 YIv = reshape(yi, nInterpPoints, 1);
 
 % Mirror the border of the image so that the kernel doesn't reach outside of the valid image
-zPadded = padarray(Z, [KERNELRADIUS, KERNELRADIUS], 0);
+zPadded = padarray(uint16(Z), [KERNELRADIUS KERNELRADIUS], 0);
 
 % Calculate size of padded image
 [paddedHeight, paddedWidth] = size(zPadded);
@@ -183,7 +186,7 @@ clear sourceRows sourceColumns
 % evaluated at each pixel. Doing this as an array operation is faster than
 % doing it in a loop because it takes a long time to loop over a million
 % goddamn pixels. 
-Zinterp = sum( Weights .* single(sourcePixels) , 2 );
+Zinterp = cast( sum( Weights .* single(sourcePixels) , 2 ) , Zclass );
 
 % Clear a variable to save space
 clear sourcePixels
@@ -194,9 +197,8 @@ Zinterp( ~validY ) = 0;
 Zinterp( ~validX ) = 0;
 
 % Reshape the vector-version of the interpolated signal to a matrix of the
-% same size as the original signal. Save the output image to the output
-% variable with the same class as the input image.
-ZI = reshape( cast(Zinterp, imageClass), [ height width ] );
+% same size as the original signal
+ZI = reshape( Zinterp, [ height width ] );
 
 end % End of function
 

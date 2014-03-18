@@ -1,4 +1,4 @@
-function [u,v,M,D]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
+function [u,v,M,D,DX,DY,ALPHA]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
 %intialize indices
 cc_x = -floor(ccsizex/2):ceil(ccsizex/2)-1;
 cc_y = -floor(ccsizey/2):ceil(ccsizey/2)-1;
@@ -16,14 +16,22 @@ if M==0
         v=zeros(1,3);
         M=zeros(1,3);
         D=zeros(1,3);
+        DX=zeros(1,3);
+        DY=zeros(1,3);
+        ALPHA=zeros(1,3);
+        
     else
-        u=0; v=0; M=0; D=0; 
+        u=0; v=0; M=0; D=0; DX=0; DY=0; ALPHA=0;
     end
 else
     if Peakswitch
         u=zeros(1,3);
         v=zeros(1,3);
         D=zeros(1,3);
+        DX=zeros(1,3);
+        DY=zeros(1,3);
+        ALPHA=zeros(1,3);
+
         %Locate peaks using imregionalmax
         A=imregionalmax(G);
         peakmat=G.*A;
@@ -36,6 +44,7 @@ else
         u=zeros(1,1);
         v=zeros(1,1);
         D=zeros(1,1);
+        DX=0; DY=0; ALPHA=0;
         j=1;    
     end
     
@@ -141,7 +150,7 @@ else
             goodSize = 0;  %gets set =1 after fit, but reset to 0 if betaX or betaY are bigger than 2*D1 or 2*D2
             
             %keep trying while method not 1 (G.3pt.fit), and the search diameter (2x expected diam.) is less than half the window size
-            while ~goodSize && method~=1 && 2*D1<ccsizex/2 && 2*D2<ccsizey/2
+            while ~goodSize && method~=1
                 %Find a suitable window around the peak (+/- D1,D2)
                 x_min=shift_locx-ceil(D1); x_max=shift_locx+ceil(D1);
                 y_min=shift_locy-ceil(D2); y_max=shift_locy+ceil(D2);
@@ -157,7 +166,7 @@ else
                 if y_max>ccsizey
                     y_max=ccsizey;
                 end
-                points=G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max);
+                points=double(G(y_min:y_max,x_min:x_max).*W(y_min:y_max,x_min:x_max));
 
                 %Options for the lsqnonlin solver using Levenberg-Marquardt solver
                 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
@@ -176,9 +185,10 @@ else
 %                 UB = [inf inf inf x_max y_max  inf];
 
                 %Initial values for the solver (have to convert D into Beta)
-                x0=[M(i) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
+                %x0 must be double for lsqnonlin, so convert M
+                x0=[double(M(i)) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
 
-                [xloc yloc]=meshgrid(x_min:x_max,y_min:y_max);
+                [xloc, yloc]=meshgrid(x_min:x_max,y_min:y_max);
 
                 %Run solver; default to 3-point gauss if it fails
                 try
@@ -197,6 +207,10 @@ else
                     dX = max( abs(dA*cos(alpha)), abs(dB*sin(alpha)) );
                     dY = max( abs(dA*sin(alpha)), abs(dB*cos(alpha)) );
                     
+                    DX(i) = dX;
+                    DY(i) = dY;
+                    ALPHA(i) = alpha;
+                    
                     %LSqF didn't fail...
                     goodSize = 1;
                     
@@ -210,20 +224,30 @@ else
                     % % disp(output.message)
                     % fprintf('\n')
                     
-                    %check if search region (+/-D1,D2) was large enough ...
-                    %our criterion is if the measured diameter was less than 
-                    %2x the search window (2D1,2D2), ie 4*D1,D2
-                    if dX > 4*D1
-                        D1 = 2*D1;      %make DX bigger
-                        goodSize = 0;   %window wasn't big enough, do it again
-                    end
-                    if dY > 4*D2
-                        D2 = 2*D2; %make DY bigger
-                        goodSize = 0;   %window wasn't big enough, do it again
-                    end
+%                     %check if search region (+/-D1,D2) was large enough ...
+%                     %our criterion is if the measured diameter was less than 
+%                     %2x the search window (2D1,2D2), ie 4*D1,D2
+%                     if dX > 4*D1
+%                         D1 = 2*D1;      %make DX bigger
+%                         goodSize = 0;   %window wasn't big enough, do it again
+%                     end
+%                     if dY > 4*D2
+%                         D2 = 2*D2; %make DY bigger
+%                         goodSize = 0;   %window wasn't big enough, do it again
+%                     end
+
+                      %if D1 or D2 are already too big, just quit - it's
+                      %the best we're going to do.
+                      %Have to check in loop, if check at while statement,
+                      %might never size it at all.
+                      if 2*D1<ccsizex/2 && 2*D2<ccsizey/2
+                          goodSize = 1;
+                      end
                     
                 catch err%#ok
                     %warning(err.message)
+                    disp(err.message)
+                    %keyboard
                     method=1;
                 end
             end %while trying to fit region
@@ -241,14 +265,14 @@ else
                 lCp1 = log(G( shift_locy , shift_locx+1 )*W( shift_locy , shift_locx+1 ));
                 if (2*(lCm1+lCp1-2*lC00)) == 0
                     shift_errx = 0;
-                    Dx = nan;
+                    dX = nan;
                 else
                     shift_errx = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
                     betax = abs(lCm1-lC00)/((-1-shift_errx)^2-(shift_errx)^2);
-                    Dx = sigma./sqrt((2*betax));
+                    dX = sigma./sqrt((2*betax));
                 end
             else
-                Dx = nan;
+                dX = nan;
             end
             
             if isempty(shift_erry)
@@ -257,19 +281,24 @@ else
                 lCp1 = log(G( shift_locy+1 , shift_locx )*W( shift_locy+1 , shift_locx ));
                 if (2*(lCm1+lCp1-2*lC00)) == 0
                     shift_erry = 0;
-                    Dy = nan;
+                    dY = nan;
                 else
                     shift_erry = (lCm1-lCp1)/(2*(lCm1+lCp1-2*lC00));
                     betay = abs(lCm1-lC00)/((-1-shift_erry)^2-(shift_erry)^2);
-                    Dy = sigma./sqrt((2*betay));
+                    dY = sigma./sqrt((2*betay));
                 end
             else
-                Dy = nan;
+                dY = nan;
             end
             
-            D(i) = nanmean([Dx Dy]);
+            D(i) = nanmean([dX dY]);
+            
+                    
+            DX(i) = dX;
+            DY(i) = dY;
+            %ALPHA(i) = 0;  %initialized to 0 anyway
+            
         end
-        
         u(i)=cc_x(shift_locx)+shift_errx;
         v(i)=cc_y(shift_locy)+shift_erry;
         

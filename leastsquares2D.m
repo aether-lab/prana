@@ -35,21 +35,29 @@ y_centroid=x(5);
 alpha = x(6);
 
 if method==3
-    gauss_int = zeros(size(mapint_i));
-    xp = zeros(size(mapint_i));
-    yp = zeros(size(mapint_i));
-    for ii = 1:length(mapint_i)
-        xp(ii) = locxy_i(ii,2);
-        yp(ii) = locxy_i(ii,1);
-    end
+%     gauss_int = zeros(size(mapint_i));
+%     xp = zeros(size(mapint_i));
+%     yp = zeros(size(mapint_i));
+%     for ii = 1:length(mapint_i)
+%         xp(ii) = locxy_i(ii,2);
+%         yp(ii) = locxy_i(ii,1);
+%     end
+    xp = locxy_i(:,2);
+    yp = locxy_i(:,1);
+
     
     % map an intensity profile of a gaussian function:
-    for rr = 1:size(xp,1)
-%         gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
-%             ((yp(rr))-y_centroid)^2));
-        gauss_int(rr)=I0*exp(-abs(betasx).*(cos(alpha).*(xp(rr)-x_centroid) - sin(alpha).*(yp(rr)-y_centroid)).^2 - ...
-            abs(betasy).*(sin(alpha).*(xp(rr)-x_centroid) + cos(alpha).*(yp(rr)-y_centroid)).^2);
-    end
+%     for rr = 1:size(xp,1)
+% %         gauss_int(rr)=I0*exp(-abs(betas)*(((xp(rr))-x_centroid)^2 + ...
+% %             ((yp(rr))-y_centroid)^2));
+%         gauss_int(rr)=I0*exp(-abs(betasx).*(cos(alpha).*(xp(rr)-x_centroid) - sin(alpha).*(yp(rr)-y_centroid)).^2 - ...
+%             abs(betasy).*(sin(alpha).*(xp(rr)-x_centroid) + cos(alpha).*(yp(rr)-y_centroid)).^2);
+%     end
+    
+        gauss_int=I0*exp(-abs(betasx).*(cos(alpha).*(xp-x_centroid) - sin(alpha).*(yp-y_centroid)).^2 - ...
+            abs(betasy).*(sin(alpha).*(xp-x_centroid) + cos(alpha).*(yp-y_centroid)).^2);
+    
+    
 
 elseif method==4
     

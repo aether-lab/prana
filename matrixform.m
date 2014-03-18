@@ -9,7 +9,7 @@ N=length(x);
 %initialize matrices
 U=nan(length(b),length(a),size(u,2));
 V=nan(length(b),length(a),size(v,2));
-Eval=-1*ones(length(b),length(a),size(eval,2));
+Eval=-1*ones(length(b),length(a),size(eval,2),'single');
 
 %generate grid matrix
 [X,Y]=meshgrid(a,b);

@@ -1,4 +1,5 @@
 function pranaprocessing(Data,I1,I2,maskname)
+imClass = 'single';
 %% --- Read Formatted Parameters ---
 %input/output directory
 if ispc
@@ -215,6 +216,56 @@ for e=1:P
     wbase(e,:)={A.outbase};
     
 end
+
+
+maskSize=size(mask);
+maskSize(3)=size(mask,3);
+[XI,YI]=IMgrid(maskSize,[0 0]);
+%cast the pixel coordinates to imClass for reduced memory
+%index-based pixel coordinates are integers on center, but we need XI and YI to
+%correspond to vector locations, which are centered on pixel edges for even sized
+%windows.  This means the center of pixel index 1 is actually at coordinate
+%0.5 from image edge, etc.
+% We need to do this because the vector positions we will use
+% for interpolation and deformation will be on the physical
+% grid, but will will need to know where the pixels are located
+% relative to them, not their indices.
+%BUT they are pixel centered for ODD sized windows.  (FIX) but
+%for now will ignore since even windows are more common.
+XI = cast(XI,imClass) - 0.5;
+YI = cast(YI,imClass) - 0.5;
+if strcmpi(Data.input_vel_type,'static')
+    Vel0 = load(Data.input_velocity);
+    
+    %velocity smoothing
+    if Velsmoothswitch(1)==1
+        [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
+        U = cast(U,imClass);
+        V = cast(V,imClass);
+        %when interpolating, assume saved coordinate system consistent with
+        %vector locations (i.e. they are in vector grid positions, not
+        %pixel-centered)
+        
+        %resample U, V and W from vector grid coordinates
+        %V(X,Y,Z) onto UI,VI, and WI on pixel coordinates
+        %[XI,YI] where XI and YI are a list of every
+        %pixel centers in the image plane. Velinterp is the type of
+        %interpolation to use.
+        Vel0.U = VFinterp(Vel0.X,Vel0.Y,U,XI,YI,Velinterp);
+        Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
+    else
+        %see above note about coordinate systems
+        Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),'single');
+        Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),'single');
+    end
+    VelInputFile = 1;
+else
+    Vel0.X = XI;
+    Vel0.Y = YI;
+    Vel0.U = BWO(1)*ones(size(XI),imClass);
+    Vel0.V = BWO(2)*ones(size(XI),imClass);
+    VelInputFile = 0;
+end
 wbase_org=wbase;
 
 %% --- Evaluate Image Sequence ---
@@ -229,8 +280,16 @@ switch char(M)
             frametitle=['Frame' sprintf(['%0.' Data.imzeros 'i'],I1(q)) ' and Frame' sprintf(['%0.' Data.imzeros 'i'],I2(q))];
 
             %load image pair and flip coordinates
-            im1 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+                loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
+                im1 = cast(loaddata.I,imClass);
+                loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                im2 = cast(loaddata.I,imClass);
+                loaddata =[];
+            else
+                im1 = cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
+                im2 = cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
+            end
             
             % Specify which color channel(s) to consider
             % This was changed to greater then 2 because John had images
@@ -286,15 +345,28 @@ switch char(M)
             
             % load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = cast(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]),imClass);
                 mask = flipud(mask);
             end
 
-            % initialize grid and evaluation matrix
+            % initialize grid and evaluation matrix for every pixel in image
+            %cast the pixel coordinates to imClass for reduced memory
+            %index-based pixel coordinates are integers on center, but we need XI and YI to
+            %correspond to vector locations, which are centered on pixel edges for even sized
+            %windows.  This means the center of pixel index 1 is actually at coordinate
+            %0.5 from image edge, etc.
+            % We need to do this because the vector positions we will use
+            % for interpolation and deformation will be on the physical
+            % grid, but will will need to know where the pixels are located
+            % relative to them, not their indices.
+            %BUT they are pixel centered for ODD sized windows.  (FIX) but
+            %for now will ignore since even windows are more common.
             [XI,YI]=IMgrid(imageSize,[0 0]);
+            XI = cast(XI,imClass) - 0.5;
+            YI = cast(YI,imClass) - 0.5;
 
-            UI = BWO(1)*ones(size(XI));
-            VI = BWO(2)*ones(size(YI));
+            UI = BWO(1)*ones(size(XI),imClass);
+            VI = BWO(2)*ones(size(YI),imClass);
             
             % Preallocating variables
             corrtime=zeros(P,max(maxdefloop));
@@ -346,7 +418,7 @@ switch char(M)
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
                         %[Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
-                        Dc = zeros(size(Cc));
+                        Dc = zeros(size(Cc),imClass);
  
                         Uc = Uc + Ub(Eval>=0);   %reincorporate deformation as velocity for next pass
                         Vc = Vc + Vb(Eval>=0);
@@ -360,35 +432,38 @@ switch char(M)
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        Dc = zeros(size(Cc));
+                        Dc = zeros(size(Cc),imClass);
                     end
                 end
 
-                if ~strcmpi(Corr{e},'SPC') %SPC=4
+                %Where Eval<0, no correlation was performed and Uc, etc are
+                %missing values.  Use Eval to fill in complete matrices U,V
+                %over all grid points X,Y.  
+                if ~strcmpi(Corr{e},'SPC') %was not SPC=4
                     if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                        U=zeros(size(X,1),3);
-                        V=zeros(size(X,1),3);
+                        U=zeros(size(X,1),3,imClass);
+                        V=zeros(size(X,1),3,imClass);
                         U(repmat(Eval>=0,[1 3]))=Uc;V(repmat(Eval>=0,[1 3]))=Vc;
-                        C=zeros(size(X,1),3);
-                        Di=zeros(size(X,1),3);
+                        C=zeros(size(X,1),3,imClass);
+                        Di=zeros(size(X,1),3,imClass);
                         C(repmat(Eval>=0,[1 3]))=Cc;
                         Di(repmat(Eval>=0,[1 3]))=Dc;
                     else
-                        U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
+                        U=zeros(size(X),imClass);V=zeros(size(X),imClass);C=zeros(size(X),imClass);Di=zeros(size(X),imClass);
                         U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     end
-                else
-                    U=zeros(size(X));V=zeros(size(X));
+                else %Corr was SPC=4
+                    U=zeros(size(X),imClass);V=zeros(size(X),imClass);
                     U(Eval>=0)=Uc;V(Eval>=0)=Vc;
                     if Peakswitch(e)
-                        C=zeros(size(X,1),3);
-                        Di=zeros(size(X,1),3);
+                        C=zeros(size(X,1),3,imClass);
+                        Di=zeros(size(X,1),3,imClass);
                         C(repmat(Eval>=0,[1 3]))=Cc;
                         Di(repmat(Eval>=0,[1 3]))=Dc;
                         
                     else 
-                        C=[];
-                        Di=[];
+                        C=zeros(size(X),imClass);
+                        Di=zeros(size(X),imClass);
                     end
                 end
                 
@@ -546,8 +621,14 @@ switch char(M)
                     
                     savetime(e,defloop)=toc(t1);
                 end
+                
+                %reset any changes or scaling back to pixels
                 U=Uval; V=Vval;
 
+                %If it isn't the lass pass, or the last pass hasn't
+                %converged yet for iterative deform, we need to prepare U
+                %and V from this pass for use as a predictor in the next
+                %pass
                 if e~=P || (strcmpi(M,'Deform') && defloop ~=1)
                     %reshape from list of grid points to matrix
                     X=reshape(X,[S(1),S(2)]);
@@ -555,6 +636,8 @@ switch char(M)
                     U=reshape(U(:,1),[S(1),S(2)]);
                     V=reshape(V(:,1),[S(1),S(2)]);
                     
+                    %Multigrid and Deform need to interpolate this pass's displacements
+                    %onto a different grid
                     if strcmp(M,'Multigrid') || strcmp(M,'Deform')
                         t1=tic;
 
@@ -563,7 +646,14 @@ switch char(M)
                             [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                         end
 
-                        %velocity interpolation
+                        %velocity interpolation -
+                        %resample U(X,Y) and V(X,Y) onto UI(XI,YI) and
+                        %VI(XI,YI) where XI and YI are a list of every
+                        %pixel in the image plane. Velinterp is the type of
+                        %interpolation to use.
+                        % We have previously made sure XI and YI correspond
+                        % to the vector positions of the pixel centers by
+                        % shifting by -0.5.
                         UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                         VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
@@ -573,18 +663,27 @@ switch char(M)
                             interptime(e,defloop)=toc(t1);
                         end
                         
+                        %For deform, UI and VI will be used to deform the images, and
+                        %then downsampled in the next pass to the new grid 
+                        %for addition to the next pass's displacement.
+                        %If not deform, then UI and VI just get downsampled
+                        %next pass and used for DWO.
                         if strcmp(M,'Deform')
                             t1=tic;
                             
-                            % translate pixel locations
-                            XD1 = XI-UI/2;
-                            YD1 = YI-VI/2;
-                            XD2 = XI+UI/2;
-                            YD2 = YI+VI/2;
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            XD1 = XI-UI/2 +0.5;
+                            YD1 = YI-VI/2 +0.5;
+                            XD2 = XI+UI/2 +0.5;
+                            YD2 = YI+VI/2 +0.5;
 
                             % Preallocate memory for deformed images.
-                            im1d = zeros(size(im1));
-                            im2d = zeros(size(im2));
+                            im1d = zeros(size(im1),imClass);
+                            im2d = zeros(size(im2),imClass);
                             
                             % Deform images according to the interpolated velocity fields
                             for k = 1:nChannels % Loop over all of the color channels in the image
@@ -613,7 +712,7 @@ switch char(M)
                                 deformtime(e,defloop)=toc(t1);
                             end                           
                         end
-                    else
+                    else %must be Multipass - grid is same on every pass, no resampling needed
                         UI=U;VI=V;
                     end
                 end
@@ -657,12 +756,32 @@ switch char(M)
         frametime=zeros(P,1);
 
         %initialize grid and evaluation matrix
-        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]));
+        if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]);
+            im1 = cast(loaddata.I,imClass);
+            loaddata =[];
+        else
+            im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(1))]),imClass);
+        end
         imageSize=size(im1);
         imageSize(3)=size(im1,3);
         [XI,YI]=IMgrid(imageSize,[0 0]);
-        UI = BWO(1)*ones(size(XI));
-        VI = BWO(2)*ones(size(XI));
+        %index-based pixel coordinates are integers on center, but we need XI and YI to
+        %correspond to vector locations, which are centered on pixel edges for even sized
+        %windows.  This means the center of pixel index 1 is actually at coordinate
+        %0.5 from image edge, etc.
+        % We need to do this because the vector positions we will use
+        % for interpolation and deformation will be on the physical
+        % grid, but will will need to know where the pixels are located
+        % relative to them, not their indices.
+        %BUT they are pixel centered for ODD sized windows.  (FIX) but
+        %for now will ignore since even windows are more common.
+        XI = XI - 0.5;
+        YI = YI - 0.5;
+        UI = Vel0.U;
+        VI = Vel0.V;
+        %UI = BWO(1)*ones(size(XI));
+        %VI = BWO(2)*ones(size(XI));
         
         defconvU = zeros(P,max(maxdefloop));
         defconvV = zeros(P,max(maxdefloop));
@@ -693,12 +812,16 @@ switch char(M)
             Eval(Eval>0)=0;
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                U=zeros(size(X,1),3);
-                V=zeros(size(X,1),3);
-                C=zeros(size(X,1),3);
-                Di=zeros(size(X,1),3);
+                U=zeros(size(X,1),3,imClass);
+                V=zeros(size(X,1),3,imClass);
+                C=zeros(size(X,1),3,imClass);
+                Di=zeros(size(X,1),3,imClass);
+                DX=zeros(size(X,1),3,imClass);
+                DY=zeros(size(X,1),3,imClass);
+                ALPHA=zeros(size(X,1),3,imClass);
             else
-                U=zeros(size(X));V=zeros(size(X));C=[];Di=[];
+                U=zeros(size(X),imClass);V=zeros(size(X),imClass);C=zeros(size(X),imClass);Di=zeros(size(X),imClass);
+                DX=zeros(size(X),imClass);DY=zeros(size(X),imClass);ALPHA=zeros(size(X),imClass);
             end
 
             if str2double(Data.par) && matlabpool('size')>1
@@ -716,8 +839,17 @@ switch char(M)
                     for q=1:length(I1dist)
                         
                         %load image pair and flip coordinates
-                        im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
-                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
+                        if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+                            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]);
+                            im1 = cast(loaddata.I,imClass);
+                            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
+                            im2 = cast(loaddata.I,imClass);
+                            loaddata =[];
+                        else
+                            im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]),imClass);
+                            im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]),imClass);
+                        end
+                        
                         if size(im1, 3) > 2
                             %Extract only red channel
                             if channel == 1;
@@ -766,20 +898,26 @@ switch char(M)
                         % L=size(im1);
                         
                         % The deformation for ensemble must be done before
-                        % the correlation unlike in the instantanious
+                        % the correlation unlike in the instantaneous
                         % images where it is done after correlation
-                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                             
                             t1=tic;
-                            %translate pixel locations
-                            XD1 = XI-UI/2;
-                            YD1 = YI-VI/2;
-                            XD2 = XI+UI/2;
-                            YD2 = YI+VI/2;
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            % Here this seems to be redundant ... Where is
+                            % VFInterp called?
+                            XD1 = XI-UI/2 + 0.5;
+                            YD1 = YI-VI/2 + 0.5;
+                            XD2 = XI+UI/2 + 0.5;
+                            YD2 = YI+VI/2 + 0.5;
                             
                             % Preallocate memory for deformed images.
-                            im1d = zeros(size(im1));
-                            im2d = zeros(size(im2));
+                            im1d = zeros(size(im1),imClass);
+                            im2d = zeros(size(im2),imClass);
                             
                             % Deform images according to the interpolated 
                             % velocity fields. Each color channel is 
@@ -803,7 +941,7 @@ switch char(M)
                         t1=tic;
                         %correlate image pair and average correlations
 %                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1  || VelInputFile)
                             [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         else
                             [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -827,7 +965,7 @@ switch char(M)
                            error('SPC Ensemble does not work with parallel processing. Try running again on a single core.')
                         end
                         corrtime=toc(t1);
-                        if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
+                        if strcmpi(M,'EDeform') && (e~=1 || defloop~=1 || VelInputFile)
                             fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1dist),floor(deformtime/60),floor(rem(deformtime,60)),floor((rem(deformtime,60)-floor(rem(deformtime,60)))*10))
                         end
 %                         fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1dist),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
@@ -835,7 +973,7 @@ switch char(M)
                     end
                 end
 %                 if Corr(e)<4 %SCC or RPC processor
-                CCm=zeros(size(CCmdist{1}));
+                CCm=zeros(size(CCmdist{1}),imClass);
                 for i=1:length(CCmdist)
                     CCm=CCm+CCmdist{i}/length(I1);
                 end
@@ -852,13 +990,22 @@ switch char(M)
 %                         ind=ind+size(CCmdist{i},4);
 %                     end
 %                 end
-            else
+            else %Not running in parallel
                 
                 for q=1:length(I1)
 
                     %load image pair and flip coordinates
-                    im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-                    im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                    if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
+                        loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
+                        im1 = cast(loaddata.I,imClass);
+                        loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                        im2 = cast(loaddata.I,imClass);
+                        loaddata =[];
+                    else
+                        im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
+                        im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
+                    end
+                    
                     if size(im1, 3) > 2
                         %Extract only red channel
                         if channel == 1;
@@ -902,18 +1049,24 @@ switch char(M)
                     im1 = im1(end:-1:1,:,:);
                     im2 = im2(end:-1:1,:,:);
 
-                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                         t1=tic;
 
-                        %translate pixel locations
-                        XD1 = XI-UI/2;
-                        YD1 = YI-VI/2;
-                        XD2 = XI+UI/2;
-                        YD2 = YI+VI/2;
+                        % translate pixel locations, but
+                        % since sincBlackmanInterp2 assumes
+                        % coordinate system is pixel-centered, we need
+                        % to convert back to index-coordinates for the
+                        % deform.
+                        % Here this seems to be redundant ... Where is
+                        % VFInterp called?
+                        XD1 = XI-UI/2 + 0.5;
+                        YD1 = YI-VI/2 + 0.5;
+                        XD2 = XI+UI/2 + 0.5;
+                        YD2 = YI+VI/2 + 0.5;
                         
                         % Preallocate memory for deformed images.
-                        im1d = zeros(size(im1));
-                        im2d = zeros(size(im2));
+                        im1d = zeros(size(im1),imClass);
+                        im2d = zeros(size(im2),imClass);
                             
                         % Deform images according to the interpolated velocity fields. Each color
                         % channel is deformed separately. They could have been done all together
@@ -935,7 +1088,7 @@ switch char(M)
                     t1=tic;
                     %correlate image pair and average correlations
 %                   [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
-                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                         [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                     else
                         [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
@@ -966,7 +1119,7 @@ switch char(M)
                         %cnvg_est = 0;
                     end
                     corrtime=toc(t1);
-                    if strcmpi(M,'EDeform') && (e~=1 || defloop~=1)
+                    if strcmpi(M,'EDeform') && (e~=1 || defloop~=1 || VelInputFile)
                         fprintf('deformation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f\n',q,length(I1),floor(deformtime/60),floor(rem(deformtime,60)),floor((rem(deformtime,60)-floor(rem(deformtime,60)))*10))
                     end
 %                     fprintf('correlation %4.0f of %4.0f...      %0.2i:%0.2i.%0.0f Ensemble %%change %0.2e\n',q,length(I1),floor(corrtime/60),floor(rem(corrtime,60)),rem(corrtime,60)-floor(rem(corrtime,60)),cnvg_est)
@@ -975,7 +1128,7 @@ switch char(M)
             end
 
             Z=[size(CCm,1), size(CCm,2),length(X(Eval>=0))];
-            cnorm=ones(Z(1),Z(2));
+            cnorm=ones(Z(1),Z(2),imClass);
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %{
             %fftshift indicies
@@ -998,22 +1151,27 @@ switch char(M)
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
-                Uc=zeros(Z(3),3);
-                Vc=zeros(Z(3),3);
-                Cc=zeros(Z(3),3);
-                Dc=zeros(Z(3),3);
+                Uc=zeros(Z(3),3,imClass);
+                Vc=zeros(Z(3),3,imClass);
+                Cc=zeros(Z(3),3,imClass);
+                Dc=zeros(Z(3),3,imClass);
+                DXc=zeros(Z(3),3,imClass);
+                DYc=zeros(Z(3),3,imClass);
+                ALPHAc=zeros(Z(3),3,imClass);
                 Ub=repmat(Ub,[1 3]);
                 Vb=repmat(Vb,[1 3]);
                 Eval=repmat(Eval,[1 3]);
             else
-                Uc=zeros(Z(3),1);Vc=zeros(Z(3),1);Cc=[];Dc=[];
+                Uc=zeros(Z(3),1,imClass);Vc=zeros(Z(3),1,imClass);Cc=zeros(Z(3),1,imClass);Dc=zeros(Z(3),1,imClass);
+                DXc=zeros(Z(3),1,imClass);DYc=zeros(Z(3),1,imClass);ALPHAc=zeros(Z(3),1,imClass);
+
             end
 
             if ~strcmpi(Corr{e},'SPC')
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points    
                     %Find the subpixel fit of the average correlation matrix
-                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
+                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:),DXc(s,:),DYc(s,:),ALPHAc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),floor((rem(peaktime,60)-floor(rem(peaktime,60)))*10))
@@ -1052,7 +1210,7 @@ switch char(M)
                 end
             end
 
-            if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1)
+            if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1 || VelInputFile)
                 U(Eval>=0)=Uc(:)+Ub(Eval>=0);
                 V(Eval>=0)=Vc(:)+Vb(Eval>=0);
             else
@@ -1062,6 +1220,9 @@ switch char(M)
             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))%~isempty(Cc)
                 C(Eval>=0)=Cc(:);
                 Di(Eval>=0)=Dc(:);
+                DX(Eval>=0)=DXc(:);
+                DY(Eval>=0)=DYc(:);
+                ALPHA(Eval>=0)=ALPHAc(:);
             end
 
             %validation
@@ -1069,8 +1230,9 @@ switch char(M)
                 %keyboard
                 t1=tic;
 
-                [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
+                [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
+                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e),...
+                    DX,DY,ALPHA);
 
                 valtime=toc(t1);
                 fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(valtime/60),floor(rem(valtime,60)),floor((rem(valtime,60)-floor(rem(valtime,60)))*10))
@@ -1084,6 +1246,7 @@ switch char(M)
                     Cval=[];
                     Dval=[];
                 end
+                DXval=DX(:,1);DYval=DY(:,1);ALPHAval=ALPHA(:,1);
             end
 
             % --- Iterative Deformation Check ---
@@ -1132,12 +1295,19 @@ switch char(M)
                     if PeakMag(e)
                         C=[Cval,C(:,1:PeakNum(e))];
                         Di=[Dval,Di(:,1:PeakNum(e))];
+                        DX=[DXval,DX(:,1:PeakNum(e))];
+                        DY=[DYval,DY(:,1:PeakNum(e))];
+                        ALPHA=[ALPHAval,ALPHA(:,1:PeakNum(e))];
                     else
                         C=Cval;
                         Di=Dval;
+                        DX=DXval;
+                        DY=DYval;
+                        ALPHA=ALPHAval;
                     end
                 else
                     U=Uval; V=Vval; Eval=Evalval; C=Cval; Di=Dval;
+                    DX=DXval;DY=DYval;ALPHA=ALPHAval;
                 end
 
                 %convert to physical units
@@ -1147,6 +1317,7 @@ switch char(M)
 
                 %convert to matrix if necessary
                 if size(X,2)==1
+                    [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
                     [X,Y,U,V,Eval,C,Di]=matrixform(X,Y,U,V,Eval,C,Di);
                 end
 
@@ -1196,9 +1367,9 @@ switch char(M)
                 end
                 if str2double(Data.multiplematout)
                     if strcmpi(M,'EDeform')
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses','DX','DY','ALPHA')
                     else
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di')
+                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','DX','DY','ALPHA')
                     end
                 end
                 if saveplane(e) && ~strcmpi(Corr{e},'SPC')
@@ -1228,6 +1399,12 @@ switch char(M)
                 end
 
                 %velocity interpolation
+                %resample U, V and W from vector grid coordinates
+                %V(X,Y,Z) onto UI,VI, and WI on pixel coordinates
+                %[XI,YI] where XI and YI are a list of every
+                %pixel centers in the image plane. We adjusted XI and YI
+                %previously.
+                %Velinterp is the type of interpolation to use.
                 UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                 VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
@@ -1287,7 +1464,7 @@ switch char(M)
             
             %load dynamic mask and flip coordinates
             if strcmp(Data.masktype,'dynamic')
-                mask = double(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]));
+                mask = cast(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]),imClass);
                 mask = flipud(mask);
             end
             
@@ -1301,10 +1478,10 @@ switch char(M)
             else
                 N=Nmax+1;
             end
-            im1=zeros(size(mask,1),size(mask,2),N); im2=im1;Dt=zeros(N,1);
+            im1=zeros(size(mask,1),size(mask,2),N,imClass); im2=im1;Dt=zeros(N,1,imClass);
             for n=1:N
-                im1_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]));
-                im2_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
+                im1_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]),imClass);
+                im2_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]),imClass);
                 im1(:,:,n)=flipud(im1_temp(:,:,1));
                 im2(:,:,n)=flipud(im2_temp(:,:,1));
 %                 if Zeromean(e)==1
@@ -1318,11 +1495,23 @@ switch char(M)
             end
             imageSize=size(im1);
 
-            %initialize grid and evaluation matrix
+            % initialize grid and evaluation matrix for every pixel in image
             [XI,YI]=IMgrid(imageSize,[0 0]);
+            %index-based pixel coordinates are integers on center, but we need XI and YI to
+            %correspond to vector locations, which are centered on pixel edges for even sized
+            %windows.  This means the center of pixel index 1 is actually at coordinate
+            %0.5 from image edge, etc.
+            % We need to do this because the vector positions we will use
+            % for interpolation and deformation will be on the physical
+            % grid, but will will need to know where the pixels are located
+            % relative to them, not their indices.
+            %BUT they are pixel centered for ODD sized windows.  (FIX) but
+            %for now will ignore since even windows are more common.
+            XI = XI - 0.5;
+            YI = YI - 0.5;
 
-            UI = zeros(size(XI));
-            VI = zeros(size(YI));
+            UI = zeros(size(XI),imClass);
+            VI = zeros(size(YI),imClass);
 
             for e=1:P
                 t1=tic;
@@ -1330,22 +1519,22 @@ switch char(M)
                 S=size(X);X=X(:);Y=Y(:);
 
                 if ~strcmpi(Corr{e},'SPC')
-                    U=zeros(size(X,1),3,N);
-                    V=zeros(size(X,1),3,N);
-                    C=zeros(size(X,1),3,N);
-                    Di=zeros(size(X,1),3,N);
-                    Cp=zeros(Wsize(e,1),Wsize(e,2),size(X,1),N);
-                    Uval=zeros(size(X,1),3);
-                    Vval=zeros(size(X,1),3);
-                    Cval=zeros(size(X,1),3);
-                    Dval=zeros(size(X,1),3);
+                    U=zeros(size(X,1),3,N,imClass);
+                    V=zeros(size(X,1),3,N,imClass);
+                    C=zeros(size(X,1),3,N,imClass);
+                    Di=zeros(size(X,1),3,N,imClass);
+                    Cp=zeros(Wsize(e,1),Wsize(e,2),size(X,1),N,imClass);
+                    Uval=zeros(size(X,1),3,imClass);
+                    Vval=zeros(size(X,1),3,imClass);
+                    Cval=zeros(size(X,1),3,imClass);
+                    Dval=zeros(size(X,1),3,imClass);
                     Eval=repmat(reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1),[1 3]);
                     Eval(Eval==0)=-1;
                     Eval(Eval>0)=0;
-                    Uc=zeros(sum(Eval(:,1)>=0),3,N);
-                    Vc=zeros(sum(Eval(:,1)>=0),3,N);
-                    Cc=zeros(sum(Eval(:,1)>=0),3,N);
-                    Dc=zeros(sum(Eval(:,1)>=0),3,N);
+                    Uc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    Vc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    Cc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    Dc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
                     
                     for t=1:N
                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
@@ -1391,10 +1580,10 @@ switch char(M)
 %                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:), Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
-                        C=zeros(length(X),3);
-                        Di=zeros(length(X),3);
+                        C=zeros(length(X),3,imClass);
+                        Di=zeros(length(X),3,imClass);
                         C(repmat(Eval,[1 3])>=0)=Cc;
-                        t_opt=zeros(size(X));
+                        t_opt=zeros(size(X),imClass);
                         t_opt(Eval>=0)=t_optc;
                     else
                         C=[];t_opt=[];Di=[];
@@ -1495,7 +1684,14 @@ switch char(M)
                         [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
                     end
                     
-                    %velocity interpolation
+                    %velocity interpolation -
+                    %resample U(X,Y) and V(X,Y) onto UI(XI,YI) and
+                    %VI(XI,YI) where XI and YI are a list of every
+                    %pixel in the image plane. Velinterp is the type of
+                    %interpolation to use.
+                    % We have previously made sure XI and YI correspond
+                    % to the vector positions of the pixel centers by
+                    % shifting by -0.5.
                     UI = VFinterp(X,Y,U,XI,YI,Velinterp);
                     VI = VFinterp(X,Y,V,XI,YI,Velinterp);
 
