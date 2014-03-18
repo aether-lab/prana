@@ -362,8 +362,8 @@ switch char(M)
             %BUT they are pixel centered for ODD sized windows.  (FIX) but
             %for now will ignore since even windows are more common.
             [XI,YI]=IMgrid(imageSize,[0 0]);
-            XI = cast(XI,imClass);
-            YI = cast(YI,imClass);
+            XI = cast(XI,imClass) - 0.5;
+            YI = cast(YI,imClass) - 0.5;
 
             UI = BWO(1)*ones(size(XI),imClass);
             VI = BWO(2)*ones(size(YI),imClass);
