@@ -769,7 +769,7 @@ switch char(M)
                     
                     %Multigrid and Deform need to interpolate this pass's displacements
                     %onto a different grid
-                    if strcmpi(M,'Multigrid') || ~ismepty(regexpi(M{1},'Deform','once'))
+                    if strcmpi(M,'Multigrid') || ~isempty(regexpi(M{1},'Deform','once'))
                         t1=tic;
 
                         %velocity smoothing
@@ -917,7 +917,7 @@ switch char(M)
                 if Writeswitch(e)
                     fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),floor((rem(savetime(e),60)-floor(rem(savetime(e),60)))*10))
                 end
-                if strcmp(M,'Multigrid') || (~isempy(regexpi(M{1},'Deform','once')) && mindefloop(e) == 1)
+                if strcmp(M,'Multigrid') || (~isempty(regexpi(M{1},'Deform','once')) && mindefloop(e) == 1)
                     if e~=P
                         fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
                         if strcmp(M,'Deform')
