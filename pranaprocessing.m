@@ -34,8 +34,8 @@ end
 
 %method and passes
 P = str2double(Data.passes);
-Method = {'Multipass','Multigrid','Deform','Ensemble','EDeform','Multiframe','FowardDeform'};
-M = Method(str2double(Data.method));
+Method = {'Multipass','Multigrid','Deform','Ensemble','EDeform','Multiframe','ForwardDeform'};
+M = Method{str2double(Data.method)};
 % Color channel
 try
     if isfield(Data,'channel')
@@ -271,7 +271,7 @@ wbase_org=wbase;
 %% --- Evaluate Image Sequence ---
 switch char(M)
     
-    case {'Multipass','Multigrid','Deform','FowardDeform'}
+    case {'Multipass','Multigrid','Deform','ForwardDeform'}
         %% --- Multipass, Multigrid, Deform
         frametime=zeros(length(I1),1);
         for q=1:length(I1)
@@ -413,7 +413,7 @@ switch char(M)
                     %if Corr(e)<4
                     if ~strcmpi(Corr{e},'SPC')
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
-                        if strcmpi(M,'FowardDeform')
+                        if strcmpi(M,'ForwardDeform')
                             % use coordinate system for deformed second
                             % frame to estimate deformation tensor and
                             % transform of subpixel corrector at t0 to
