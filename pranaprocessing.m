@@ -409,7 +409,7 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                if (e~=1 || defloop~=1) && ~isempty(regexpi(M{1},'Deform','once'))         %then don't offset windows, images already deformed
+                if (e~=1 || defloop~=1) && ~isempty(regexpi(M,'Deform','once'))         %then don't offset windows, images already deformed
                     %if Corr(e)<4
                     if ~strcmpi(Corr{e},'SPC')
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
@@ -760,7 +760,7 @@ switch char(M)
                 %converged yet for iterative deform, we need to prepare U
                 %and V from this pass for use as a predictor in the next
                 %pass
-                if e~=P || (~isempty(regexpi(M{1},'Deform','once')) && defloop ~=1)
+                if e~=P || (~isempty(regexpi(M,'Deform','once')) && defloop ~=1)
                     %reshape from list of grid points to matrix
                     X=reshape(X,[S(1),S(2)]);
                     Y=reshape(Y,[S(1),S(2)]);
@@ -769,7 +769,7 @@ switch char(M)
                     
                     %Multigrid and Deform need to interpolate this pass's displacements
                     %onto a different grid
-                    if strcmpi(M,'Multigrid') || ~ismepty(regexpi(M{1},'Deform','once'))
+                    if strcmpi(M,'Multigrid') || ~isempty(regexpi(M,'Deform','once'))
                         t1=tic;
 
                         %velocity smoothing
@@ -910,14 +910,14 @@ switch char(M)
                 if Valswitch(e)
                     fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),floor((rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))*10))
                 end
-                if ~isempty(regexpi(M{1},'Deform','once')) && mindefloop(e) ~= 1
+                if ~isempty(regexpi(M,'Deform','once')) && mindefloop(e) ~= 1
                     fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
                     fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
                 end
                 if Writeswitch(e)
                     fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),floor((rem(savetime(e),60)-floor(rem(savetime(e),60)))*10))
                 end
-                if strcmp(M,'Multigrid') || (~isempy(regexpi(M{1},'Deform','once')) && mindefloop(e) == 1)
+                if strcmp(M,'Multigrid') || (~isempty(regexpi(M,'Deform','once')) && mindefloop(e) == 1)
                     if e~=P
                         fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
                         if strcmp(M,'Deform')
