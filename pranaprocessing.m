@@ -1054,7 +1054,7 @@ switch char(M)
                 if strcmp(M,'Multigrid') || (~isempty(regexpi(M,'Deform','once')) && mindefloop(e) == 1)
                     if e~=P
                         fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
-                        if strcmp(M,'Deform')
+                        if ~isempty(regexpi(M,'Deform','once'))
                             fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
                         end
                     end
