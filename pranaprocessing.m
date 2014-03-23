@@ -368,7 +368,8 @@ switch char(M)
             %load dynamic input velocity, overwrite BWO or default
             if strcmpi(Data.input_vel_type,'dynamic')  
                 
-                Vel0 = load(fullfile(Data.input_veldirec,[input_velbase,sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+                %for now, assume that input vector files are stored in .mat
+                Vel0 = load(fullfile(Data.input_veldirec,[Data.input_velbase,sprintf(['%0.' Data.imzeros 'i.mat'],I1(q))]));
                 
                 %velocity smoothing, if first pass is smoothed, assumed
                 %previous passs needed to be as well
