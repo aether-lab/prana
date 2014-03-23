@@ -234,7 +234,7 @@ maskSize(3)=size(mask,3);
 %for now will ignore since even windows are more common.
 XI = cast(XI,imClass) - 0.5;
 YI = cast(YI,imClass) - 0.5;
-if strcmpi(Data.input_vel_type,'static')
+if strcmpi(Data.input_vel_type,'static')  %'dynamic' is handled below in the processing loop
     Vel0 = load(Data.input_velocity);
     
     %velocity smoothing
@@ -348,7 +348,7 @@ switch char(M)
                 mask = cast(imread([maskbase sprintf(['%0.' Data.maskzeros 'i.' Data.maskext],maskname(q))]),imClass);
                 mask = flipud(mask);
             end
-
+            
             % initialize grid and evaluation matrix for every pixel in image
             %cast the pixel coordinates to imClass for reduced memory
             %index-based pixel coordinates are integers on center, but we need XI and YI to
@@ -364,6 +364,36 @@ switch char(M)
             [XI,YI]=IMgrid(imageSize,[0 0]);
             XI = cast(XI,imClass) - 0.5;
             YI = cast(YI,imClass) - 0.5;
+
+            %load dynamic input velocity, overwrite BWO or default
+            if strcmpi(Data.input_vel_type,'dynamic')  
+                
+                Vel0 = load(fullfile(Data.input_veldirec,[input_velbase,sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
+                
+                %velocity smoothing, if first pass is smoothed, assumed
+                %previous passs needed to be as well
+                if Velsmoothswitch(1)==1
+                    [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
+                    U = cast(U,imClass);
+                    V = cast(V,imClass);
+                    %when interpolating, assume saved coordinate system consistent with
+                    %vector locations (i.e. they are in vector grid positions, not
+                    %pixel-centered)
+                    
+                    %resample U, V and W from vector grid coordinates
+                    %V(X,Y,Z) onto UI,VI, and WI on pixel coordinates
+                    %[XI,YI] where XI and YI are a list of every
+                    %pixel centers in the image plane. Velinterp is the type of
+                    %interpolation to use.
+                    Vel0.U = VFinterp(Vel0.X,Vel0.Y,U,XI,YI,Velinterp);
+                    Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
+                else
+                    %see above note about coordinate systems
+                    Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),'single');
+                    Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),'single');
+                end
+                VelInputFile = 1;
+            end
             
             UI = Vel0.U;
             VI = Vel0.V;
@@ -380,6 +410,104 @@ switch char(M)
             defconvV = zeros(P,max(maxdefloop));
             
             e = 0; defloop = 1; % What is e? 
+            
+            % before we start doing the new work, see if we need to deform
+            % the input images to match the input velocity field
+            if ( strcmpi(Data.input_vel_type,'dynamic') || strcmpi(Data.input_vel_type,'static'))  && ~isempty(regexpi(M,'Deform','once'))
+                
+                %Here, UI and VI are provided by the velocity input
+                %file....
+                %For deform, UI and VI will be used to deform the images, and
+                %then downsampled in the next pass to the new grid
+                %for addition to the next pass's displacement.
+                %If not deform, then UI and VI just get downsampled
+                %next pass and used for DWO.
+                if strcmpi(M,'Deform')
+                    t1=tic;
+                    
+                    % translate pixel locations, but
+                    % since sincBlackmanInterp2 assumes
+                    % coordinate system is pixel-centered, we need
+                    % to convert back to index-coordinates for the
+                    % deform.
+                    %HOWEVER: we need to use these shifted
+                    %coordinates later in vector coordinates, so
+                    %move the -0.5 pixel correction to the call to
+                    %the sincBlackmanInterp2 function
+                    XD1 = XI-UI/2 ;
+                    YD1 = YI-VI/2;
+                    XD2 = XI+UI/2;
+                    YD2 = YI+VI/2;
+                    
+                    % Preallocate memory for deformed images.
+                    im1d = zeros(size(im1),imClass);
+                    im2d = zeros(size(im2),imClass);
+                    
+                    % Deform images according to the interpolated velocity fields
+                    for k = 1:nChannels % Loop over all of the color channels in the image
+                        if Iminterp == 1 % Sinc interpolation (without blackman window)
+                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'sinc');
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                            
+                        elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'blackman');
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                        end
+                    end
+                    
+                    %not sure this won't get overwritten below,
+                    %but I think that normally the deformation is
+                    %stored on the next pass?  Also, code can't get
+                    %to deformation without finishing pass 1 (which
+                    %resets defloop to 1 and stores the time at e+1)
+                    %or incrementing defloop to 2, and storing time
+                    %at e.  So it should always be safe to store at
+                    %(e=1,defloop=1)
+                    deformtime(1,defloop)=toc(t1);
+                    
+                elseif strcmpi(M,'ForwardDeform') %only the 2nd image is deformed
+                    t1=tic;
+                    
+                    % translate pixel locations, but
+                    % since sincBlackmanInterp2 assumes
+                    % coordinate system is pixel-centered, we need
+                    % to convert back to index-coordinates for the
+                    % deform.
+                    %HOWEVER: we need to use these shifted
+                    %coordinates later in vector coordinates, so
+                    %move the -0.5 pixel correction to the call to
+                    %the sincBlackmanInterp2 function
+                    XD1 = XI   ;
+                    YD1 = YI   ;
+                    XD2 = XI+UI;
+                    YD2 = YI+VI;
+                    
+                    % Preallocate memory for deformed images.
+                    im1d = im1;
+                    im2d = zeros(size(im2),imClass);
+                    
+                    % Deform images according to the interpolated velocity fields
+                    for k = 1:nChannels % Loop over all of the color channels in the image
+                        if Iminterp == 1 % Sinc interpolation (without blackman window)
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                        elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                        end
+                    end
+                    
+                    %not sure this won't get overwritten below,
+                    %but I think that normally the deformation is
+                    %stored on the next pass?  Also, code can't get
+                    %to deformation without finishing pass 1 (which
+                    %resets defloop to 1 and stores the time at e+1)
+                    %or incrementing defloop to 2, and storing time
+                    %at e.  So it should always be safe to store at
+                    %(e=1,defloop=1)
+                    deformtime(1,defloop)=toc(t1);
+                end
+            end %pre-deformation for velocity input
+                        
+            
             
             % This while statment is used to interatively move through the
             % deformations.  If the minimum number of loops hasn't been
@@ -409,7 +537,7 @@ switch char(M)
                 Eval(Eval>0)=0;
 
                 %correlate image pair
-                if (e~=1 || defloop~=1) && ~isempty(regexpi(M,'Deform','once'))         %then don't offset windows, images already deformed
+                if (e~=1 || defloop~=1 || VelInputFile) && ~isempty(regexpi(M,'Deform','once'))          %then don't offset windows, images already deformed
                     %if Corr(e)<4
                     if ~strcmpi(Corr{e},'SPC')
                         [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
@@ -906,6 +1034,11 @@ switch char(M)
             fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ') at %s \n'], datestr(now));
             fprintf('----------------------------------------------------\n')
             for e=1:P
+                if e==1 && ~isempty(regexpi(M,'Deform','once')) && VelInputFile && mindefloop(e) == 1
+                    %fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
+                    fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,1))/60),floor(rem(sum(deformtime(e,1)),60)),floor((rem(sum(deformtime(e,1)),60)-floor(rem(sum(deformtime(e,1)),60)))*10))
+                end
+
                 fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(sum(corrtime(e,:))/60),floor(rem(sum(corrtime(e,:)),60)),floor((rem(sum(corrtime(e,:)),60)-floor(rem(sum(corrtime(e,:)),60)))*10))
                 if Valswitch(e)
                     fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),floor((rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))*10))
