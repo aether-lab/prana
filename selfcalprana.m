@@ -1,12 +1,12 @@
-function varargout = prana(varargin)
-% HELP TEXT for running prana from the command line goes here.
+function varargout = selfcalprana(varargin)
+% HELP TEXT for running selfcalprana from the command line goes here.
 
-%     This file is part of prana, an open-source GUI-driven program for
+%     This file is part of selfcalprana, an open-source GUI-driven program for
 %     calculating velocity fields using PIV or PTV.
 %     Copyright (C) 2010  Virginia Polytechnic Institute and State
 %     University
 % 
-%     prana is free software: you can redistribute it and/or modify
+%     selfcalprana is free software: you can redistribute it and/or modify
 %     it under the terms of the GNU General Public License as published by
 %     the Free Software Foundation, either version 3 of the License, or
 %     (at your option) any later version.
@@ -23,8 +23,8 @@ function varargout = prana(varargin)
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @prana_OpeningFcn, ...
-                   'gui_OutputFcn',  @prana_OutputFcn, ...
+                   'gui_OpeningFcn', @selfcalprana_OpeningFcn, ...
+                   'gui_OutputFcn',  @selfcalprana_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -39,7 +39,7 @@ end
 % End initialization code - DO NOT EDIT
 
 % --- Opening function for figure / variable initialization ---
-function prana_OpeningFcn(hObject, eventdata, handles, varargin)
+function selfcalprana_OpeningFcn(hObject, eventdata, handles, varargin)
 warning off
 handles.syscolor=get(hObject,'color');
 
@@ -60,7 +60,7 @@ try
     %Are we still saving defaultsettings.mat anywhere?  I couldn't find it.
 catch ERR  %#ok<NASGU>
     
-    % Now we call a function that will build a default prana Job.  This is
+    % Now we call a function that will build a default selfcalprana Job.  This is
     % done in part to allow other (exterieur) codes to build default jobs.
     [defaultdata] = buildDefaultPranaJob();
 end
@@ -93,7 +93,7 @@ if str2double(defaultdata.splash)==0 || str2double(defaultdata.clientversion)<2.
     %save('defaultsettings.mat','defaultdata')
 end
 
-%JJC: for now, disable this save - running prana drops defaultsettings.mat files in whatever your current working directory is - ANNOYING!
+%JJC: for now, disable this save - running selfcalprana drops defaultsettings.mat files in whatever your current working directory is - ANNOYING!
 %save('defaultsettings.mat','defaultdata')
 
 handles.data=defaultdata;
@@ -139,7 +139,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line ---
-function varargout = prana_OutputFcn(hObject, eventdata, handles) 
+function varargout = selfcalprana_OutputFcn(hObject, eventdata, handles) 
 varargout{1} = handles.output;
 
 % --- Job Menu ---
@@ -2835,19 +2835,19 @@ e=0;
 for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
     e=e+1;
     files(e,1)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
-    files(e,2)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
+    files(e,2)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep)-1)]};
 end
-for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
-    e=e+1;
-    files(e,1)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
-    files(e,2)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
-end
+% for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
+%     e=e+1;
+%     files(e,1)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
+%     files(e,2)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
+% end
 %keyboard;
 [sorted_names,sorted_index] = sortrows({dir_struct.name}');
 [sorted_names2,~] = sortrows({dir_struct2.name}');
-sorted_names=[sorted_names;sorted_names2];
+%sorted_names=[sorted_names;sorted_names2];
 [files1,id,id1] = intersect(sorted_names,files(:,1));
-[files2,id,id2] = intersect(sorted_names,files(:,2));
+[files2,id,id2] = intersect(sorted_names2,files(:,2));
 [idf]=intersect(id1,id2);
 if isempty(idf)
     set(handles.imagelist,'backgroundcolor','r');
@@ -4244,7 +4244,7 @@ set(texthandle, 'Position',[MsgTxtXOffset MsgTxtYOffset 0]);
 % 
 % set(QuestFig ,'NextPlot','add');
 % 
-% pranadir=which('prana');
+% pranadir=which('selfcalprana');
 % try
 %     logo=imread(fullfile(pranadir(1:end-8),'documentation','logo.tif'),'tif');
 % catch
