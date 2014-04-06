@@ -796,7 +796,9 @@ function selfcalbutton_Callback(hObject, eventdata, handles)
 guiprops        = guidata(hObject);
 caldata=guiprops.caljob;
 selfcaljob=guiprops.selfcaljob;
- for i=1:10
+
+reftrue=1;
+ while(reftrue~=0)
      
  [caldatamod]=selfcalibration_v1(caldata,selfcaljob);
  
@@ -811,13 +813,13 @@ selfcaljob=guiprops.selfcaljob;
  
   refine= input('Do you want to Refine? (Y/N):','s');
   
-  if strcmp(refine,'Y')
+  if strcmpi(refine,'Y')
       
-      continue
+      reftrue=1;
       
   else
       
-      break
+      reftrue=0;
   end
  
  end

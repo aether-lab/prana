@@ -5,7 +5,7 @@ clear all;
 
 %%% LOADING CALIBRATION JOB FILE
 cal= input('Do you want to load a Calibration job? (Y/N):','s');
-if strcmp(cal,'Y')
+if strcmpi(cal,'Y')
     [f1,p1]=uigetfile('*.*','Load Calibration Job File');
     load([p1,f1]);
     caljob=datasave.caljob;
@@ -23,7 +23,7 @@ end
 
 %%%LOADING SELFCAL JOB FILE
 selfcal= input('Do you want to load a Self-Calibration job? (Y/N):','s');
-if strcmp(selfcal,'Y')
+if strcmpi(selfcal,'Y')
     [f1,p1]=uigetfile('*.*','Load Self Calibration Job File');
     load([p1,f1]);
     selfcaljob=Data;
@@ -40,14 +40,14 @@ end
 
 
 %%%LOADING PRANA JOB FILE
-pranajob= input('Do you want to load a Self-Calibration job? (Y/N):','s');
-if strcmp(pranajob,'Y')
+pranajob= input('Do you want to load a Prana job for twod processing? (Y/N):','s');
+if strcmpi(pranajob,'Y')
     [f1,p1]=uigetfile('*.*','Load Prana Job File');
     load([p1,f1]);
     planarjob=Data;
     clear Data;
 else
-    selfcalprana;
+    prana;
     fprintf('\n  Setup and Load Selfcal job \n');
     keyboard;
     [f1,p1]=uigetfile('*.*','Load Prana Job File');
@@ -106,9 +106,9 @@ caljob.convergemessage = convergemessage;
 %%%DOING SELF CALIBRATION
 
 caldata=caljob; %CREATING COPY OF CAL JOB SUCH THAT ORIGINAL CAN BE RETRIEVED EVEN AFTER SELF CALIBRATION
-
- for i=1:10
-     
+reftrue=1;
+ while (reftrue~=0)
+ 
  [caldatamod]=selfcalibration_v1(caldata,selfcaljob);
  
  caldata.allx1data=caldatamod.allx1data;
@@ -122,13 +122,10 @@ caldata=caljob; %CREATING COPY OF CAL JOB SUCH THAT ORIGINAL CAN BE RETRIEVED EV
  
   refine= input('Do you want to Refine? (Y/N):','s');
   
-  if strcmp(refine,'Y')
-      
-      continue
-      
+  if strcmpi(refine,'Y')
+      reftrue=1;
   else
-      
-      break
+     reftrue=0;
   end
  
  end
