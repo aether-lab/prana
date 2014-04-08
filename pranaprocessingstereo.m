@@ -1062,6 +1062,7 @@ switch char(M)
             frametime(q)=eltime;
             comptime=mean(frametime(1:q))*(length(I1)-q);
             fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
+            end
         end
         
     case {'Ensemble','EDeform'}
