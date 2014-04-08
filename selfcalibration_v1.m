@@ -238,6 +238,25 @@ end
 alphatan(:,:,2)=(((dFdx3(:,:,4).*dFdx2(:,:,3)) - (dFdx2(:,:,4).*dFdx3(:,:,3)))./((dFdx2(:,:,4).*dFdx1(:,:,3)) - (dFdx1(:,:,4).*dFdx2(:,:,3))));
 betatan(:,:,2)=(((dFdx3(:,:,4).*dFdx1(:,:,3)) - (dFdx1(:,:,4).*dFdx3(:,:,3)))./((dFdx1(:,:,4).*dFdx2(:,:,3)) - (dFdx2(:,:,4).*dFdx1(:,:,3))));
 %keyboard;
+
+%Display camera angles for reference
+    
+%         figure(100); subplot(2,2,1);
+%         imagesc(atand(alphatan(:,:,1))); colorbar; %caxis([25 30]);
+%         title('Camera 1 Angle \alpha1','FontSize',16)
+%         subplot(2,2,2);
+%         imagesc(atand(alphatan(:,:,2))); colorbar; %caxis([-30 -25]);
+%         title('Camera 2 Angle \alpha2','FontSize',16)
+%         subplot(2,2,3);
+%         imagesc(atand(betatan(:,:,1))); colorbar; %caxis([-2 2]);(end-(zed+10):end-(zed+5))
+%         title('Camera 1 Angle \beta1','FontSize',16)
+%         subplot(2,2,4);
+%         imagesc(atand(betatan(:,:,2))); colorbar; %caxis([-2 2]);
+%         title('Camera 1 Angle \beta1','FontSize',16)
+%     
+    %keyboard;
+    
+
 % Triangulation using formula (1) of that paper
 
 if max(max(abs(alphatan(:,:,1)-abs(alphatan(:,:,2)))))>max(max(abs(betatan(:,:,1)-abs(betatan(:,:,2)))))

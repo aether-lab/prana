@@ -58,7 +58,24 @@ function [a_cam1, a_cam2, aXcam1, aYcam1, aXcam2, aYcam2, convergemessage] = fit
 % save('allX1datagood.mat','allX1data');
 % save('allX2datagood.mat','allX2data');
 
+%keyboard;
+%  allx1data(:,1)=(allx1data(:,1)-mean(allx1data(:,1)))./(1*max(abs(allx1data(:,1))));
+%  allx1data(:,2)=(allx1data(:,2)-mean(allx1data(:,2)))./(1*max(abs(allx1data(:,2))));
+%  allx1data(:,3)=(allx1data(:,3)-mean(allx1data(:,3)))./(1*max(abs(allx1data(:,3))));
+%  
+%  allx2data(:,1)=(allx2data(:,1)-mean(allx2data(:,1)))./(1*max(abs(allx2data(:,1))));
+%  allx2data(:,2)=(allx2data(:,2)-mean(allx2data(:,2)))./(1*max(abs(allx2data(:,2))));
+%  allx2data(:,3)=(allx2data(:,3)-mean(allx2data(:,3)))./(1*max(abs(allx2data(:,3))));
+%  
+%  allX1data(:,1)=(allX1data(:,1)-mean(allX1data(:,1)))./(1*max(abs(allX1data(:,1))));
+%  allX1data(:,2)=(allX1data(:,2)-mean(allX1data(:,2)))./(1*max(abs(allX1data(:,2))));
+%   
+%  allX2data(:,1)=(allX2data(:,1)-mean(allX2data(:,1)))./(1*max(abs(allX2data(:,1))));
+%  allX2data(:,2)=(allX2data(:,2)-mean(allX2data(:,2)))./(1*max(abs(allX2data(:,2))));
 
+ 
+ 
+ 
 optionsls=optimset('MaxIter',30000,'MaxFunEvals',30000,'TolX',1e-11,'TolFun',1e-7,...
         'LargeScale','off','Display','off','Algorithm','levenberg-marquardt');
 

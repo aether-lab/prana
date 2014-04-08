@@ -47,16 +47,22 @@ if strcmp(dewarpmethod,'Willert')
     outputdirlist.dewarpdir2=dirout2;
     
     istring1=sprintf(['%%s%%s%%0%0.0fd.',ext],zer);
-    
-    IML=imread(sprintf(istring1,dir1,base1,1));
-    IMR=imread(sprintf(istring1,dir2,base2,1));
+    %keyboard;
+    IML=imread(sprintf(istring1,dir1,base1,fstart));
+    IMR=imread(sprintf(istring1,dir2,base2,fstart));
     [Jmax1,Imax1] = size(IML);
     [Jmax2,Imax2] = size(IMR);
     
-    X1points=[0.5 Jmax1-0.5 0.5 Jmax1-0.5];
-    Y1points=[0.5 0.5 Imax1-0.5 Imax1-0.5];
-    X2points=[0.5 Jmax2-0.5 0.5 Jmax2-0.5];
-    Y2points=[0.5 0.5 Imax2-0.5 Imax2-0.5];
+    
+    X1points=[1 Jmax1 1 Jmax1];
+    Y1points=[1 1 Imax1 Imax1];
+    X2points=[1 Jmax2 1 Jmax2];
+    Y2points=[1 1 Imax2 Imax2];
+     
+%     X1points=[0.5 Jmax1-0.5 0.5 Jmax1-0.5];
+%     Y1points=[0.5 0.5 Imax1-0.5 Imax1-0.5];
+%     X2points=[0.5 Jmax2-0.5 0.5 Jmax2-0.5];
+%     Y2points=[0.5 0.5 Imax2-0.5 Imax2-0.5];
     
 elseif strcmp(dewarpmethod,'Soloff')
     load(vectorlist{1});
@@ -99,16 +105,6 @@ end
         
         fprintf('Computing overlapping area...\n');
 
-        
-%         X1points=[1 Jmax1 1 Jmax1];Y1points=[1 1 Imax1 Imax1];
-%         X2points=[1 Jmax2 1 Jmax2];Y2points=[1 1 Imax2 Imax2];
-
-%         X1points=[0 Jmax1 0 Jmax1];Y1points=[0 0 Imax1 Imax1];
-%         X2points=[0 Jmax2 0 Jmax2];Y2points=[0 0 Imax2 Imax2];
-        
-        
-      
-          
         bottom1X=linspace(X1points(1),X1points(2),Jmax1)';
         top1X=linspace(X1points(3),X1points(4),Jmax1)';
         left1X=X1points(1)*ones(1,Imax1)';
@@ -261,7 +257,7 @@ end
     end
     %keyboard;
     if strcmp(dewarpmethod,'Willert')
-        [x1,y1] = meshgrid(0.5:1:Jmax1-0.5,0.5:1:Imax1-0.5);
+        %[x1,y1] = meshgrid(0.5:1:Jmax1-0.5,0.5:1:Imax1-0.5);
         fprintf('Dewarping Images...\n');
                 
         for k=fstart:fstep:fend+1
@@ -272,31 +268,34 @@ end
             
             incl=class(IMLi);
             %flipping images
-            IMLi=IMLi(end:-1:1,:);IMRi=IMRi(end:-1:1,:);
+            IMLi=IMLi(end:-1:1,:);
+            IMRi=IMRi(end:-1:1,:);
             %Interpolating on a common grid
-            %     IMLo=double((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 3)));
-            %     IMRo=double((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 3)));
+            IMLo=((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 3,'blackman')));
+            IMRo=((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 3,'blackman')));
             
-            IMLo=double((interp2(x1,y1,IMLi, Xgrid1, Ygrid1, 'spline',0)));
-            IMRo=double((interp2(x1,y1,IMRi, Xgrid2, Ygrid2, 'spline',0)));
+%             IMLo=double((interp2(x1,y1,IMLi, Xgrid1, Ygrid1, 'spline',0)));
+%             IMRo=double((interp2(x1,y1,IMRi, Xgrid2, Ygrid2, 'spline',0)));
             
-            % figure(4);imagesc(IMLo);colormap('gray');%axis equal tight;
-            % figure(5);imagesc(IMRo);colormap('gray');%axis equal tight;
-            % figure(6);imagesc(IMLi);colormap('gray');%axis equal tight;
-            % figure(7);imagesc(IMRi);colormap('gray');%axis equal tight;
+            
             %  keyboard;
             %flipping them back
             IMLo=IMLo(end:-1:1,:);IMRo=IMRo(end:-1:1,:);
             IMLo=cast(IMLo,incl);IMRo=cast(IMRo,incl);
+            
+%             figure(4);imagesc(IMLo);colormap('gray');%axis equal tight;
+%             figure(5);imagesc(IMRo);colormap('gray');%axis equal tight;
+%             figure(6);imagesc(IMLi);colormap('gray');%axis equal tight;
+%             figure(7);imagesc(IMRi);colormap('gray');%axis equal tight;
             %writing dewarped images to the output directory
             %writing the images because of two reasons:-
             %1)prana assumes all images to be in a sigle directory while processing
             %2)In prana processing just the image matrices cannot be given as input, have to give image location
             %     clear IM;
-            %     IM(:,:,1)=IMLo;
-            %     IM(:,:,2)=IMRo;
-            %     IM(:,:,3)=IMRo;
-            %     figure;imshow(IM);
+%                 IM(:,:,1)=IMLo;
+%                 IM(:,:,2)=IMRo;
+%                 IM(:,:,3)=IMRo;
+%                 figure(10);imshow(IM);
             
             %keyboard;
             imwrite((IMLo),sprintf(istring1,dirout1,base1,k),'TIFF','WriteMode','overwrite','Compression','none');
