@@ -714,7 +714,7 @@ while true;
 %         end;
 
         L=subpixel_grid_point_diameter*sqrt(2*pi)/4;
-        
+       
         % This checks whether the current point is exterior to the image
         % and if so also checks whether it is an external index search
         % point.  If it is exterior to the image, the function continues to
@@ -747,7 +747,9 @@ while true;
         % This calculates the centroid of the region about the estimated
         % location of the current grid point
         [X_Centroid_Search,Y_Centroid_Search]=calculate_centroid(I,X_Third_Location_Search,Y_Third_Location_Search,Nx,Ny);
-        
+        if isnan(X_Centroid_Search) || isnan(Y_Centroid_Search)
+            continue;
+        end
         hold on;
         plot(X_Centroid_Search,Y_Centroid_Search,'s','Color',[1,0.7,0],'Markersize',18,'Linewidth',2);
         hold off;
@@ -1126,14 +1128,25 @@ xmin=round(XC-L/2);
 xmax=round(XC+L/2);
 ymin=round(YC-L/2);
 ymax=round(YC+L/2);
+%Checking limits such that it is not outside the image
+if xmin==0
+    xmin=1;
+end
+if ymin==0
+    ymin=1;
+end
+if xmax>size(I,2);
+    xmax=size(I,2);
+end
+if ymax>size(I,1);
+    ymax=size(I,1);
+end
+
 % This extracts the current ROI
 try
     I_ROI=I(ymin:ymax,xmin:xmax);
 catch
-    xmin=1;
-    I_ROI=I(ymin:ymax,xmin:xmax);
-%     keyboard;
-%     return;
+    keyboard; %if still fails see what is the error
 end
 % This is the sorted range of intensity values
 v_sort=double(sort(I_ROI(:)));

@@ -109,7 +109,7 @@ caldata=caljob; %CREATING COPY OF CAL JOB SUCH THAT ORIGINAL CAN BE RETRIEVED EV
 reftrue=1;
  while (reftrue~=0)
  
- [caldatamod]=selfcalibration_v1(caldata,selfcaljob);
+ [caldatamod]=selfcalibration_v2(caldata,selfcaljob);
  
  caldata.allx1data=caldatamod.allx1data;
  caldata.allx2data=caldatamod.allx2data;
