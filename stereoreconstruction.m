@@ -37,7 +37,11 @@ if strcmp(rectype{1},'Willert')
     job1=planarjob;
     job1.imdirec=dewarpdirlist.dewarpdir2;
     job1.imbase=planarjob.imbase2;
-    mkdir(fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]));
+    
+    if ~exist(fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]),'dir')
+        mkdir(fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]));
+    end
+    
     job1.outdirec=fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]);    
     diroutlist.willert2dcam2=job1.outdirec;
     fprintf(['\nProcessing Planar Fields for Camera:',num2str(caldata.camnumber(2)),'\n']);
@@ -61,7 +65,11 @@ if strcmp(rectype{2},'Soloff')
     job1=planarjob;
     job1.imdirec=planarjob.imdirec;
     job1.imbase=planarjob.imbase;
-    mkdir(fullfile(job1.outdirec,rectype{2},['Camera',num2str(caldata.camnumber(1)),filesep]));
+    
+    if ~exist(fullfile(job1.outdirec,rectype{2},['Camera',num2str(caldata.camnumber(1)),filesep]),'dir')
+        mkdir(fullfile(job1.outdirec,rectype{2},['Camera',num2str(caldata.camnumber(1)),filesep]));
+    end
+    
     job1.outdirec=fullfile(job1.outdirec,rectype{2},['Camera',num2str(caldata.camnumber(1)),filesep]);    
     diroutlist.soloff2dcam1=job1.outdirec;
     fprintf(['\nProcessing Planar Fields for Camera:',num2str(caldata.camnumber(1)),'\n']);
