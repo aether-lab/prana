@@ -55,8 +55,21 @@ job1.imdirec=outputdirlist.dewarpdir1;
 job1.imdirec2=outputdirlist.dewarpdir2;
 job1.imcstep='0';
 
-fprintf('Calculating Disparity.\n');
-pranaprocessingstereo(job1);
+fprintf('Calculating Disparity.\n')
+if any(str2double(job1.method)==[4 5]) && (str2double(job1.par) == 1)
+    try
+        matlabpool('close')
+    end
+    try
+    matlabpool(str2double(job1.parprocessors))
+    catch;keyboard;end
+    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+    pranaprocessingstereo(job1)
+    fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
+    matlabpool('close');
+else
+    pranaprocessingstereo(job1);
+end
 %pranaPIVcode(job1);
 %keyboard;
 istring1=sprintf(['%%s%%s%%0%0.0fd.','mat'],str2double(job1.imzeros));
@@ -72,11 +85,13 @@ clear U V X Y;
 %[X3,~,xgrid1,ygrid1,Dux,Duy,Imax1,Jmax1]=disparitycal(cameracal,selfcaljob);
 % Dispx=Dux;
 % Dispy=Duy;
-figure('Name','Disparity Map');quiver(X3,Y3,Dux,Duy,1)
+figure('Name','Disparity Map');
+quiver(X3,Y3,Dux,Duy,1);
+axis equal tight xy
 mdx=mean(mean(Dux));%mean x disparity
 %figure(22);hist(Dux(:));
 mdy=mean(mean(Duy));%mean y disparity
-sprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy)])
+fprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy)])
 
 %keyboard;
 %calculating the length of the common grid in the object plane on which the

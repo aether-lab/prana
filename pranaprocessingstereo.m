@@ -1157,12 +1157,12 @@ switch char(M)
                         if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                             loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]);
                             im1 = cast(loaddata.I,imClass);
-                            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
+                            loaddata=load([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
                             im2 = cast(loaddata.I,imClass);
                             loaddata =[];
                         else
                             im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]),imClass);
-                            im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]),imClass);
+                            im2=cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]),imClass);
                         end
                         
                         if size(im1, 3) > 2
@@ -1313,12 +1313,12 @@ switch char(M)
                     if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                         loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
                         im1 = cast(loaddata.I,imClass);
-                        loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                        loaddata=load([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
                         im2 = cast(loaddata.I,imClass);
                         loaddata =[];
                     else
                         im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
-                        im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
+                        im2=cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
                     end
                     
                     if size(im1, 3) > 2
@@ -1796,7 +1796,7 @@ switch char(M)
             im1=zeros(size(mask,1),size(mask,2),N,imClass); im2=im1;Dt=zeros(N,1,imClass);
             for n=1:N
                 im1_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]),imClass);
-                im2_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]),imClass);
+                im2_temp=cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]),imClass);
                 im1(:,:,n)=flipud(im1_temp(:,:,1));
                 im2(:,:,n)=flipud(im2_temp(:,:,1));
                 %                 if Zeromean(e)==1
