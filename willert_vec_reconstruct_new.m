@@ -132,21 +132,21 @@ for j=1:nof
     end
     
     % Display camera angles for reference
-    
-    %     figure(100); subplot(2,2,1);
-    %     imagesc(atand(alpha1)); colorbar; %caxis([25 30]);
-    %     title('Camera 1 Angle \alpha1','FontSize',16)
-    %     subplot(2,2,2);
-    %     imagesc(atand(alpha2)); colorbar; %caxis([-30 -25]);
-    %     title('Camera 2 Angle \alpha2','FontSize',16)
-    %     subplot(2,2,3);
-    %     imagesc(atand(beta1)); colorbar; %caxis([-2 2]);(end-(zed+10):end-(zed+5))
-    %     title('Camera 1 Angle \beta1','FontSize',16)
-    %     subplot(2,2,4);
-    %     imagesc(atand(beta2)); colorbar; %caxis([-2 2]);
-    %     title('Camera 1 Angle \beta1','FontSize',16)
-    
-    
+%     
+%     figure(100); subplot(2,2,1);
+%     imagesc(atand(alpha1)); colorbar; %caxis([25 30]);
+%     title('Camera 1 Angle \alpha1','FontSize',16)
+%     subplot(2,2,2);
+%     imagesc(atand(alpha2)); colorbar; %caxis([-30 -25]);
+%     title('Camera 2 Angle \alpha2','FontSize',16)
+%     subplot(2,2,3);
+%     imagesc(atand(beta1)); colorbar; %caxis([-2 2]);(end-(zed+10):end-(zed+5))
+%     title('Camera 1 Angle \beta1','FontSize',16)
+%     subplot(2,2,4);
+%     imagesc(atand(beta2)); colorbar; %caxis([-2 2]);
+%     title('Camera 1 Angle \beta1','FontSize',16)
+%     
+%     keyboard;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Perform Geometric Reconstruction on Camera 1 & 2 PIV Fields   %
@@ -164,7 +164,7 @@ for j=1:nof
         %
         u = (u2.*alpha1-u1.*alpha2)./(alpha1-alpha2);                       % U velocity reconstruction
         %
-        v = (v1+v2)/2+((u2-u1)/2).*((beta2-beta1)./(alpha1-alpha2));        % V velocity reconstruction
+        v = (v1+v2)/2+((u2-u1)/2).*((beta2+beta1)./(alpha1-alpha2));        % V velocity reconstruction
         % yg
         w = (u2-u1)./(alpha1-alpha2);                                       % W velocity reconstruction
     elseif min(abs(atand(alpha1(:)))) < 8 && min(abs(atand(alpha2(:)))) < 8
@@ -175,7 +175,7 @@ for j=1:nof
         %         y = (Y2.*beta1-Y1.*beta2)./(beta1-beta2);
         y = (Y1+Y2)/2;
         %
-        u = (u1+u2)/2+((v2-v1)/2).*((alpha2-alpha1)./(beta1-beta2));        % U velocity reconstruction
+        u = (u1+u2)/2+((v2-v1)/2).*((alpha2+alpha1)./(beta1-beta2));        % U velocity reconstruction
         %
         v = (v2.*beta1-v1.*beta2)./(beta1-beta2);                           % V velocity reconstruction
         %
