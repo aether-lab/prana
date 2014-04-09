@@ -868,18 +868,19 @@ switch char(M)
                         else
                             save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_'],I1(q)) sprintf(['%0.' Data.imzeros 'i.mat' ],I2(q))],'X','Y','U','V','Eval','C','Di')
                         end
-                        % This saves the correlation planes if that selection
-                        % has been made in the job file.
-                        if saveplane(e) && ~strcmpi(Corr{e},'SPC')
-                            Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
-                            save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
-                            clear Xloc Yloc C_planes
-                        end
-                        
-                        X=Xval;Y=Yval;
-                        
-                        savetime(e,defloop)=toc(t1);
                     end
+                    % This saves the correlation planes if that selection
+                    % has been made in the job file.
+                    if saveplane(e) && ~strcmpi(Corr{e},'SPC')
+                        Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
+                        save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
+                        clear Xloc Yloc C_planes
+                    end
+                        
+                    X=Xval;Y=Yval;
+                        
+                      savetime(e,defloop)=toc(t1);
+                end
                     
                     %reset any changes or scaling back to pixels
                     U=Uval; V=Vval;
@@ -1063,7 +1064,7 @@ switch char(M)
                 frametime(q)=eltime;
                 comptime=mean(frametime(1:q))*(length(I1)-q);
                 fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
-            end
+            
         end
         
     case {'Ensemble','EDeform'}
@@ -1157,12 +1158,12 @@ switch char(M)
                         if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                             loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]);
                             im1 = cast(loaddata.I,imClass);
-                            loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
+                            loaddata=load([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]);
                             im2 = cast(loaddata.I,imClass);
                             loaddata =[];
                         else
                             im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]),imClass);
-                            im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]),imClass);
+                            im2=cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]),imClass);
                         end
                         
                         if size(im1, 3) > 2
@@ -1313,12 +1314,12 @@ switch char(M)
                     if strcmpi(Data.imext,'mat') %read .mat file, image must be stored in variable 'I'
                         loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
                         im1 = cast(loaddata.I,imClass);
-                        loaddata=load([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                        loaddata=load([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
                         im2 = cast(loaddata.I,imClass);
                         loaddata =[];
                     else
                         im1=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
-                        im2=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
+                        im2=cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
                     end
                     
                     if size(im1, 3) > 2
@@ -1796,7 +1797,7 @@ switch char(M)
             im1=zeros(size(mask,1),size(mask,2),N,imClass); im2=im1;Dt=zeros(N,1,imClass);
             for n=1:N
                 im1_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]),imClass);
-                im2_temp=cast(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]),imClass);
+                im2_temp=cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]),imClass);
                 im1(:,:,n)=flipud(im1_temp(:,:,1));
                 im2(:,:,n)=flipud(im2_temp(:,:,1));
                 %                 if Zeromean(e)==1
