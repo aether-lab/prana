@@ -48,33 +48,40 @@ dir_struct1= dir(fullfile(diroutlist.willert2dcam1,['*.' 'mat']));
 flname1={dir_struct1.name}';
 dir_struct2= dir(fullfile(diroutlist.willert2dcam2,['*.' 'mat']));
 flname2={dir_struct2.name}';
-foutnamelist=regexp(flname1,'pass','split');
+
 nof=length(flname1);
+
+% Finals will not ALWAYS have "pass" in the name.  This could be a problem.
+foutnamelist=regexp(flname1,'pass','split');
+
+% Predefining variables helps things run faster.
+vectorlist = cell(nof,1);
+
 %keyboard;
 for j=1:nof
     
     vectorlist{j}=[{fullfile(diroutlist.willert2dcam1,flname1{j})};{fullfile(diroutlist.willert2dcam2,flname2{j})}];
     
-    load(vectorlist{j}{1});
+    vecfr1 = load(vectorlist{j}{1});
     if j==1 || (j>1 && ~strcmp(foutnamelist{j}{2}(1),foutnamelist{j-1}{2}(1)))
         %keyboard;
-        X1 = xgridc(Y(:,1),X(1,:));
-        Y1 = ygridc(Y(:,1),X(1,:));
+        X1 = xgridc(vecfr1.Y(:,1),vecfr1.X(1,:));
+        Y1 = ygridc(vecfr1.Y(:,1),vecfr1.X(1,:));
     end                   % Assign Camera 1 grids locs to local variable
     
-    u1 = (xscale*t)*U(:,:,1);
-    v1 = (yscale*t)*V(:,:,1);
-    clear X Y U V;
+    u1 = (xscale*t)*vecfr1.U(:,:,1);
+    v1 = (yscale*t)*vecfr1.V(:,:,1);
+    clear vecfr1;
     
-    load(vectorlist{j}{2});
+    vecfr2 = load(vectorlist{j}{2});
     if j==1 || (j>1 && ~strcmp(foutnamelist{j}{2}(1),foutnamelist{j-1}{2}(1)))
-        X2 = xgridc(Y(:,1),X(1,:));
-        Y2 = ygridc(Y(:,1),X(1,:));
+        X2 = xgridc(vecfr2.Y(:,1),vecfr2.X(1,:));
+        Y2 = ygridc(vecfr2.Y(:,1),vecfr2.X(1,:));
     end                   % Assign Camera 1 grids locs to local variable
     
-    u2 = (xscale*t)*U(:,:,1);
-    v2 = (yscale*t)*V(:,:,1);
-    clear X Y U V;
+    u2 = (xscale*t)*vecfr2.U(:,:,1);
+    v2 = (yscale*t)*vecfr2.V(:,:,1);
+    clear vecfr2;
     
     if j==1 || (j>1 && ~strcmp(foutnamelist{j}{2}(1),foutnamelist{j-1}{2}(1)))
         
@@ -199,7 +206,7 @@ for j=1:nof
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % output the plt file with all components %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    U=u/1000;                                                 % convert from mm/frame (mm displacement) to m/sec
+    U=u/1000;                                                 % convert from mm/second (mm displacement) to m/sec
     V=v/1000;                                                 % pulsesep is in microsec
     W=w/1000;
     X= x/1000;
