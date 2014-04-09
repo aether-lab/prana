@@ -27,8 +27,17 @@ if strcmp(rectype{1},'Willert')
     job1=planarjob;
     job1.imdirec=dewarpdirlist.dewarpdir1;
     job1.imbase=planarjob.imbase;
-    mkdir(fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(1)),filesep]));
-    job1.outdirec=fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(1)),filesep]);    
+    
+    % By creating a variable "cam1dir" I know only have to update one
+    % location if I want to change the form of this directory.  The
+    % previous way it was written I would have to update multiple locations
+    % increasing the chance I would miss one of them.
+    cam1dir = fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(1)),filesep]);
+    if ~exist(cam1dir,'dir');
+        mkdir(cam1dir);
+    end
+    
+    job1.outdirec=cam1dir;    
     diroutlist.willert2dcam1=job1.outdirec;
     fprintf(['\nProcessing Planar Fields for Camera:',num2str(caldata.camnumber(1)),'\n']);
     pranaPIVcode(job1);
@@ -38,11 +47,12 @@ if strcmp(rectype{1},'Willert')
     job1.imdirec=dewarpdirlist.dewarpdir2;
     job1.imbase=planarjob.imbase2;
     
-    if ~exist(fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]),'dir')
-        mkdir(fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]));
+    cam2dir = fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]);
+    if ~exist(cam2dir,'dir')
+        mkdir(cam2dir);
     end
     
-    job1.outdirec=fullfile(job1.outdirec,rectype{1},['Camera',num2str(caldata.camnumber(2)),filesep]);    
+    job1.outdirec=cam2dir;    
     diroutlist.willert2dcam2=job1.outdirec;
     fprintf(['\nProcessing Planar Fields for Camera:',num2str(caldata.camnumber(2)),'\n']);
     pranaPIVcode(job1);
