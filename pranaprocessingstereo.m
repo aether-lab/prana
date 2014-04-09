@@ -868,18 +868,19 @@ switch char(M)
                         else
                             save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_'],I1(q)) sprintf(['%0.' Data.imzeros 'i.mat' ],I2(q))],'X','Y','U','V','Eval','C','Di')
                         end
-                        % This saves the correlation planes if that selection
-                        % has been made in the job file.
-                        if saveplane(e) && ~strcmpi(Corr{e},'SPC')
-                            Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
-                            save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
-                            clear Xloc Yloc C_planes
-                        end
-                        
-                        X=Xval;Y=Yval;
-                        
-                        savetime(e,defloop)=toc(t1);
                     end
+                    % This saves the correlation planes if that selection
+                    % has been made in the job file.
+                    if saveplane(e) && ~strcmpi(Corr{e},'SPC')
+                        Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
+                        save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
+                        clear Xloc Yloc C_planes
+                    end
+                        
+                    X=Xval;Y=Yval;
+                        
+                      savetime(e,defloop)=toc(t1);
+                end
                     
                     %reset any changes or scaling back to pixels
                     U=Uval; V=Vval;
@@ -1063,7 +1064,7 @@ switch char(M)
                 frametime(q)=eltime;
                 comptime=mean(frametime(1:q))*(length(I1)-q);
                 fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
-            end
+            
         end
         
     case {'Ensemble','EDeform'}
