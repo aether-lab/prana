@@ -74,13 +74,13 @@ end
 %keyboard;
 istring1=sprintf(['%%s%%s%%0%0.0fd.','mat'],str2double(job1.imzeros));
 
-load(sprintf(istring1,job1.outdirec,[filesep,job1.outputpassbase,'pass',job1.passes,'_'],str2double(job1.imfstart)));
+dispfield = load(sprintf(istring1,job1.outdirec,[filesep,job1.outputpassbase,'pass',job1.passes,'_'],str2double(job1.imfstart)));
 
-Dux=U(:,:,1);
-Duy=V(:,:,1);%X and Y disparity matrices
-X3=X;
-Y3=Y;% correlation X and Y grid points
-clear U V X Y;
+Dux=dispfield.U(:,:,1);
+Duy=dispfield.V(:,:,1);%X and Y disparity matrices
+X3=dispfield.X;
+Y3=dispfield.Y;% correlation X and Y grid points
+clear dispfield
 
 %[X3,~,xgrid1,ygrid1,Dux,Duy,Imax1,Jmax1]=disparitycal(cameracal,selfcaljob);
 % Dispx=Dux;
