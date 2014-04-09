@@ -88,9 +88,9 @@ clear U V X Y;
 figure('Name','Disparity Map');
 quiver(X3,Y3,Dux,Duy,1);
 axis equal tight xy
-mdx=mean(mean(Dux));%mean x disparity
+mdx=mean((Dux(:)));%mean x disparity
 %figure(22);hist(Dux(:));
-mdy=mean(mean(Duy));%mean y disparity
+mdy=mean((Duy(:)));%mean y disparity
 fprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy)])
 
 %keyboard;
