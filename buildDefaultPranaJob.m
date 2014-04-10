@@ -4,14 +4,20 @@ defaultdata.clientversion='2.0';
 %defaultdata.version='2.0'; %gets set below in call to pranaPIVcode('version')
 if ispc
     defaultdata.imdirec='C:\';
+    defaultdata.imdirec2='C:\';
     defaultdata.outdirec='C:\';
     defaultdata.maskdirec='C:\';
 else
     defaultdata.imdirec='/';
+    defaultdata.imdirec2='/';
     defaultdata.outdirec='/';
     defaultdata.maskdirec='/';
 end
+
+defaultdata.numcams='1';
+
 defaultdata.imbase='Img_';
+defaultdata.imbase2='Img_';
 defaultdata.imzeros='6';
 defaultdata.imext='tif';
 defaultdata.imcstep='1';
@@ -51,6 +57,8 @@ defaultdata.exp_depthoffocus='';
 
 defaultdata.input_vel_type = 'none';
 defaultdata.input_velocity = '';
+defaultdata.input_veldirec = '';
+defaultdata.input_velbase  = '';
 
 defaultdata.masktype='none';
 defaultdata.staticmaskname='';
@@ -172,6 +180,6 @@ if ~isfield(defaultdata,'outputpassbasename')
     defaultdata.PIV2.outbase = [defaultdata.outputpassbase 'pass2_'];
 end
 
-defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
-defaultdata.ptv_version=pranaPTVcode('version');
+%defaultdata.version=pranaPIVcode('version');  %why isn't this done in the catch statement above?
+% defaultdata.ptv_version=pranaPTVcode('version');
 end
