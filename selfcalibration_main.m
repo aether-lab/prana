@@ -72,8 +72,13 @@ clear U V X Y;
 %[X3,~,xgrid1,ygrid1,Dux,Duy,Imax1,Jmax1]=disparitycal(cameracal,selfcaljob);
 % Dispx=Dux;
 % Dispy=Duy;
-figure;quiver(X3,Y3,Dux,Duy)
+figure('Name','Disparity Map');quiver(X3,Y3,Dux,Duy,1)
+mdx=mean(mean(Dux));%mean x disparity
+%figure(22);hist(Dux(:));
+mdy=mean(mean(Duy));%mean y disparity
+fprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy)])
 
+%keyboard;
 %calculating the length of the common grid in the object plane on which the
 %images are dewarped
 xmin=min(min(xgrid1));
@@ -92,10 +97,9 @@ scaley=(ymax-ymin)/Imax1;
 
 %Making object grids of same size as the grid on which disparity is calculated
 [a,b]=size(X3);
-x=xmin:(xmax-xmin)/(b-1):xmax;
-y=ymin:(ymax-ymin)/(a-1):ymax;
-[xgrid,ygrid]=meshgrid(x,y);
-zgrid=zeros(a,b);
+xg=xgrid1(Y3(:,1),X3(1,:));
+yg=ygrid1(Y3(:,1),X3(1,:));
+zgrid=zeros(size(xg));
 
 %Just a check that if maximum absolute x disparity is less than 1 pixel then no need
 %to go further.
@@ -105,25 +109,26 @@ zgrid=zeros(a,b);
 % end
 
 
- clear x; clear y;
- mdx=mean(mean(Dux));%mean x disparity
- %figure(22);hist(Dux(:));
- mdy=mean(mean(Duy));%mean y disparity
  
-sprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy)])
-
 %scaling the disparity to physical dimensions 
-Dux=Dux.*(scalex);Duy=Duy.*(scaley);
-
+Dux=Dux.*(scalex);
+Duy=Duy.*(scaley);
 %world grid points shifted by the amount of disparity to get the
 %locations at which camera 2 local viewing angle are calculated.
-x2grid=xgrid+Dux;y2grid=ygrid+Duy;
+
+xgrid=xg-Dux./2;
+x2grid=xg+Dux./2;
+ygrid=yg-Duy./2;
+y2grid=yg+Duy./2; 
+
+% ygrid=yg-Duy./2;
+% y2grid=yg+Duy./2;
 %Doing Triangulation
 
 [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2); %ouput is the projected z world points
 
 
-x=reshape(xgrid,a*b,1);y=reshape(ygrid,a*b,1);z=reshape(z1grid,a*b,1);
+x=reshape(xg,a*b,1);y=reshape(yg,a*b,1);z=reshape(z1grid,a*b,1);
 
 %fitting a plane to the projected z points using linear regression
 
@@ -255,8 +260,6 @@ betatan(:,:,2)=(((dFdx3(:,:,4).*dFdx1(:,:,3)) - (dFdx1(:,:,4).*dFdx3(:,:,3)))./(
 %         title('Camera 1 Angle \beta1','FontSize',16)
 %     
     %keyboard;
-    
-
 % Triangulation using formula (1) of that paper
 
 if max(max(abs(alphatan(:,:,1)-abs(alphatan(:,:,2)))))>max(max(abs(betatan(:,:,1)-abs(betatan(:,:,2)))))
@@ -265,7 +268,15 @@ else
     %dz2=Duy./(abs(alphatan(:,:,1))+abs(alphatan(:,:,2)));%(abs(betatan(:,:,1))+abs(betatan(:,:,2)));
     dz1=(sign(betatan(1,1)).*Duy)./(abs(betatan(:,:,1))+abs(betatan(:,:,2)));
 end
-
+% if (mean(abs(Dux(:))))>(mean(abs(Duy(:))))
+%     dz1=(-sign(alphatan(1,1)).*Dux)./(abs(alphatan(:,:,1))+abs(alphatan(:,:,2)));
+% elseif (mean(abs(Duy(:))))>(mean(abs(Dux(:))))
+%     %dz2=Duy./(abs(alphatan(:,:,1))+abs(alphatan(:,:,2)));%(abs(betatan(:,:,1))+abs(betatan(:,:,2)));
+%     dz1=(sign(betatan(1,1)).*Duy)./(abs(betatan(:,:,1))+abs(betatan(:,:,2)));
+% else
+%     dz1=0;
+%     fprintf('\n Disparity Map converged \n');
+% end
 %dz1
 %if max(max(abs(Dux)))>max(max(abs(Duy)))
     

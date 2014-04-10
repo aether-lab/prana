@@ -800,7 +800,7 @@ selfcaljob=guiprops.selfcaljob;
 reftrue=1;
  while(reftrue~=0)
      
- [caldatamod]=selfcalibration_v2(caldata,selfcaljob);
+ [caldatamod]=selfcalibration_main(caldata,selfcaljob);
  
  caldata.allx1data=caldatamod.allx1data;
  caldata.allx2data=caldatamod.allx2data;
