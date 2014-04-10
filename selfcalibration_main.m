@@ -1,4 +1,4 @@
-function [caldatamod]=selfcalibration_v1(caldata,selfcaljob)
+function [caldatamod]=selfcalibration_main(caldata,selfcaljob)
 
 %THis function does self calibration and corrects for any disparity between
 %two camera images and the existing calibration
