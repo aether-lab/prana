@@ -1,6 +1,6 @@
 function [defaultdata] = buildDefaultPranaJob()
 
-defaultdata.clientversion='2.0';
+defaultdata.clientversion='2.5';
 %defaultdata.version='2.0'; %gets set below in call to pranaPIVcode('version')
 if ispc
     defaultdata.imdirec='C:\';

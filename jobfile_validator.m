@@ -77,6 +77,17 @@ if ~isfield(Data,'PIV0')
     Data.PIV0 = Data.PIV1;
 end
 
+%does the job file have information about the second image directory
+if ~isfield(Data,'imdirec2')
+    Data.imdirec2 = Data.imdirec;
+    Data.imbase2 = Data.imbase;
+end
+%does the job file know whether whether it should ignore the second camera directory?
+if ~isfield(Data,'numcams')
+    Data.numcams = '1';
+end
+
+
 %does the job file have the zero mean option
 if ~isfield(Data.PIV0,'zeromean')
     for pass=0:str2double(Data.passes)
@@ -130,11 +141,18 @@ if ~isfield(Data,'outputpassbase')
     eval(['Data.outputpassbase = Data.PIV' Data.passes '.outbase;']);
 end
 
+%does the job file have infromation about input velocity fields
 if ~isfield(Data,'input_vel_type')
     Data.input_vel_type = 'none';
 end
 if ~isfield(Data,'input_velocity')
     Data.input_velocity = '';
+end
+if ~isfield(Data,'input_veldirec')
+    Data.input_veldirec = '';
+end
+if ~isfield(Data,'input_velbase')
+    Data.input_veldirec = '';
 end
 
 % Check to see if the job file is using the old version of correlation
