@@ -2858,19 +2858,23 @@ e=0;
 for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
     e=e+1;
     files(e,1)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
-    files(e,2)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
-end
-for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
-    e=e+1;
-    files(e,1)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
     files(e,2)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
 end
 
+% %JJC: as far as I can tell, pranaprocessing correlates imdir/imageNNN1 to
+% imdir/imageNNN2, NOT all of imdir/imageNNN1 to imdir/imageNNN2 and then
+% imdir2/imageNNN2 to imdir2/imageNNN2
+% for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
+%     e=e+1;
+%     files(e,1)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
+%     files(e,2)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
+% end
+
 [sorted_names,sorted_index] = sortrows({dir_struct.name}');
 [sorted_names2,~] = sortrows({dir_struct2.name}');
-sorted_names=[sorted_names;sorted_names2];
-[files1,id,id1] = intersect(sorted_names,files(:,1));
-[files2,id,id2] = intersect(sorted_names,files(:,2));
+% sorted_names=[sorted_names;sorted_names2];
+[files1,id,id1] = intersect(sorted_names ,files(:,1));
+[files2,id,id2] = intersect(sorted_names2,files(:,2));
 [idf]=intersect(id1,id2);
 if isempty(idf)
     set(handles.imagelist,'backgroundcolor','r');
