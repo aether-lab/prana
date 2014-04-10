@@ -5176,3 +5176,136 @@ function imagebasename2_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in no_input_vel_button.
+function no_input_vel_button_Callback(hObject, eventdata, handles)
+% hObject    handle to no_input_vel_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of no_input_vel_button
+
+
+% --- Executes on button press in static_input_vel_button.
+function static_input_vel_button_Callback(hObject, eventdata, handles)
+% hObject    handle to static_input_vel_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of static_input_vel_button
+
+
+% --- Executes on button press in dynamic_input_vel_button.
+function dynamic_input_vel_button_Callback(hObject, eventdata, handles)
+% hObject    handle to dynamic_input_vel_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of dynamic_input_vel_button
+
+
+
+function input_velocity_Callback(hObject, eventdata, handles)
+% hObject    handle to input_velocity (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of input_velocity as text
+%        str2double(get(hObject,'String')) returns contents of input_velocity as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function input_velocity_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to input_velocity (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in browse_input_vel.
+function browse_input_vel_Callback(hObject, eventdata, handles)
+% hObject    handle to browse_input_vel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function input_veldirec_Callback(hObject, eventdata, handles)
+% hObject    handle to input_veldirec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of input_veldirec as text
+%        str2double(get(hObject,'String')) returns contents of input_veldirec as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function input_veldirec_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to input_veldirec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in browse_input_veldirec.
+function browse_input_veldirec_Callback(hObject, eventdata, handles)
+% hObject    handle to browse_input_veldirec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function input_velbase_Callback(hObject, eventdata, handles)
+% hObject    handle to input_velbase (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of input_velbase as text
+%        str2double(get(hObject,'String')) returns contents of input_velbase as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function input_velbase_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to input_velbase (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in cameranumber_popupmenu.
+function cameranumber_popupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to cameranumber_popupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns cameranumber_popupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from cameranumber_popupmenu
+
+
+% --- Executes during object creation, after setting all properties.
+function cameranumber_popupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to cameranumber_popupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
