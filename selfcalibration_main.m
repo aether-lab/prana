@@ -54,10 +54,9 @@ job1=selfcaljob;
 job1.imdirec=outputdirlist.dewarpdir1;
 job1.imdirec2=outputdirlist.dewarpdir2;
 job1.imcstep='0';
-
+job1.selfcal=1;
 fprintf('Calculating Disparity.\n');
-pranaprocessingstereo(job1);
-%pranaPIVcode(job1);
+pranaPIVcode(job1);
 %keyboard;
 istring1=sprintf(['%%s%%s%%0%0.0fd.','mat'],str2double(job1.imzeros));
 

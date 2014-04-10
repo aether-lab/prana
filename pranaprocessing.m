@@ -1,15 +1,21 @@
 function pranaprocessing(Data,I1,I2,maskname)
 %% --- Read Formatted Parameters ---
 %input/output directory
-if ispc
-    imbase=[Data.imdirec '\' Data.imbase];
-    maskbase=[Data.maskdirec '\' Data.maskbase];
-    pltdirec=[Data.outdirec '\'];
-else
-    imbase=[Data.imdirec '/' Data.imbase];
-    maskbase=[Data.maskdirec '/' Data.maskbase];
-    pltdirec=[Data.outdirec '/'];
-end
+
+    imbase=[Data.imdirec filesep Data.imbase];
+    maskbase=[Data.maskdirec filesep Data.maskbase];
+    %Data.selfcal is set to value(not string)=0 in the jobfile_validator
+    % So by default it should be 2d prana processing if the value is not 0
+    %then imbase2 is set to camera 2 directory  and then cam1 and cam2
+    %images are correlated as required in selfcalibration.
+    %Data.selfcal is not updated using gui, please manually enter when
+    %calling selfcalibration_main.
+    if Data.selfcal~=0
+        imbase2=[Data.imdirec2 filesep Data.imbase2];
+    elseif Data.selfcal==0
+        imbase2=[Data.imdirec filesep Data.imbase];
+    end
+    pltdirec=[Data.outdirec filesep];
 
 if nargin<3
     I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
@@ -230,7 +236,7 @@ switch char(M)
 
             %load image pair and flip coordinates
             im1 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-            im2 = double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+            im2 = double(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
             
             % Specify which color channel(s) to consider
             % This was changed to greater then 2 because John had images
@@ -717,7 +723,7 @@ switch char(M)
                         
                         %load image pair and flip coordinates
                         im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1dist(q))]));
-                        im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
+                        im2=double(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2dist(q))]));
                         if size(im1, 3) > 2
                             %Extract only red channel
                             if channel == 1;
@@ -858,7 +864,7 @@ switch char(M)
 
                     %load image pair and flip coordinates
                     im1=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]));
-                    im2=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
+                    im2=double(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]));
                     if size(im1, 3) > 2
                         %Extract only red channel
                         if channel == 1;
@@ -1304,7 +1310,7 @@ switch char(M)
             im1=zeros(size(mask,1),size(mask,2),N); im2=im1;Dt=zeros(N,1);
             for n=1:N
                 im1_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q)-(n-1))]));
-                im2_temp=double(imread([imbase sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
+                im2_temp=double(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q)+(n-1))]));
                 im1(:,:,n)=flipud(im1_temp(:,:,1));
                 im2(:,:,n)=flipud(im2_temp(:,:,1));
 %                 if Zeromean(e)==1
