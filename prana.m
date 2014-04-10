@@ -115,6 +115,7 @@ catch
 end
 
 handles.data.imdirec=pwd;
+handles.data.imdirec2=pwd;
 handles.data.maskdirec=pwd;
 handles.data.outdirec=pwd;
 
@@ -540,7 +541,7 @@ if str2double(handles.Njob)>0
 %     if strcmp(handles.data.masktype,'dynamic')
 %         load_masklist(handles)
 %     end
-    load_imlist(handles);
+    %load_imlist(handles);
     guidata(hObject,handles)
 end
 
@@ -572,7 +573,7 @@ if str2double(handles.Njob)>0
 %     if strcmp(handles.data.masktype,'dynamic')
 %         load_masklist(handles)
 %     end
-    load_imlist(handles);
+%     load_imlist(handles);
     guidata(hObject,handles)
 end
 
@@ -1404,7 +1405,7 @@ if str2double(handles.Njob)>0
             eval(['handles.data.PIV' num2str(e) '.gridres = get(handles.gridres,''String'');'])
             eval(['handles.data.PIV' num2str(e) '.gridbuf = get(handles.gridbuffer,''String'');'])
         end
-    elseif get(hObject,'Value')>=6
+    elseif get(hObject,'Value')==6
         set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
         set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
@@ -1417,7 +1418,7 @@ if str2double(handles.Njob)>0
         set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
         set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
         set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
-        if any(get(hObject,'Value')==[3 5])
+        if any(get(hObject,'Value')==[3 5 7])
             set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
             set(handles.deform_min_iter,'backgroundcolor',[1 1 1]);
             set(handles.deform_max_iter,'backgroundcolor',[1 1 1]);
@@ -2590,6 +2591,8 @@ if str2double(handles.Njob) == 0
     set(handles.outputdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imagedirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imagebasename,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagedirectory2,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.imagebasename2,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imagezeros,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imageextension,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.imagecorrelationstep,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2624,6 +2627,8 @@ if str2double(handles.Njob) == 0
     set(handles.velocityinterptype,'Value',1,'backgroundcolor',0.5*[1 1 1]);    
     set(handles.staticmaskfile,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.input_velocity,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.input_veldirec,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.input_velbase,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskdirectory,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskbasename,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.maskzeros,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2647,6 +2652,7 @@ if str2double(handles.Njob) == 0
     set(handles.exp_NA,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.exp_n,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.colorchannel_popupMenu,'Value',1,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.cameranumber_popupMenu,'Value',1,'backgroundcolor',0.5*[1 1 1]);
     % --- Tracking ---
     set(handles.idmethod,'backgroundcolor',0.5*[1 1 1]);
     set(handles.idimthresh,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2699,8 +2705,10 @@ else
     set(handles.outputbasename,'String','','backgroundcolor',[1 1 1]);
 	set(handles.outputpassbasename,'String','','backgroundcolor',[1 1 1]);
     set(handles.imagedirectory,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imagedirectory2,'String','','backgroundcolor',[1 1 1]);
     set(handles.outputdirectory,'String','','backgroundcolor',[1 1 1]);
     set(handles.imagebasename,'String','','backgroundcolor',[1 1 1]);
+    set(handles.imagebasename2,'String','','backgroundcolor',[1 1 1]);
     set(handles.imagezeros,'String','','backgroundcolor',[1 1 1]);
     set(handles.imageextension,'String','','backgroundcolor',[1 1 1]);
     set(handles.imagecorrelationstep,'String','','backgroundcolor',[1 1 1]);
@@ -2737,6 +2745,7 @@ else
     set(handles.exp_L,'String','','backgroundcolor',[1 1 1]);
     set(handles.exp_notesbox,'String','','backgroundcolor',[1 1 1]);
     set(handles.colorchannel_popupMenu,'Value',1,'backgroundcolor',[1 1 1]);
+    set(handles.cameranumber_popupMenu,'Value',1,'backgroundcolor',[1 1 1]);
     % --- Tracking ---
     set(handles.idmethod,'Value',1,'backgroundcolor',[1 1 1]);
     set(handles.idimthresh,'String','','backgroundcolor',[1 1 1]);
@@ -2773,8 +2782,16 @@ else
     
     if strcmpi(handles.data.input_vel_type,'static')
         set(handles.input_velocity,'String','','backgroundcolor',[1 1 1]);
-    else
+        set(handles.input_veldirec,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.input_velbase,'String','','backgroundcolor',0.5*[1 1 1]);
+    elseif strcmpi(handles.data.input_vel_type,'dynamic')
         set(handles.input_velocity,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.input_veldirec,'String','','backgroundcolor',[1 1 1]);
+        set(handles.input_velbase,'String','','backgroundcolor',[1 1 1]);
+    else %'none'
+        set(handles.input_velocity,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.input_veldirec,'String','','backgroundcolor',0.5*[1 1 1]);
+        set(handles.input_velbase,'String','','backgroundcolor',0.5*[1 1 1]);
     end
     
     if strcmp(handles.data.masktype,'static')
@@ -2820,10 +2837,20 @@ end
 % --- Load Image List ---
 function load_imlist(handles)
 dir_struct = dir(fullfile(handles.data.imdirec,['*.' handles.data.imext]));
+dir_struct2 = dir(fullfile(handles.data.imdirec2,['*.' handles.data.imext]));
 if isempty(dir_struct)
     set(handles.imagedirectory,'backgroundcolor','r');
+    %set(handles.imagedirectory2,'backgroundcolor','r');
 else
     set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
+    %set(handles.imagedirectory2,'backgroundcolor',[1 1 1]);
+end
+if isempty(dir_struct2)
+    %set(handles.imagedirectory,'backgroundcolor','r');
+    set(handles.imagedirectory2,'backgroundcolor','r');
+else
+    %set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
+    set(handles.imagedirectory2,'backgroundcolor',[1 1 1]);
 end
 N=length(str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend));
 files = cell(N,2);
@@ -2833,8 +2860,15 @@ for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2dou
     files(e,1)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
     files(e,2)={[handles.data.imbase sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
 end
+for f=str2double(handles.data.imfstart):str2double(handles.data.imfstep):str2double(handles.data.imfend)
+    e=e+1;
+    files(e,1)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f)]};
+    files(e,2)={[handles.data.imbase2 sprintf(['%0.' handles.data.imzeros 'i.' handles.data.imext],f+str2double(handles.data.imcstep))]};
+end
 
 [sorted_names,sorted_index] = sortrows({dir_struct.name}');
+[sorted_names2,~] = sortrows({dir_struct2.name}');
+sorted_names=[sorted_names;sorted_names2];
 [files1,id,id1] = intersect(sorted_names,files(:,1));
 [files2,id,id2] = intersect(sorted_names,files(:,2));
 [idf]=intersect(id1,id2);
@@ -3085,7 +3119,7 @@ end
 
 % Grays out the smoothing filt size box when smoothing is not selected when
 % switching between passes.
-if str2double(A.velsmooth)  == 0
+if str2double(A.velsmooth)  == 0 || any(get(handles.passtype,'Value')==[1 6])
     set(handles.smoothingsize,'backgroundcolor',0.5*[1 1 1]);
 else
     set(handles.smoothingsize,'backgroundcolor',[1 1 1]);
@@ -3216,6 +3250,8 @@ end
 
 set(handles.imagedirectory,'String',handles.data.imdirec);
 set(handles.imagebasename,'String',handles.data.imbase);
+set(handles.imagedirectory2,'String',handles.data.imdirec2);
+set(handles.imagebasename2,'String',handles.data.imbase2);
 set(handles.imagezeros,'String',handles.data.imzeros);
 set(handles.imageextension,'String',handles.data.imext);
 set(handles.imagecorrelationstep,'String',handles.data.imcstep);
@@ -3224,6 +3260,8 @@ set(handles.imageframestart,'String',handles.data.imfstart);
 set(handles.imageframeend,'String',handles.data.imfend);
 
 set(handles.input_velocity,'String',handles.data.input_velocity)
+set(handles.input_veldirec,'String',handles.data.input_veldirec)
+set(handles.input_velbase,'String',handles.data.input_velbase)
 
 set(handles.staticmaskfile,'String',handles.data.staticmaskname)
 set(handles.maskdirectory,'String',handles.data.maskdirec);
@@ -3249,11 +3287,24 @@ end
 if strcmpi(handles.data.input_vel_type,'none')
     set(handles.no_input_vel_button,'Value',1)
     set(handles.static_input_vel_button,'Value',0)
+    set(handles.dynamic_input_vel_button,'Value',0)
     set(handles.input_velocity,'backgroundcolor',0.5*[1 1 1])
+    set(handles.input_veldirec,'backgroundcolor',0.5*[1 1 1])
+    set(handles.input_velbase,'backgroundcolor',0.5*[1 1 1])
 elseif strcmpi(handles.data.input_vel_type,'static')
     set(handles.no_input_vel_button,'Value',0)
     set(handles.static_input_vel_button,'Value',1)
+    set(handles.dynamic_input_vel_button,'Value',0)
     set(handles.input_velocity,'string',handles.data.input_velocity,'backgroundcolor',[1 1 1]);
+    set(handles.input_veldirec,'backgroundcolor',0.5*[1 1 1])
+    set(handles.input_velbase,'backgroundcolor',0.5*[1 1 1])
+elseif strcmpi(handles.data.input_vel_type,'dynamic')
+    set(handles.no_input_vel_button,'Value',0)
+    set(handles.static_input_vel_button,'Value',0)
+    set(handles.dynamic_input_vel_button,'Value',1)
+    set(handles.input_velocity,'backgroundcolor',0.5*[1 1 1])
+    set(handles.input_veldirec,'string',handles.data.input_veldirec,'backgroundcolor',[1 1 1]);
+    set(handles.input_velbase,'string',handles.data.input_velbase,'backgroundcolor',[1 1 1]);
 else
     error('Unknown input velocity type')
 end
@@ -3305,10 +3356,11 @@ set(handles.passtype,'Value',str2double(handles.data.method));
 set(handles.velocityinterptype,'Value',str2double(handles.data.velinterp));
 set(handles.imageinterptype,'Value',str2double(handles.data.iminterp));
 set(handles.colorchannel_popupMenu,'Value',str2double(handles.data.channel));
+set(handles.cameranumber_popupMenu,'Value',str2double(handles.data.numcams));
 set(handles.framestep,'String',handles.data.framestep);
 set(handles.PIVerror,'String',handles.data.PIVerror);
 
-if get(handles.passtype,'Value')>=6
+if get(handles.passtype,'Value')==6
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
     set(handles.imageinterptype,'backgroundcolor',0.5*[1 1 1]);
     set(handles.deform_min_iter,'backgroundcolor',0.5*[1 1 1]);
@@ -3321,7 +3373,7 @@ elseif get(handles.passtype,'Value')>1
     set(handles.framestep,'backgroundcolor',0.5*[1 1 1]);
     set(handles.PIVerror,'backgroundcolor',0.5*[1 1 1]);
     set(handles.velocityinterptype,'backgroundcolor',[1 1 1]);
-    if any(get(handles.passtype,'Value')==[3 5])
+    if any(get(handles.passtype,'Value')==[3 5 7])
         set(handles.imageinterptype,'backgroundcolor',[1 1 1]);
         set(handles.deform_min_iter,'backgroundcolor',[1 1 1]);
         set(handles.deform_max_iter,'backgroundcolor',[1 1 1]);
@@ -3358,6 +3410,11 @@ if isempty(dir(handles.data.imdirec))
     set(handles.imagedirectory,'backgroundcolor','r');
 else
     set(handles.imagedirectory,'backgroundcolor',[1 1 1]);
+end
+if isempty(dir(handles.data.imdirec2))
+    set(handles.imagedirectory2,'backgroundcolor','r');
+else
+    set(handles.imagedirectory2,'backgroundcolor',[1 1 1]);
 end
 
 if ~exist(handles.data.outdirec,'dir')
@@ -5072,9 +5129,15 @@ end
 
 
 function input_velocity_Callback(hObject, eventdata, handles)
-if str2double(handles.Njob)>0
+% hObject    handle to input_velocity (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if str2double(handles.Njob)>0  && get(handles.static_input_vel_button,'Value')==1
     handles.data.input_velocity = get(handles.input_velocity,'String');
     guidata(hObject,handles)
+else
+    set(handles.input_velocity,'String',handles.data.input_velocity);
 end
 
 % --- Executes during object creation, after setting all properties.
@@ -5089,9 +5152,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
 % --- Executes on button press in browse_input_vel.
 function browse_input_vel_Callback(hObject, eventdata, handles)
+% hObject    handle to browse_input_vel (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
 if str2double(handles.Njob)>0 && get(handles.static_input_vel_button,'Value')==1
     D = handles.data.input_velocity;
     
@@ -5104,12 +5171,18 @@ if str2double(handles.Njob)>0 && get(handles.static_input_vel_button,'Value')==1
     set(handles.input_velocity,'string',handles.data.input_velocity);
 end
 
-
 % --- Executes on button press in no_input_vel_button.
 function no_input_vel_button_Callback(hObject, eventdata, handles)
+% hObject    handle to no_input_vel_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of no_input_vel_button
+
 handles.data.input_vel_type='none';
 set(hObject,'Value',1)
 set(handles.static_input_vel_button,'Value',0)
+set(handles.dynamic_input_vel_button,'Value',0)
 if str2double(handles.Njob)>0
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
@@ -5119,12 +5192,250 @@ end
 
 % --- Executes on button press in static_input_vel_button.
 function static_input_vel_button_Callback(hObject, eventdata, handles)
+% hObject    handle to static_input_vel_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
 handles.data.input_vel_type='static';
 set(hObject,'Value',1)
 set(handles.no_input_vel_button,'Value',0)
+set(handles.dynamic_input_vel_button,'Value',0)
 if str2double(handles.Njob)>0
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
     handles=update_data(handles);
     guidata(hObject,handles)
+end
+
+% --- Executes on button press in dynamic_input_vel_button.
+function dynamic_input_vel_button_Callback(hObject, eventdata, handles)
+% hObject    handle to dynamic_input_vel_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+handles.data.input_vel_type='dynamic';
+set(hObject,'Value',1)
+set(handles.no_input_vel_button,'Value',0)
+set(handles.static_input_vel_button,'Value',0)
+if str2double(handles.Njob)>0
+    Jlist=char(get(handles.joblist,'String'));
+    eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
+    handles=update_data(handles);
+    guidata(hObject,handles)
+end
+
+
+
+function input_veldirec_Callback(hObject, eventdata, handles)
+% hObject    handle to input_veldirec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if str2double(handles.Njob)>0 && get(handles.dynamic_input_vel_button,'Value')==1
+    handles.data.input_veldirec = get(hObject,'String');
+    guidata(hObject,handles)
+else
+    set(handles.input_veldirec,'String',handles.data.input_veldirec);
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function input_veldirec_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to input_veldirec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in browse_input_veldirec.
+function browse_input_veldirec_Callback(hObject, eventdata, handles)
+% hObject    handle to browse_input_veldirec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if str2double(handles.Njob)>0  && get(handles.dynamic_input_vel_button,'Value')==1
+    D = handles.data.input_veldirec;
+
+    handles.data.input_veldirec = uigetdir(D,'Directory for Input Velocities');
+    if handles.data.input_veldirec == 0
+        handles.data.input_veldirec = D;
+    end
+    set(handles.input_veldirec,'string',handles.data.input_veldirec);
+    if ~isempty(dir(handles.data.input_veldirec))
+        set(handles.input_veldirec,'Backgroundcolor',[1 1 1])
+    end
+    %load_imlist(handles);
+    guidata(hObject,handles)
+end
+
+
+
+function input_velbase_Callback(hObject, eventdata, handles)
+% hObject    handle to input_velbase (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if str2double(handles.Njob)>0 && get(handles.dynamic_input_vel_button,'Value')==1
+    handles.data.input_velbase = get(hObject,'String');
+    guidata(hObject,handles)
+else
+    set(handles.input_velbase,'String',handles.data.input_velbase);
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function input_velbase_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to input_velbase (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in cameranumber_popupMenu.
+function cameranumber_popupMenu_Callback(hObject, eventdata, handles)
+% hObject    handle to cameranumber_popupMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+if str2double(handles.Njob)>0
+    handles.data.numcams = num2str(get(hObject,'Value'));
+    guidata(hObject,handles)
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function cameranumber_popupMenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to cameranumber_popupMenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes on button press in loadcam2firstimage.
+function loadcam2firstimage_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.imdirec2;
+    B = handles.data.imbase2;
+%     Z = handles.data.imzeros;
+%     E = handles.data.imext;
+%     S = handles.data.imfstart;
+%     F = handles.data.imfend;
+%     C = handles.data.imcstep;
+    [imname,handles.data.imdirec2] = uigetfile('*.*','Select an image file',handles.data.imdirec);
+    if handles.data.imdirec2==0
+        handles.data.imdirec2 = D;
+        handles.data.imbase2 = B;
+%         handles.data.imzeros = Z;
+%         handles.data.imext = E;
+%         handles.data.imfstart = S;
+%         handles.data.imfend = F;
+    else
+        i=strfind(imname,'.');
+        handles.data.imext=imname((i(end)+1):end);
+        % This finds everything that is not a number
+        j = regexp(imname(1:i(end)-1),'\D');
+        % Now looking at the first thing that is not a number excluding the
+        % extension to determine the number of zeros.
+        zeros=i(end)-1-j(end);
+        handles.data.imbase2=imname(1:(i(end)-1-zeros));
+        handles.data.imzeros=num2str(zeros);
+%         fstart=str2double(imname((i(end)-zeros):(i(end)-1)));
+%         handles.data.imfstart=num2str(fstart);
+%         dirinfo = dir([handles.data.imdirec handles.data.imbase '*.' handles.data.imext]);
+%         handles.data.imfend=num2str(str2double(dirinfo(end).name(i(end)-zeros:i(end)-1))-str2double(C));
+    end
+    set(handles.imagedirectory2,'string',handles.data.imdirec2);
+    set(handles.imagebasename2,'string',handles.data.imbase2);
+%     set(handles.imagezeros,'string',handles.data.imzeros);
+%     set(handles.imageextension,'string',handles.data.imext);
+%     set(handles.imageframestart,'string',handles.data.imfstart);
+%     set(handles.imageframeend,'string',handles.data.imfend);
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+
+function imagedirectory2_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    D = handles.data.imdirec2;
+    handles.data.imdirec2 = uigetdir(handles.data.imdirec2);
+    if handles.data.imdirec2==0
+        handles.data.imdirec2 = D;
+    end
+    set(handles.imagedirectory2,'string',handles.data.imdirec2);
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+
+% --- Executes during object creation, after setting all properties.
+function imagedirectory2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to imagedirectory2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in loadimagedirectory2button.
+function loadimagedirectory2button_Callback(hObject, eventdata, handles)
+% hObject    handle to loadimagedirectory2button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+if str2double(handles.Njob)>0
+    D = handles.data.imdirec2;
+    handles.data.imdirec2 = uigetdir(handles.data.imdirec2);
+    if handles.data.imdirec2==0
+        handles.data.imdirec2 = D;
+    end
+    set(handles.imagedirectory2,'string',handles.data.imdirec2);
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
+%     load_imlist(handles);
+    guidata(hObject,handles)
+end
+
+
+function imagebasename2_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    handles.data.imbase2 = get(hObject,'String');
+%     if strcmp(handles.data.masktype,'dynamic')
+%         load_masklist(handles)
+%     end
+    load_imlist(handles);
+    guidata(hObject,handles)
+end
+
+% --- Executes during object creation, after setting all properties.
+function imagebasename2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to imagebasename2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
