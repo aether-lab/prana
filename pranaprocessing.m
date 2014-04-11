@@ -1,5 +1,8 @@
 function pranaprocessing(Data,I1,I2,maskname)
 imClass = 'single';
+
+SaveIMdeform = 1;
+
 %% --- Read Formatted Parameters ---
 %input/output directory
 if ispc
@@ -515,7 +518,7 @@ switch char(M)
             % This while statment is used to interatively move through the
             % deformations.  If the minimum number of loops hasn't been
             % reach it will keep iterating otherwise it should stop.
-            while (e<P && defloop == 1) || (e<=P && defloop~=1)%
+            while (e<P && defloop == 1) || (e<=P && defloop~=1)
                 if defloop == 1
                     e=e+1;
                 end
@@ -751,7 +754,7 @@ switch char(M)
                 % --- Iterative Deformation Check ---
                 % This block checks too see if the deformation has
                 % converged or reach is max number of iterations.
-                if strcmpi(M,'Deform')
+                if ~isempty(regexpi(M,'Deform','once'))
                     if defloop == 1
                         Ud = Uval; Vd = Vval;
                     else
@@ -863,7 +866,7 @@ switch char(M)
                     end
                     
                     if str2double(Data.multiplematout)
-                        if strcmpi(M,'Deform')
+                        if ~isempty(regexpi(M,'Deform','once'))
                             save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','numDefPasses')
                         else
                             save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
@@ -1021,6 +1024,24 @@ switch char(M)
                                 end
                                 
                             end
+                            
+                            %save intermediate deformed images
+                            if SaveIMdeform
+                                %put the deformed images in a subdirectory of the vector directory to keep things tidy
+                                saveIMDdir = fullfile(pltdirec,'imDeform');
+                                [~,~,~] = mkdir(saveIMDdir); 
+                                %build image names
+                                saveIM1Dfile = [saveIMDdir, char(wbase(e,:)) ,'im1d_', sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]; 
+                                saveIM2Dfile = [saveIMDdir, char(wbase(e,:)) ,'im2d_', sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]; %even though this is from I2, it corresponds to the vectors saved as I1, so use I1 in name
+                                %check if images look like 8 bit or 12/16 bit
+                                if max(im1d(:)) > 255 || max(im2d(:)) > 255
+                                    saveclass = 'uint16';
+                                else
+                                    saveclass = 'uint8';
+                                end
+                                imwrite(cast(im1d,saveclass),saveIM1Dfile);
+                                imwrite(cast(im2d,saveclass),saveIM2Dfile);
+                             end
                             
                         else %must be Multipass - grid is same on every pass, no resampling needed
                             UI=U;VI=V;
