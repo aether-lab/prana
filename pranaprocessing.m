@@ -864,9 +864,9 @@ switch char(M)
                     
                     if str2double(Data.multiplematout)
                         if strcmpi(M,'Deform')
-                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_'],I1(q)) sprintf(['%0.' Data.imzeros 'i.mat' ],I2(q))],'X','Y','U','V','Eval','C','Di','numDefPasses')
+                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','numDefPasses')
                         else
-                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i_'],I1(q)) sprintf(['%0.' Data.imzeros 'i.mat' ],I2(q))],'X','Y','U','V','Eval','C','Di')
+                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
                         end
                     end
                     % This saves the correlation planes if that selection
