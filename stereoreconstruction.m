@@ -15,7 +15,12 @@ function [diroutlist,scaling]=stereoreconstruction(caldata,planarjob,rectype)
 %
 
 pulsesep=str2double(planarjob.wrsep)*(1e-6);
-planarjob.wrsep='1';
+planarjob.wrsep = '1';
+% If you are going to set the pulse separation to 1 to get things in pixel
+% units you should also change the magnificaiton to sure that things come
+% out correctly.
+planarjob.wrmag = '1';
+
 % pulsesep
 % planarjob.wrsep
 
@@ -28,7 +33,10 @@ for j = 1:length(rectype)
     if strcmp(rectype{j},'Willert')
         fprintf('Processing for Geometric Reconstruction... \n');
         %Dewarp the camera images
-        [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp(caldata,'Willert',planarjob);
+%         [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp(caldata,'Willert',planarjob);
+        [Xg,Yg] = meshgrid(-34:.45:20,-27:.45:27);
+        [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp_predefined_grid(caldata,'Willert',planarjob,[],Xg,Yg,8);
+        
         %2D processing for camera1
         job1=planarjob;
         job1.imdirec=dewarpdirlist.dewarpdir1;
@@ -64,7 +72,10 @@ for j = 1:length(rectype)
         pranaPIVcode(job1);
         clear job1;
         
-        mkdir(fullfile(planarjob.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(1)),'Camera',num2str(caldata.camnumber(2)),'_3Cfields',filesep]));
+        stereodir = fullfile(planarjob.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(1)),'Camera',num2str(caldata.camnumber(2)),'_3Cfields',filesep]); 
+        if ~exist(stereodir,'dir')
+            mkdir(stereodir);
+        end
         diroutlist.willert3cfields=fullfile(planarjob.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(1)),'Camera',num2str(caldata.camnumber(2)),'_3Cfields',filesep]);
         
         %stereo reconstruction

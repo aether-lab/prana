@@ -39,8 +39,8 @@ if strcmp(dewarpmethod,'Willert')
     fend=str2double(imagelist.imfend);
     cstep=str2double(imagelist.imcstep);
     
-    dirout1=([dir1,'Dewarped Images',filesep]);
-    dirout2=([dir2,'Dewarped Images',filesep]);
+    dirout1=fullfile(dir1,['Dewarped Images',filesep]);
+    dirout2=fullfile(dir2,['Dewarped Images',filesep]);
     if ~exist(dirout1,'dir')
         mkdir(dirout1);
     end
@@ -51,10 +51,10 @@ if strcmp(dewarpmethod,'Willert')
     outputdirlist.dewarpdir1=dirout1;
     outputdirlist.dewarpdir2=dirout2;
     
-    istring1=sprintf(['%%s%%s%%0%0.0fd.',ext],zer);
+    istring1=sprintf(['%%s%%0%0.0fd.',ext],zer);
     %keyboard;
-    IML=imread(sprintf(istring1,dir1,base1,fstart));
-    IMR=imread(sprintf(istring1,dir2,base2,fstart));
+    IML=imread(fullfile(dir1,sprintf(istring1,base1,fstart)));
+    IMR=imread(fullfile(dir2,sprintf(istring1,base2,fstart)));
     [Jmax1,Imax1] = size(IML);
     [Jmax2,Imax2] = size(IMR);
     
@@ -268,8 +268,8 @@ if strcmp(dewarpmethod,'Willert')
     for k=fstart:fstep:fend+1
         %reading recorded images
         
-        IMLi= im2double(imread(sprintf(istring1,dir1,base1,k)));
-        IMRi= im2double(imread(sprintf(istring1,dir2,base2,k+cstep-1)));
+        IMLi= im2double(imread(fullfile(dir1,sprintf(istring1,base1,k))));
+        IMRi= im2double(imread(fullfile(dir2,sprintf(istring1,base2,k+cstep-1))));
         
         incl=class(IMLi);
         %flipping images
@@ -303,8 +303,8 @@ if strcmp(dewarpmethod,'Willert')
         %                 figure(10);imshow(IM);
         
         %keyboard;
-        imwrite((IMLo),sprintf(istring1,dirout1,base1,k),'TIFF','WriteMode','overwrite','Compression','none');
-        imwrite((IMRo),sprintf(istring1,dirout2,base2,k+cstep-1),'TIFF','WriteMode','overwrite','Compression','none');
+        imwrite((IMLo),fullfile(dirout1,sprintf(istring1,base1,k)),'TIFF','WriteMode','overwrite','Compression','none');
+        imwrite((IMRo),fullfile(dirout2,sprintf(istring1,base2,k+cstep-1)),'TIFF','WriteMode','overwrite','Compression','none');
         %keyboard;
         
     end

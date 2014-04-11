@@ -5,7 +5,7 @@ function expsummary = write_expsummary(Data)
 y_n={'No','Yes'};
 % These are the PIV methods
 methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
-    'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)'};
+    'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)','Multigrid - 1st Order Forward Deform'};
 % These are the different interpolation methods for the velocity field
 velinterp={'Nearest Neighbor','Bilinear','Cubic'};
 % These are the interpolation methods for the image deformations
