@@ -892,7 +892,7 @@ switch char(M)
                     %converged yet for iterative deform, we need to prepare U
                     %and V from this pass for use as a predictor in the next
                     %pass
-                    if e~=P || (~isempty(regexpi(M,'Deform','once')) && defloop ~=1)
+                    if e~=P || (~isempty(regexpi(M,'Deform','once')) && defloop ~=1) || SaveIMdeform
                         %reshape from list of grid points to matrix
                         X=reshape(X,[S(1),S(2)]);
                         Y=reshape(Y,[S(1),S(2)]);
@@ -1031,16 +1031,17 @@ switch char(M)
                                 saveIMDdir = fullfile(pltdirec,'imDeform');
                                 [~,~,~] = mkdir(saveIMDdir); 
                                 %build image names
-                                saveIM1Dfile = [saveIMDdir, char(wbase(e,:)) ,'im1d_', sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]; 
-                                saveIM2Dfile = [saveIMDdir, char(wbase(e,:)) ,'im2d_', sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]; %even though this is from I2, it corresponds to the vectors saved as I1, so use I1 in name
+                                saveIM1Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im1d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
+                                %even though this is from I2, it corresponds to the vectors saved as I1, so use I1 in name
+                                saveIM2Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im2d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
                                 %check if images look like 8 bit or 12/16 bit
                                 if max(im1d(:)) > 255 || max(im2d(:)) > 255
                                     saveclass = 'uint16';
                                 else
                                     saveclass = 'uint8';
                                 end
-                                imwrite(cast(im1d,saveclass),saveIM1Dfile);
-                                imwrite(cast(im2d,saveclass),saveIM2Dfile);
+                                imwrite(flipud(cast(im1d,saveclass)),saveIM1Dfile);
+                                imwrite(flipud(cast(im2d,saveclass)),saveIM2Dfile);
                              end
                             
                         else %must be Multipass - grid is same on every pass, no resampling needed
