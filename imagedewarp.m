@@ -56,8 +56,11 @@ if strcmp(dewarpmethod,'Willert')
     %keyboard;
     IML=imread(fullfile(dir1,sprintf(istring1,base1,fstart)));
     IMR=imread(fullfile(dir2,sprintf(istring1,base2,fstart)));
-    [Jmax1,Imax1] = size(IML);  %Possible bug, isn't this [NY,NX], but used below as [NX,NY] to build X1points, etc.?
-    [Jmax2,Imax2] = size(IMR);
+%     [Jmax1,Imax1] = size(IML);  %Possible bug, isn't this [NY,NX], but used below as [NX,NY] to build X1points, etc.?
+%     [Jmax2,Imax2] = size(IMR);
+    %bug fixed?
+    [Imax1,Jmax1] = size(IML);  
+    [Imax2,Jmax2] = size(IMR);
     
     %The corners of each image?
     %[SW,SE,NW,NE] ?
@@ -83,8 +86,12 @@ elseif strcmp(dewarpmethod,'Soloff')
     y2=veclist2.Y;
     clear veclist2;
     
-    [Jmax1, Imax1]=size(x1);
-    [Jmax2, Imax2]=size(x2);
+    % %Possible bug, isn't this [NY,NX], but used below as [NX,NY] to build X1points, etc.?
+    % [Jmax1, Imax1]=size(x1);
+    % [Jmax2, Imax2]=size(x2);
+    %bug fixed?
+    [Imax1, Jmax1]=size(x1);
+    [Imax2, Jmax2]=size(x2);
     
     outputdirlist='';
     
@@ -99,15 +106,15 @@ elseif strcmp(dewarpmethod,'Soloff')
     %The corners of each vector field?
     %[SW,SE,NW,NE]?  x is flipped E-W for backside cameras
     if caldata.targetside==1
-        X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))];
-        Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))];
-        X2points=[min(min(x2)) max(max(x2)) min(min(x2)) max(max(x2))];
-        Y2points=[min(min(y2)) min(min(y2)) max(max(y2)) max(max(y2))];
+        X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))] + 0.5;
+        Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))] + 0.5;
+        X2points=[min(min(x2)) max(max(x2)) min(min(x2)) max(max(x2))] + 0.5;
+        Y2points=[min(min(y2)) min(min(y2)) max(max(y2)) max(max(y2))] + 0.5;
     else    % different arrangement if camera 2 is on other side
-        X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))];
-        Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))];
-        X2points=[max(max(x2)) min(min(x2))  max(max(x2)) min(min(x2))];
-        Y2points=[min(min(y2)) min(min(y2))  max(max(y2)) max(max(y2))];
+        X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))] + 0.5;
+        Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))] + 0.5;
+        X2points=[max(max(x2)) min(min(x2))  max(max(x2)) min(min(x2))] + 0.5;
+        Y2points=[min(min(y2)) min(min(y2))  max(max(y2)) max(max(y2))] + 0.5;
     end
     
 end

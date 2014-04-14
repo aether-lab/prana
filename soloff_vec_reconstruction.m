@@ -26,20 +26,20 @@ for j=1:nof
     if j==1
         [~,dewarp_grid,scaling]=imagedewarp(caldata,'Soloff',imagelist,vectorlist{j});
         
-        xgrid=dewarp_grid.xgrid;
+        xgrid=dewarp_grid.xgrid; %reconstruction grid in world coordinates
         ygrid=dewarp_grid.ygrid;
         zgrid=zeros(size(xgrid));
-        Xgrid1=dewarp_grid.Xgrid1;
+        Xgrid1=dewarp_grid.Xgrid1; %reconstruction grid in pixel-centered image coordinates
         Ygrid1=dewarp_grid.Ygrid1;
         Xgrid2=dewarp_grid.Xgrid2;
         Ygrid2=dewarp_grid.Ygrid2;
     elseif j>1 && ~strcmp(foutnamelist{j}{2}(1),foutnamelist{j-1}{2}(1))
         [~,dewarp_grid,scaling]=imagedewarp(caldata,'Soloff',imagelist,vectorlist{j});
         
-        xgrid=dewarp_grid.xgrid;
+        xgrid=dewarp_grid.xgrid; %reconstruction grid in world coordinates
         ygrid=dewarp_grid.ygrid;
         zgrid=zeros(size(xgrid));
-        Xgrid1=dewarp_grid.Xgrid1;
+        Xgrid1=dewarp_grid.Xgrid1; %reconstruction grid in pixel-centered image coordinates
         Ygrid1=dewarp_grid.Ygrid1;
         Xgrid2=dewarp_grid.Xgrid2;
         Ygrid2=dewarp_grid.Ygrid2;
@@ -47,15 +47,17 @@ for j=1:nof
     end
     
     vecfr1 = load(vectorlist{j}{1});
-    x1=vecfr1.X;
-    y1=vecfr1.Y;
-    u1=vecfr1.U(:,:,1);
+    %need to convert vector locations on pixel corners to pixel centers for image coordinates
+    x1=vecfr1.X + 0.5;
+    y1=vecfr1.Y + 0.5;
+    u1=vecfr1.U(:,:,1); %pixels displacement?
     v1=vecfr1.V(:,:,1);
     clear vecfr1;
     vecfr2 = load(vectorlist{j}{2});
-    x2=vecfr2.X;
-    y2=vecfr2.Y;
-    u2=vecfr2.U(:,:,1);
+    %need to convert vector locations on pixel corners to pixel centers for image coordinates
+    x2=vecfr2.X + 0.5;
+    y2=vecfr2.Y + 0.5;
+    u2=vecfr2.U(:,:,1); %pixels displacement?
     v2=vecfr2.V(:,:,1);
     clear vecfr2;
     

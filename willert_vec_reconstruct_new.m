@@ -65,8 +65,11 @@ for j=1:nof
     vecfr1 = load(vectorlist{j}{1});
     if j==1 || (j>1 && ~strcmp(foutnamelist{j}{2}(1),foutnamelist{j-1}{2}(1)))
         %keyboard;
-        X1 = xgridc(vecfr1.Y(:,1),vecfr1.X(1,:));
-        Y1 = ygridc(vecfr1.Y(:,1),vecfr1.X(1,:));
+        % %this is the same error as in selfcalibration.m, fixed the same way        
+        % X1 = xgridc(vecfr1.Y(:,1),vecfr1.X(1,:));
+        % Y1 = ygridc(vecfr1.Y(:,1),vecfr1.X(1,:));
+        X1 = xscale * (vecfr1.X+0.5 - 1) + min(xgridc(:));
+        Y1 = yscale * (vecfr1.Y+0.5 - 1) + min(ygridc(:));
     end                   % Assign Camera 1 grids locs to local variable
     
     u1 = (xscale*t)*vecfr1.U(:,:,1);
@@ -75,8 +78,10 @@ for j=1:nof
     
     vecfr2 = load(vectorlist{j}{2});
     if j==1 || (j>1 && ~strcmp(foutnamelist{j}{2}(1),foutnamelist{j-1}{2}(1)))
-        X2 = xgridc(vecfr2.Y(:,1),vecfr2.X(1,:));
-        Y2 = ygridc(vecfr2.Y(:,1),vecfr2.X(1,:));
+        % X2 = xgridc(vecfr2.Y(:,1),vecfr2.X(1,:));
+        % Y2 = ygridc(vecfr2.Y(:,1),vecfr2.X(1,:));
+        X2 = xscale * (vecfr2.X+0.5 - 1) + min(xgridc(:));
+        Y2 = yscale * (vecfr2.Y+0.5 - 1) + min(ygridc(:));
     end                   % Assign Camera 1 grids locs to local variable
     
     u2 = (xscale*t)*vecfr2.U(:,:,1);
