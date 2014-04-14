@@ -350,8 +350,8 @@ if strcmp(dewarpmethod,'Willert')
         IMRi=IMRi(end:-1:1,:);
         %Interpolating on a common grid
         %sincBlackmanInterp2 assumes images are on grid [1 NX] and [1 NY]
-        IMLo=((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 3,'blackman')));
-        IMRo=((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 3,'blackman')));
+        IMLo=((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 8,'blackman')));
+        IMRo=((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 8,'blackman')));
         
         %             IMLo=double((interp2(x1,y1,IMLi, Xgrid1, Ygrid1, 'spline',0)));
         %             IMRo=double((interp2(x1,y1,IMRi, Xgrid2, Ygrid2, 'spline',0)));

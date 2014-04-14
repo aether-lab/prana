@@ -1,5 +1,5 @@
-function ZI = sincBlackmanInterp2(Z, XI, YI, KERNELRADIUS, METHOD)
-% ZI = sincBlackmanInterp2(Z, XI, YI, KERNELRADIUS)
+function ZI = sincBlackmanInterp2(Z, XI, YI, KERNELSIZE, METHOD)
+% ZI = sincBlackmanInterp2(Z, XI, YI, KERNELSIZE, METHOD)
 % Sinc-interpolation with the option for blackman apodization. 
 %
 % INPUTS
@@ -8,7 +8,8 @@ function ZI = sincBlackmanInterp2(Z, XI, YI, KERNELRADIUS, METHOD)
 %   Z = Matrix of values of the original signal sampled on the [Y, X] grid
 %   XI = Matrix of non-integer column positions at which to resample the original signal
 %   YI = Matrix of non-integer row positions at which to resample the original signal
-%   KERNELRADIUS = Radius of the Sinc interpolation kernel. 
+%   KERNELSIZE = symmetric dimension of the kernel size. Should be even; 
+%       odd inputs will be forced to the next largest even integer 
 %   METHOD = String specifying the interpolation type. Set METHOD =
 %   'blackman' for blackman apodization and 'sinc' for no apodization. 
 % 
@@ -24,37 +25,35 @@ if nargin < 5
     METHOD = 'blackman';
 end
 
-%find type of Z so we can make the output match
-Zclass = class(Z);
-
 % Image height (number of rows) and width (number of columns)
 [height, width] = size(Z);
 
-% Determine the class of the image.
+% Determine the data class of the image.
 imageClass = class(Z);
 
-% Convert data types to singles
-xi = single(XI);
-yi = single(YI);
+% Number of points to interpolate
+nInterpPoints = numel(XI);
 
-% Clear variables to save memory
+[nInterpRows, nInterpColumns] = size(XI);
+
+% Reshape the grid of interpolation points into vectors.
+% Convert to single precision to save memory.
+XIv = single(reshape(XI, nInterpPoints, 1));
+YIv = single(reshape(YI, nInterpPoints, 1));
+
+% Determine the integer locations of the anchor pixels.
+% Floor them so it's easy to specify the pixel locations locations of an even kernel.
+xAnchors = int16(floor(XIv));
+yAnchors = int16(floor(YIv));
+
+% clear variables to save memory
 clear XI YI
 
-% Number of points to interpolate
-nInterpPoints = numel(xi);
-
-% Vector of integers corresponding to the kernel locations
-kernelLocs = int16(-KERNELRADIUS : KERNELRADIUS);
-
-% Length of the kernel
-kernelLength = length(kernelLocs);
-
-% Reshape coordinates into vectors
-XIv = reshape(xi, nInterpPoints, 1);
-YIv = reshape(yi, nInterpPoints, 1);
+% Force the kernel size to an even integer
+kernelSize = KERNELSIZE + 2 * mod(KERNELSIZE/2, 1);
 
 % Mirror the border of the image so that the kernel doesn't reach outside of the valid image
-zPadded = padarray(uint16(Z), [KERNELRADIUS KERNELRADIUS], 0);
+zPadded = padarray(Z, [kernelSize/2, kernelSize/2], 0);
 
 % Calculate size of padded image
 [paddedHeight, paddedWidth] = size(zPadded);
@@ -63,56 +62,64 @@ zPadded = padarray(uint16(Z), [KERNELRADIUS KERNELRADIUS], 0);
 % matrix operations)
 zPaddedVector = reshape(zPadded, numel(zPadded), 1);
 
-% Clear a variable to save memory
+% clear a variable to save memory
 clear zPadded
 
-% Determine the integer locations of the anchor pixels
-yAnchors = int16(round(YIv));
-xAnchors = int16(round(XIv));
+% Vector of integers corresponding to the kernel locations
+% The -1 is to specify that there are always
+% (kernelSize/2 -1) points to the left of the floored anchor pixel
+% and (kernelSize/2) points to the right of the floored anchor pixel.
+kernelLocs = int16( -(kernelSize/2 - 1) : (kernelSize/2));
 
 % Replicate the interpolated coordinate vectors and the anchor pixel
 % vectors to save time on loops later. These operations are equivalent to
 % "repmat" but faster.
-repYI = YIv( : , ones(1, kernelLength) ); % Replicate the Interpolated row positions. This way is faster than REPMAT.
-repXI = XIv( : , ones(1, kernelLength) ); % Replicate the Interpolated column positions
+repYI = YIv( : , ones(1, kernelSize) ); % Replicate the Interpolated row positions. This way is faster than REPMAT.
+repXI = XIv( : , ones(1, kernelSize) ); % Replicate the Interpolated column positions
 
-% Clear some variables to save memory
-clear X Y YI XI YIv XIv Z yi xi;
+% clear some variables to save memory
+clear YI XI YIv XIv Z;
 
 % Calculate the (possibly non-integer) image-coordinates of the positions at which the
 % interpolation function will be evaluated.
-interpolantRows = single(kernelLocs( ones(1, nInterpPoints), :) + yAnchors( : , ones( 1, kernelLength ) ) );
-interpolantCols = single(kernelLocs( ones(1, nInterpPoints), :) + xAnchors( : , ones( 1, kernelLength ) ) );
+% interpolantRows = repmat(kernelLocs, nInterpPoints, 1) + repmat(yAnchors, 1, kernelSize);
+interpolantRows = single(kernelLocs( ones(1, nInterpPoints), :) + yAnchors( : , ones( 1, kernelSize ) ) );
+
+% interpolantCols = repmat(kernelLocs, nInterpPoints, 1) + repmat(xAnchors, 1, kernelSize);
+interpolantCols = single(kernelLocs( ones(1, nInterpPoints), :) + xAnchors( : , ones( 1, kernelSize ) ) );
 
 % Calculate the values of the intepolant at the interpolation coordinates
 % (this line does both X- and Y- coordinates)
-Interpolants = sinc([repYI - interpolantRows, repXI - interpolantCols]);
+% Interpolants = sinc([repYI - interpolantRows, repXI - interpolantCols]);
+Interpolants = sinc([interpolantRows - repYI, interpolantCols - repXI]);
 
 % Pull the X- and Y- interpolants out of the combined matrix
-interpolantsY = Interpolants(:, 1 : kernelLength);
-interpolantsX = Interpolants(:, kernelLength + 1 : end);
+interpolantsY = Interpolants(:, 1 : kernelSize);
+interpolantsX = Interpolants(:, kernelSize + 1 : end);
 
-% Clear the Interpolants variable to save memory
+% clear the Interpolants variable to save memory
 clear Interpolants; 
 
 % Calculate the interpolant apodization function
 if strcmp(METHOD, 'blackman') % If blackman window was specified
-    apodizationY =  0.42 + 0.5 * cos( pi *( interpolantRows - repYI ) / KERNELRADIUS ) + 0.08 * cos (2 * pi * ( interpolantRows- repYI ) / KERNELRADIUS ); % Blackman window ( vertical )
-    apodizationX = 0.42 + 0.5 * cos( pi *( interpolantCols - repXI ) / KERNELRADIUS ) + 0.08 * cos (2 * pi * ( interpolantCols - repXI ) / KERNELRADIUS ); % Blackman window ( horizontal)
+    apodizationY =  0.42 + 0.5 * cos( pi *( interpolantRows - repYI ) / (kernelSize/2) ) + 0.08 * cos (2 * pi * ( interpolantRows - repYI ) / (kernelSize/2) ); % Blackman window ( vertical )
+    apodizationX = 0.42 + 0.5 * cos( pi *( interpolantCols - repXI ) / (kernelSize/2) ) + 0.08 * cos (2 * pi * ( interpolantCols - repXI ) / (kernelSize/2) ); % Blackman window ( horizontal)
 else % If no apodization function was specified then don't apodize the interpolant
     apodizationY =  ones(size(interpolantRows));
     apodizationX = ones(size(interpolantCols));
 end
 
-% Clear some variables to save memory
+% clear some variables to save memory
 clear interpolantRows interpolantCols repXI repYI
 
-% Replicate the interpolant and apodization matrices so that they can me
+% Replicate the interpolant and apodization matrices so that they can be
 % multiplied by a single array operation
-repInterpolantsX = interpolantsX(:, (1 : kernelLength)' * ones(1, kernelLength));
-repApodizationX = apodizationX(:, (1 : kernelLength)' * ones(1, kernelLength));
+% repInterpolantsX2 = repmat(interpolantsX, 1, kernelSize);
+% repApodizationX2 = repmat(apodizationX, 1, kernelSize);
+repInterpolantsX = interpolantsX(:, (1 : kernelSize)' * ones(1, kernelSize));
+repApodizationX = apodizationX(:, (1 : kernelSize)' * ones(1, kernelSize));
 
-% Clear some variables to save memory
+% clear some variables to save memory
 clear interpolantsX apodizationX
 
 % Initialize the vertical interpolant and apodization matrices
@@ -126,18 +133,18 @@ repApodizationY = zeros(size(repApodizationX), 'single');
 % so that multiplying them by the corresponding horizontal interpolants and
 % apodization functions results in a re-shaped version of real vector
 % multiplication. 
-for k = 1 : kernelLength;
-    repInterpolantsY(:, kernelLength * (k - 1) + 1 : kernelLength * k ) = interpolantsY(:, k * ones(1, kernelLength ) ) ;
-    repApodizationY(:, kernelLength * (k - 1) + 1 : kernelLength * k) = apodizationY(:, k * ones(1, kernelLength ) ) ;
+for k = 1 : kernelSize;
+    repInterpolantsY(:, kernelSize * (k - 1) + 1 : kernelSize * k ) = interpolantsY(:, k * ones(1, kernelSize ) ) ;
+    repApodizationY(:, kernelSize * (k - 1) + 1 : kernelSize * k) = apodizationY(:, k * ones(1, kernelSize ) ) ;
 end
 
-% Clear some variables to save memory
+% clear some variables to save memory
 clear interpolantsY apodizationY;
 
 % Calculate the pixel intensity weighting function evaluated at each pixel
 Weights = repInterpolantsY .* repInterpolantsX .* repApodizationY .* repApodizationX;
 
-% Clear some variables to save memory
+% clear some variables to save memory
 clear repInterpolantsY repInterpolantsX repApodizationY repApodizationX 
 
 % Determine which x- and y- anchor positions are valid (i.e. which ones
@@ -147,22 +154,31 @@ validY = yAnchors >= 1 & yAnchors <= height;
 validX = xAnchors >= 1 & xAnchors <= width;
 
 % Source columns matrix 
-kernelAdds = int16(0 : 2 * KERNELRADIUS); % Integers specifying the number of elements from the left-side of the interpolation kernel 
-sourceColumns = kernelAdds( ones(1, nInterpPoints), :) + xAnchors( : , ones( 1, kernelLength ) ); % List of the source columns
-sourceColumnsRep = uint16(sourceColumns( : , (1 : kernelLength)' * ones(1, kernelLength))); % Replicate the source columns matrix
+% Integers specifying the number of elements from the left-side of the interpolation kernel
+% kernelAdds = int16(0 : (kernelSize - 1));
+kernelAdds = int16(1 : kernelSize);
 
-% Clear a vairable to save memory
+% List of the source columns
+% sourceColumns = repmat(kernelAdds, nInterpPoints, 1) + repmat(xAnchors, 1, kernelSize)
+sourceColumns = kernelAdds( ones(1, nInterpPoints), :) + xAnchors( : , ones( 1, kernelSize ) ); 
+
+% Replicate the source columns matrix
+% sourceColumnsRep = repmat(sourceColumns, 1, kernelSize)
+sourceColumnsRep = uint16(sourceColumns( : , (1 : kernelSize)' * ones(1, kernelSize))); 
+
+% clear a vairable to save memory
 clear sourceColumns;
 
 % Initialize the source rows matrix
 sourceRowsRep = zeros(size(sourceColumnsRep), 'uint16');
 
 % Determine row positions of source pixels
-for k = 1 : kernelLength
-    sourceRowsRep(:, kernelLength * (k - 1) + 1 : kernelLength * k) = yAnchors(:, ones(1, kernelLength) ) + (k -1);
+for k = 1 : kernelSize
+%     sourceRowsRep(:, kernelSize * (k - 1) + 1 : kernelSize * k) = yAnchors(:, ones(1, kernelSize) ) + (k - 1);
+    sourceRowsRep(:, kernelSize * (k - 1) + 1 : kernelSize * k) = yAnchors(:, ones(1, kernelSize) ) + kernelAdds(k);
 end
 
-% Clear some variables to save space. 
+% clear some variables to save space. 
 clear yAnchors xAnchors
 
 % Set coordinates of points outside of the domain of the original signal to
@@ -179,16 +195,16 @@ sourceColumnsRep(sourceColumnsRep > paddedWidth ) = paddedWidth;
 % sourceIndices =  (double(sourceColumnsRep ) - 1) * size(zPadded, 1) + double(sourceRowsRep);
 sourcePixels = zPaddedVector((double(sourceColumnsRep ) - 1) * paddedHeight + double(sourceRowsRep));
 
-% Clear some variables to save memory
+% clear some variables to save memory
 clear sourceRows sourceColumns
 
 % Multiply the values of the source pixels by the weighting function
 % evaluated at each pixel. Doing this as an array operation is faster than
 % doing it in a loop because it takes a long time to loop over a million
 % goddamn pixels. 
-Zinterp = cast( sum( Weights .* single(sourcePixels) , 2 ) , Zclass );
+Zinterp = sum( Weights .* single(sourcePixels) , 2 );
 
-% Clear a variable to save space
+% clear a variable to save space
 clear sourcePixels
 
 % Set the values of the interpolated function whose source pixel values
@@ -197,8 +213,9 @@ Zinterp( ~validY ) = 0;
 Zinterp( ~validX ) = 0;
 
 % Reshape the vector-version of the interpolated signal to a matrix of the
-% same size as the original signal
-ZI = reshape( Zinterp, [ height width ] );
+% same size as the original signal. Save the output image to the output
+% variable with the same class as the input image.
+ZI = reshape( cast(Zinterp, imageClass), [ nInterpRows, nInterpColumns ] );
 
 end % End of function
 

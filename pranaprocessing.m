@@ -460,12 +460,12 @@ switch char(M)
                     % Deform images according to the interpolated velocity fields
                     for k = 1:nChannels % Loop over all of the color channels in the image
                         if Iminterp == 1 % Sinc interpolation (without blackman window)
-                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'sinc');
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'sinc');
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
                             
                         elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'blackman');
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
                         end
                     end
                     
@@ -503,9 +503,9 @@ switch char(M)
                     % Deform images according to the interpolated velocity fields
                     for k = 1:nChannels % Loop over all of the color channels in the image
                         if Iminterp == 1 % Sinc interpolation (without blackman window)
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
                         elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
                         end
                     end
                     
@@ -963,12 +963,12 @@ switch char(M)
                                 % Deform images according to the interpolated velocity fields
                                 for k = 1:nChannels % Loop over all of the color channels in the image
                                     if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                        im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'sinc');
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                                        im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'sinc');
+                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
                                         
                                     elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                        im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 3, 'blackman');
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                                        im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
+                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
                                     end
                                 end
                                 
@@ -1010,9 +1010,9 @@ switch char(M)
                                 % Deform images according to the interpolated velocity fields
                                 for k = 1:nChannels % Loop over all of the color channels in the image
                                     if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'sinc');
+                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
                                     elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 'blackman');
+                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
                                     end
                                 end
                                 
@@ -1272,12 +1272,12 @@ switch char(M)
                             % memory at the expense of some speed here.
                             for k = 1:nChannels % Loop over all of the color channels in the image
                                 if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'sinc');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'sinc');
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'sinc');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'sinc');
                                     
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'blackman');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'blackman');
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'blackman');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'blackman');
                                 end
                             end
                             
@@ -1419,12 +1419,12 @@ switch char(M)
                         % but I'm trying to save memory at the expense of some speed here.
                         for k = 1:nChannels % Loop over all of the color channels in the image
                             if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'sinc');
-                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'sinc');
+                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'sinc');
+                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'sinc');
                                 
                             elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 3, 'blackman');
-                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 3, 'blackman');
+                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'blackman');
+                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'blackman');
                             end
                         end
                         
