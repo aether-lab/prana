@@ -25,6 +25,7 @@ aYcam2=caldata.aYcam2;
 
 %keyboard;
 
+%JJC: We will be dewarping images?
 if strcmp(dewarpmethod,'Willert')
     
     %keyboard;
@@ -55,10 +56,11 @@ if strcmp(dewarpmethod,'Willert')
     %keyboard;
     IML=imread(fullfile(dir1,sprintf(istring1,base1,fstart)));
     IMR=imread(fullfile(dir2,sprintf(istring1,base2,fstart)));
-    [Jmax1,Imax1] = size(IML);
+    [Jmax1,Imax1] = size(IML);  %Possible bug, isn't this [NY,NX], but used below as [NX,NY] to build X1points, etc.?
     [Jmax2,Imax2] = size(IMR);
     
-    
+    %The corners of each image?
+    %[SW,SE,NW,NE] ?
     X1points=[1 Jmax1 1 Jmax1];
     Y1points=[1 1 Imax1 Imax1];
     X2points=[1 Jmax2 1 Jmax2];
@@ -69,20 +71,33 @@ if strcmp(dewarpmethod,'Willert')
     %     X2points=[0.5 Jmax2-0.5 0.5 Jmax2-0.5];
     %     Y2points=[0.5 0.5 Imax2-0.5 Imax2-0.5];
     
+%JJC: We will be dewarping vector fields?
 elseif strcmp(dewarpmethod,'Soloff')
-    load(vectorlist{1});
-    x1=X;
-    y1=Y;
-    clear X Y U V;
-    load(vectorlist{2});
-    x2=X;
-    y2=Y;
-    clear X Y U V;
+    veclist1 = load(vectorlist{1});
+    x1=veclist1.X;
+    y1=veclist1.Y;
+    clear veclist1;
+    
+    veclist2 = load(vectorlist{2});
+    x2=veclist2.X;
+    y2=veclist2.Y;
+    clear veclist2;
+    
     [Jmax1, Imax1]=size(x1);
     [Jmax2, Imax2]=size(x2);
     
     outputdirlist='';
     
+    %Caution: These positions come from vector fields, and therefore may be
+    % vector coordinates that don't match the pixel coordinates!
+    % Do we need to translate them?
+    %To make this work (ignoring coordinate system mismatch for now), we 
+    % must be assuming that the vector field locations are in units of
+    % pixels in Image space, not physical units and not physical (object?) 
+    % space.
+    %
+    %The corners of each vector field?
+    %[SW,SE,NW,NE]?  x is flipped E-W for backside cameras
     if caldata.targetside==1
         X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))];
         Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))];
@@ -242,7 +257,7 @@ if overplots == 1
 end
 %keyboard;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Comput this grid in the IMAGE (object) plane to interpolate values
+% Compute this grid in the IMAGE (object) plane to interpolate values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [Xgrid1,Ygrid1]=poly_3xy_123z_fun(xgrid,ygrid,orderz,aXcam1,aYcam1);
 [Xgrid2,Ygrid2]=poly_3xy_123z_fun(xgrid,ygrid,orderz,aXcam2,aYcam2);
@@ -253,13 +268,28 @@ dewarp_grid.Xgrid2=Xgrid2;
 dewarp_grid.Ygrid2=Ygrid2;
 dewarp_grid.xgrid=xgrid;
 dewarp_grid.ygrid=ygrid;
+
+%scaling is only an estimate returned as an output, and is not used in the
+% dewarping calculation
+%divide extent in object space by number of pixels.  
 if strcmp(dewarpmethod,'Willert')
-    scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/Imax1;
-    scaling.yscale =(max(ygrid(:))-min(ygrid(:)))/Jmax1;
+    %JJC: this looks like a bug.  Commented out and replaced with fix below
+    % % Does this have an off-by-one error?  If we have four pixels at 1:4 with 
+    % % unit scaling, max_x-min_x = 4-1 = 3, and Imax = 4, then we get 
+    % % xscale = 3/4 = 0.75, not 1.0 like we'd expect.
+    % scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/Imax1;
+    % scaling.yscale =(max(ygrid(:))-min(ygrid(:)))/Jmax1;
+    
+    %Both numerator and denominator need to be (Max - Min), see Soloff
+    %below for analogous construction
+    scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/(Imax1-1);
+    scaling.yscale =(max(ygrid(:))-min(ygrid(:)))/(Jmax1-1);
 elseif strcmp(dewarpmethod,'Soloff')
+    %JJC: this was already correct, see above
     scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/(max(x1(:))-min(x1(:)));
     scaling.yscale =(max(ygrid(:))-min(ygrid(:)))/(max(y1(:))-min(y1(:)));
 end
+
 %keyboard;
 if strcmp(dewarpmethod,'Willert')
     %[x1,y1] = meshgrid(0.5:1:Jmax1-0.5,0.5:1:Imax1-0.5);
@@ -276,6 +306,7 @@ if strcmp(dewarpmethod,'Willert')
         IMLi=IMLi(end:-1:1,:);
         IMRi=IMRi(end:-1:1,:);
         %Interpolating on a common grid
+        %sincBlackmanInterp2 assumes images are on grid [1 NX] and [1 NY]
         IMLo=((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 3,'blackman')));
         IMRo=((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 3,'blackman')));
         
@@ -284,7 +315,7 @@ if strcmp(dewarpmethod,'Willert')
         
         
         %  keyboard;
-        %flipping them back
+        %flipping them back for saving
         IMLo=IMLo(end:-1:1,:);IMRo=IMRo(end:-1:1,:);
         IMLo=cast(IMLo,incl);IMRo=cast(IMRo,incl);
         
@@ -303,6 +334,7 @@ if strcmp(dewarpmethod,'Willert')
         %                 figure(10);imshow(IM);
         
         %keyboard;
+        %JJC: why the heck are we saving them with no TIFF compression?
         imwrite((IMLo),fullfile(dirout1,sprintf(istring1,base1,k)),'TIFF','WriteMode','overwrite','Compression','none');
         imwrite((IMRo),fullfile(dirout2,sprintf(istring1,base2,k+cstep-1)),'TIFF','WriteMode','overwrite','Compression','none');
         %keyboard;
