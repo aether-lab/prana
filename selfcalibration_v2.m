@@ -46,6 +46,8 @@ aYcam2=caldata.aYcam2;
 
 %keyboard;
 
+%These are the dewarped image coordinates in physical space; one grid point
+%for every pixel in the dewarped images
 xgrid1=dewarp_grid.xgrid;
 ygrid1=dewarp_grid.ygrid;
 
@@ -54,6 +56,12 @@ job1=selfcaljob;
 job1.imdirec=outputdirlist.dewarpdir1;
 job1.imdirec2=outputdirlist.dewarpdir2;
 job1.imcstep='0';
+
+%JJC: I think wrmag (resolution), wrsep (dt), wrsamp (f) all need to be set
+%to 1 everytime to get pixel units.  I can't find anywhere that they were
+%changed from their defaults either.  Should we force them to 1 here to
+%make sure someone doesn't load a job where they've been manually altered?
+
 
 fprintf('Calculating Disparity.\n')
 if any(str2double(job1.method)==[4 5]) && (str2double(job1.par) == 1)
@@ -76,10 +84,18 @@ istring1=sprintf(['%%s%%s%%0%0.0fd.','mat'],str2double(job1.imzeros));
 
 dispfield = load(sprintf(istring1,job1.outdirec,[filesep,job1.outputpassbase,'pass',job1.passes,'_'],str2double(job1.imfstart)));
 
+%What units are U,V,X,Y in?
+%The images are in dewarped physical coordinates
+%I think U and V will be pixels of displacement.
+%I think X and Y will be pixels in the dewarped images, so we'll need to
+%look them up using xgrid1 and ygrid1 to get to something meaningful.
+%HOWEVER, X and Y will be in vector-centered coordinates, which means that
+%pixel 1 is probably at vector coordinate 0.5 as reported in X and Y.
 Dux=dispfield.U(:,:,1);
 Duy=dispfield.V(:,:,1);%X and Y disparity matrices
-X3=dispfield.X;
-Y3=dispfield.Y;% correlation X and Y grid points
+%need to change correlation points referenced to pixel corners to be referenced to pixel centers
+X3=dispfield.X + 0.5;
+Y3=dispfield.Y + 0.5;% correlation X and Y grid points
 clear dispfield
 
 %[X3,~,xgrid1,ygrid1,Dux,Duy,Imax1,Jmax1]=disparitycal(cameracal,selfcaljob);
@@ -103,8 +119,10 @@ ymax=max(max(ygrid1));
 
 [Imax1,Jmax1]=size(xgrid1);
 % Scaling factor = object plane grid length in x or y(in physical units) / pixel length of images
-scalex=(xmax-xmin)/Jmax1; 
-scaley=(ymax-ymin)/Imax1;
+%JJC: Same mistake as in imagedewarp.m; denominator needs to be (NNmax - NNmin),
+% not just NNmax.  I fixed it.
+scalex=(xmax-xmin)/(Jmax1-1); 
+scaley=(ymax-ymin)/(Imax1-1);
 
 
 %figure(87);imagesc(Dux);title('X direction disparity');xlabel('x(pixels');ylabel('y(pixels)');%caxis on;
@@ -112,8 +130,16 @@ scaley=(ymax-ymin)/Imax1;
 
 %Making object grids of same size as the grid on which disparity is calculated
 [a,b]=size(X3);
-xg=xgrid1(Y3(:,1),X3(1,:));
-yg=ygrid1(Y3(:,1),X3(1,:));
+
+% %This is incorrect because vector points are located beteween pixel indices
+% %(for even windows, anyway)
+% xg=xgrid1(Y3(:,1),X3(1,:));
+% yg=ygrid1(Y3(:,1),X3(1,:));
+
+%Do coordinate transform between vectors location reported as image indices 
+% (From 1 to Imax1) to world coordinates:
+xg = scalex * (X3-1) + xmin;
+yg = scaley * (Y3-1) + ymin;
 zgrid=zeros(size(xg));
 
 %Just a check that if maximum absolute x disparity is less than 1 pixel then no need
@@ -142,7 +168,7 @@ y2grid=yg+Duy./2;
 
 [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2); %ouput is the projected z world points
 
-
+%Just turn grid coordinates matrices into vectors, why not use (:)?
 x=reshape(xg,a*b,1);y=reshape(yg,a*b,1);z=reshape(z1grid,a*b,1);
 
 %fitting a plane to the projected z points using linear regression
