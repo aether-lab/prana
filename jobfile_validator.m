@@ -184,6 +184,15 @@ for pass=0:str2double(Data.passes)
     end
 end
 
+%Do we want to save the dewarped images in a subfolder of the vector output
+%directory named imDeform/?
+%Currently, this switch is not accessible in the GUI
+if ~isfield(Data,'SaveIMdeform')
+    Data.SaveIMdeform = '0';
+end
+
+
+
 % --- Tacking Info ---
 %does the job file have tracking infromation.
 if ~isfield(Data,'ID')

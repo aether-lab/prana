@@ -1,7 +1,6 @@
 function pranaprocessing(Data,I1,I2,maskname)
 imClass = 'single';
 
-SaveIMdeform = 1;
 
 %% --- Read Formatted Parameters ---
 %input/output directory
@@ -21,6 +20,9 @@ if nargin<3
     I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
     I2 = I1+str2double(Data.imcstep);
 end
+
+
+
 
 %processing mask
 if strcmp(Data.masktype,'none')
@@ -131,6 +133,12 @@ maxdefloop      = zeros(P,1);
 condefloop      = zeros(P,1);
 saveplane       = zeros(P,1);
 numDefPasses    = zeros(P,1); % This stores the number of interative deform passes that are performed
+
+%Do we want to save the dewarped images in a subfolder of the vector output
+%directory named imDeform/?
+SaveIMdeform = str2double(Data.SaveIMdeform);
+
+
 
 %read data info for each pass
 for e=1:P

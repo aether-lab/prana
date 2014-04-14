@@ -1,6 +1,6 @@
 function [defaultdata] = buildDefaultPranaJob()
 
-defaultdata.clientversion='2.5';
+defaultdata.clientversion='2.5.1';
 %defaultdata.version='2.0'; %gets set below in call to pranaPIVcode('version')
 if ispc
     defaultdata.imdirec='C:\';
@@ -121,6 +121,12 @@ defaultdata.iminterp='2';
 defaultdata.framestep='3';
 defaultdata.PIVerror='0.1';
 defaultdata.channel = '1';
+
+%Do we want to save the dewarped images in a subfolder of the vector output
+%directory named imDeform/?
+%Currently, this switch is not accessible in the GUI
+defaultdata.SaveIMdeform = '0';
+
 
 % --- Tracking Default Values ---
 % ID Default values
