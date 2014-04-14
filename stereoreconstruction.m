@@ -33,9 +33,9 @@ for j = 1:length(rectype)
     if strcmp(rectype{j},'Willert')
         fprintf('Processing for Geometric Reconstruction... \n');
         %Dewarp the camera images
-%         [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp(caldata,'Willert',planarjob);
-        [Xg,Yg] = meshgrid(-34:.45:20,-27:.45:27);
-        [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp_predefined_grid(caldata,'Willert',planarjob,[],Xg,Yg,8);
+        [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp(caldata,'Willert',planarjob);
+%         [Xg,Yg] = meshgrid(-34:.45:20,-27:.45:27);
+%         [dewarpdirlist,dewarp_grid,wil_scaling]=imagedewarp_predefined_grid(caldata,'Willert',planarjob,[],Xg,Yg,8);
         
         %2D processing for camera1
         job1=planarjob;
