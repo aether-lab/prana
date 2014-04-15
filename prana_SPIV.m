@@ -720,10 +720,19 @@ allX2data(:,2)   = guiprops.caljob.calibration_data.y_image_full{2};
 
 rA1=guiprops.caljob.y_pixel_number;
 
-allX1data(:,1)  = allX1data(:,1)-0.5;      % convert from image coords to regular coords ((0,0) at bottom left corner)
-allX1data(:,2)  = rA1-allX1data(:,2)+0.5;
-allX2data(:,1)  = allX2data(:,1)-0.5;      % convert from image coords to regular coords ((0,0) at bottom left corner)
-allX2data(:,2)  = rA1-allX2data(:,2)+0.5;
+% %JJC: I think these are unnecessary now that I treat the image coordinates
+% %everywhere else in the code as pixel centered.  But is it better to just
+% %fix them here and be done with it?
+% allX1data(:,1)  = allX1data(:,1)-0.5;      % convert from image coords to regular coords ((0,0) at bottom left corner)
+% allX1data(:,2)  = rA1-allX1data(:,2)+0.5;
+% allX2data(:,1)  = allX2data(:,1)-0.5;      % convert from image coords to regular coords ((0,0) at bottom left corner)
+% allX2data(:,2)  = rA1-allX2data(:,2)+0.5;
+
+%JJC: Still need to flip the coordinate system?
+%I think so since these positions are referenced to the upper left, and 
+%everywhere else the image coordinates will be reference to lower left.
+allX1data(:,2)  = rA1-allX1data(:,2) + 1; %plus 1 is because the first index is at 1, not 0
+allX2data(:,2)  = rA1-allX2data(:,2) + 1;
 
 modeltype   = guiprops.caljob.modeltype;
 optionsls   = guiprops.caljob.optionsls;
