@@ -71,6 +71,9 @@ end
 if ~isfield(Data,'exp_notes')
     Data.exp_notes = '';
 end
+% if ~isfield(Data,'selfcal')
+%     Data.selfcal = 0;
+% end
 
 % If PIV0 doesn't exist, create it.
 if ~isfield(Data,'PIV0')

@@ -1,20 +1,15 @@
 function pranaprocessing(Data,I1,I2,maskname)
-imClass = 'single';
+imClass = 'double';
 
 
 %% --- Read Formatted Parameters ---
 %input/output directory
-if ispc
-    imbase=[Data.imdirec '\' Data.imbase];
-    imbase2=[Data.imdirec2 '\' Data.imbase2];
-    maskbase=[Data.maskdirec '\' Data.maskbase];
-    pltdirec=[Data.outdirec '\'];
-else
-    imbase=[Data.imdirec '/' Data.imbase];
-    imbase2=[Data.imdirec2 '/' Data.imbase2];
-    maskbase=[Data.maskdirec '/' Data.maskbase];
-    pltdirec=[Data.outdirec '/'];
-end
+
+    imbase   = fullfile(Data.imdirec ,Data.imbase);
+    imbase2  = fullfile(Data.imdire2c,Data.imbase2);
+    maskbase = fullfile(Data.maskdirec,Data.maskbase);
+    pltdirec = fullfile(Data.outdirec);
+    
 
 if nargin<3
     I1 = str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
@@ -268,8 +263,8 @@ if strcmpi(Data.input_vel_type,'static')  %'dynamic' is handled below in the pro
         Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
     else
         %see above note about coordinate systems
-        Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),'single');
-        Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),'single');
+        Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),imClass);
+        Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),imClass);
     end
     VelInputFile = 1;
 else
@@ -403,8 +398,8 @@ switch char(M)
                     Vel0.V = VFinterp(Vel0.X,Vel0.Y,V,XI,YI,Velinterp);
                 else
                     %see above note about coordinate systems
-                    Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),'single');
-                    Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),'single');
+                    Vel0.U = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.U(:,:,1),XI,YI,Velinterp),imClass);
+                    Vel0.V = cast(VFinterp(Vel0.X,Vel0.Y,Vel0.V(:,:,1),XI,YI,Velinterp),imClass);
                 end
                 VelInputFile = 1;
             end

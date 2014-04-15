@@ -1,4 +1,4 @@
-function [caldatamod]=selfcalibration_v2(caldata,selfcaljob)
+function [caldatamod]=selfcalibration_main(caldata,selfcaljob)
 
 %THis function does self calibration and corrects for any disparity between
 %two camera images and the existing calibration
@@ -64,21 +64,7 @@ job1.imcstep='0';
 
 
 fprintf('Calculating Disparity.\n')
-if any(str2double(job1.method)==[4 5]) && (str2double(job1.par) == 1)
-    try
-        matlabpool('close')
-    end
-    try
-    matlabpool(str2double(job1.parprocessors))
-    catch;keyboard;end
-    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
-    pranaprocessingstereo(job1)
-    fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
-    matlabpool('close');
-else
-    pranaprocessingstereo(job1);
-end
-%pranaPIVcode(job1);
+pranaPIVcode(job1);
 %keyboard;
 istring1=sprintf(['%%s%%s%%0%0.0fd.','mat'],str2double(job1.imzeros));
 
