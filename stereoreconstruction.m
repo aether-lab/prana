@@ -41,7 +41,8 @@ for j = 1:length(rectype)
         job1=planarjob;
         job1.imdirec=dewarpdirlist.dewarpdir1;
         job1.imbase=planarjob.imbase;
-        
+        job1.imdirec2=dewarpdirlist.dewarpdir1;
+        job1.imbase2=planarjob.imbase;
         % By creating a variable "cam1dir" I know only have to update one
         % location if I want to change the form of this directory.  The
         % previous way it was written I would have to update multiple locations
@@ -60,6 +61,8 @@ for j = 1:length(rectype)
         job1=planarjob;
         job1.imdirec=dewarpdirlist.dewarpdir2;
         job1.imbase=planarjob.imbase2;
+        job1.imdirec2=dewarpdirlist.dewarpdir2;
+        job1.imbase2=planarjob.imbase2;
         
         cam2dir = fullfile(job1.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(2)),filesep]);
         if ~exist(cam2dir,'dir')
@@ -91,6 +94,8 @@ for j = 1:length(rectype)
         job1=planarjob;
         job1.imdirec=planarjob.imdirec;
         job1.imbase=planarjob.imbase;
+        job1.imdirec2=planarjob.imdirec;
+        job1.imbase2=planarjob.imbase;
         
         if ~exist(fullfile(job1.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(1)),filesep]),'dir')
             mkdir(fullfile(job1.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(1)),filesep]));
@@ -106,6 +111,9 @@ for j = 1:length(rectype)
         job1=planarjob;
         job1.imdirec=planarjob.imdirec2;
         job1.imbase=planarjob.imbase2;
+        job1.imdirec2=planarjob.imdirec2;
+        job1.imbase2=planarjob.imbase2;
+        
         mkdir(fullfile(job1.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(2)),filesep]));
         job1.outdirec=fullfile(job1.outdirec,rectype{j},['Camera',num2str(caldata.camnumber(2)),filesep]);
         diroutlist.soloff2dcam2=job1.outdirec;
