@@ -596,19 +596,19 @@ switch char(M)
                             % a deformed (XD2,YD2) system
                             
                             %first, figure out where vector centers are in (XD2,YD2)
-                            XDc = interp2(XI,YI,XD2,Xc,Yc,'linear');
-                            YDc = interp2(XI,YI,YD2,Xc,Yc,'linear');
+                            XDc = interp2(XI,YI,XD2,Xc,Yc,'cubic');
+                            YDc = interp2(XI,YI,YD2,Xc,Yc,'cubic');
                             %if shift takes us outside image domain, just
                             %return a NaN, we don't know where that point
                             %will go
                             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                                 %there will be 3 velocity fields in Uc and Vc, so repmat vector origins
-                                U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(XDc,[1,3]);
-                                V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(YDc,[1,3]);
+                                U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(XDc,[1,3]);
+                                V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(YDc,[1,3]);
                             else
                                 %only 1 velocity field is returned, use origins directly
-                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - XDc;
-                                V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - YDc;
+                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - XDc;
+                                V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - YDc;
                             end
                             
                             %if we have NaN values, we don't know how to
