@@ -2,7 +2,16 @@ function [ZI]=VFinterp(X,Y,Z,XI,YI,M)
 % --- Velocity Interpolation Subfunction
 
 %find grid sizes
-Method={'nearest','linear','spline'};
+Method={'nearest','linear','cubic'};
+
+% keyboard
+F = griddedInterpolant(Y,X,Z,Method{M},'nearest');
+% F = griddedInterpolant({Y(:,1),X(1,:)},Z,Method(M),'nearest');
+ZI = F(YI,XI);
+
+% this is the rest of the old VFInterp, which sometimes had problems with the 
+% way the nearest neighbor algorithm was programmed.  It assumed too much.
+%{
 L=[max(max(YI)) max(max(XI))];
 S=size(X);
 
@@ -22,6 +31,8 @@ Zf(end,end) = mean([Zf(end-1,end) Zf(end,end-1)]);
 
 %velocity interpolation
 Zf(isnan(Zf))=0;
+keyboard
 ZI=interp2(Xf,Yf,Zf,XI,YI,char(Method(M)));
+%}
 
 end

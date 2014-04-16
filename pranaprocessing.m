@@ -526,21 +526,33 @@ switch char(M)
                     e=e+1;
                 end
                 
+                %fprintf('e=%d,defloop=%d\n',e,defloop)
+                
                 t1=tic;
                 [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
                 
-                if strcmp(M,'Multipass')
-                    %UI and VI are already only defined on the grid points,
-                    %which are the same at every iteration
-                    Ub=UI(:);
-                    Vb=VI(:);
-                else
-                    %resample UI(XI,YI) and VI at every pixel down to just
-                    %the subset of interrogation points defined by Gres(e,:)
-                    Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                    Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                end
+%                 if strcmp(M,'Multipass')
+%                     %UI and VI are already only defined on the grid points,
+%                     %which are the same at every iteration
+%                      Ub=UI(:);
+%                     Vb=VI(:);
+%                 else
+%                     %resample UI(XI,YI) and VI at every pixel down to just
+%                     %the subset of interrogation points defined by Gres(e,:)
+%                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%                 end
+
+                %The old way was downsampling velocity field using pixel
+                %grid to start with, and trying to get on the vector grid
+                %as defined by IMgrid, which didn't match.  Just directly
+                %resample instead.
+                Ub = VFinterp(XI,YI,UI,X,Y,Velinterp);
+                Vb = VFinterp(XI,YI,VI,X,Y,Velinterp);
+
+                S=size(X);X=X(:);Y=Y(:);
+
+                %this still works (mostly) because the mask is defined on the pixel grid
                 Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
@@ -1145,9 +1157,13 @@ switch char(M)
             tf=tic;
             
             [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
+            %The old way was downsampling velocity field using pixel
+            %grid to start with, and trying to get on the vector grid
+            %as defined by IMgrid, which didn't match.  Just directly
+            %resample instead.
+            Ub = VFinterp(XI,YI,UI,X,Y,Velinterp);
+            Vb = VFinterp(XI,YI,VI,X,Y,Velinterp);
             S=size(X);X=X(:);Y=Y(:);
-            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Eval(Eval==0)=-1;
             Eval(Eval>0)=0;
@@ -1859,7 +1875,6 @@ switch char(M)
             for e=1:P
                 t1=tic;
                 [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
                 
                 if ~strcmpi(Corr{e},'SPC')
                     U=zeros(size(X,1),3,N,imClass);
@@ -1878,10 +1893,24 @@ switch char(M)
                     Vc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
                     Cc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
                     Dc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    %we temporarily need matrix form for the interpolation
+                    Xm = X;
+                    Ym = Y;
+                    
+                    S=size(X);X=X(:);Y=Y(:);
                     
                     for t=1:N
-                        Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
-                        Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+%                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+%                         Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+                        
+                        %The old way was downsampling velocity field using pixel
+                        %grid to start with, and trying to get on the vector grid
+                        %as defined by IMgrid, which didn't match.  Just directly
+                        %resample instead.
+                        Ub = VFinterp(XI,YI,UI,Xm,Ym,Velinterp).*Dt(t);
+                        Vb = VFinterp(XI,YI,VI,Xm,Ym,Velinterp).*Dt(t);
+
+                        
                         
                         %correlate image pair
                         %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
@@ -1924,8 +1953,18 @@ switch char(M)
                     Eval(Eval==0)=-1;
                     Eval(Eval>0)=0;
                     
-                    Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                    Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                    % Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                    % Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+
+                    %The old way was downsampling velocity field using pixel
+                    %grid to start with, and trying to get on the vector grid
+                    %as defined by IMgrid, which didn't match.  Just directly
+                    %resample instead.
+                    Ub = VFinterp(XI,YI,UI,Xm,Ym,Velinterp).*Dt(t);
+                    Vb = VFinterp(XI,YI,VI,Xm,Ym,Velinterp).*Dt(t);
+
+                    S=size(X);X=X(:);Y=Y(:);
+
                     %                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:), Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
