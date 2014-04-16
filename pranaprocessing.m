@@ -6,7 +6,7 @@ imClass = 'double';
 %input/output directory
 
     imbase   = fullfile(Data.imdirec ,Data.imbase);
-    imbase2  = fullfile(Data.imdire2c,Data.imbase2);
+    imbase2  = fullfile(Data.imdirec2,Data.imbase2);
     maskbase = fullfile(Data.maskdirec,Data.maskbase);
     pltdirec = fullfile(Data.outdirec);
     
@@ -526,21 +526,33 @@ switch char(M)
                     e=e+1;
                 end
                 
+                %fprintf('e=%d,defloop=%d\n',e,defloop)
+                
                 t1=tic;
                 [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
                 
-                if strcmp(M,'Multipass')
-                    %UI and VI are already only defined on the grid points,
-                    %which are the same at every iteration
-                    Ub=UI(:);
-                    Vb=VI(:);
-                else
-                    %resample UI(XI,YI) and VI at every pixel down to just
-                    %the subset of interrogation points defined by Gres(e,:)
-                    Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                    Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                end
+%                 if strcmp(M,'Multipass')
+%                     %UI and VI are already only defined on the grid points,
+%                     %which are the same at every iteration
+%                      Ub=UI(:);
+%                     Vb=VI(:);
+%                 else
+%                     %resample UI(XI,YI) and VI at every pixel down to just
+%                     %the subset of interrogation points defined by Gres(e,:)
+%                     Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%                     Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+%                 end
+
+                %The old way was downsampling velocity field using pixel
+                %grid to start with, and trying to get on the vector grid
+                %as defined by IMgrid, which didn't match.  Just directly
+                %resample instead.
+                Ub = VFinterp(XI,YI,UI,X,Y,Velinterp);
+                Vb = VFinterp(XI,YI,VI,X,Y,Velinterp);
+
+                S=size(X);X=X(:);Y=Y(:);
+
+                %this still works (mostly) because the mask is defined on the pixel grid
                 Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
                 Eval(Eval==0)=-1;
                 Eval(Eval>0)=0;
@@ -596,19 +608,19 @@ switch char(M)
                             % a deformed (XD2,YD2) system
                             
                             %first, figure out where vector centers are in (XD2,YD2)
-                            XDc = interp2(XI,YI,XD2,Xc,Yc,'linear');
-                            YDc = interp2(XI,YI,YD2,Xc,Yc,'linear');
+                            XDc = interp2(XI,YI,XD2,Xc,Yc,'cubic');
+                            YDc = interp2(XI,YI,YD2,Xc,Yc,'cubic');
                             %if shift takes us outside image domain, just
                             %return a NaN, we don't know where that point
                             %will go
                             if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
                                 %there will be 3 velocity fields in Uc and Vc, so repmat vector origins
-                                U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(XDc,[1,3]);
-                                V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'linear',NaN) - repmat(YDc,[1,3]);
+                                U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(XDc,[1,3]);
+                                V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(YDc,[1,3]);
                             else
                                 %only 1 velocity field is returned, use origins directly
-                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - XDc;
-                                V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'linear',NaN) - YDc;
+                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - XDc;
+                                V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - YDc;
                             end
                             
                             %if we have NaN values, we don't know how to
@@ -680,7 +692,7 @@ switch char(M)
                             Uc = Uc + Ub(Eval>=0);
                             Vc = Vc + Vb(Eval>=0);
                         end
-                    else
+                    else %then was SPC
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
                         %Sam deleted the Cc output from PIVPhaseCorr - why?  because we don't use it? But it's needed for Dc in next line?
                         %[Xc,Yc,Uc,Vc]=PIVphasecorr(im1d,im2d,Wsize(e,:),Wres(:, :, e),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0));
@@ -862,24 +874,24 @@ switch char(M)
                             % of the dat file (NOTE this doesn't change the
                             % file name only the title that is used in
                             % tecplot).
-                            write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
+                            write_dat_val_C(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))]),X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
                         else
-                            write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
+                            write_dat_val_C(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))]),X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
                         end
                     end
                     
                     if str2double(Data.multiplematout)
                         if ~isempty(regexpi(M,'Deform','once'))
-                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','numDefPasses')
+                            save(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]),'X','Y','U','V','Eval','C','Di','numDefPasses')
                         else
-                            save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di')
+                            save(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]),'X','Y','U','V','Eval','C','Di')
                         end
                     end
                     % This saves the correlation planes if that selection
                     % has been made in the job file.
                     if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                         Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
-                        save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
+                        save(fullfile(pltdirec,sprintf(['%scorrplanes_%0.' Data.imzeros 'i.mat' ],wbase{e,:},I1(q))),'Xloc','Yloc','C_planes')
                         clear Xloc Yloc C_planes
                     end
                         
@@ -888,208 +900,208 @@ switch char(M)
                       savetime(e,defloop)=toc(t1);
                 end
                     
-                    %reset any changes or scaling back to pixels
-                    U=Uval; V=Vval;
-                    
-                    %If it isn't the lass pass, or the last pass hasn't
-                    %converged yet for iterative deform, we need to prepare U
-                    %and V from this pass for use as a predictor in the next
-                    %pass
-                    if e~=P || (~isempty(regexpi(M,'Deform','once')) && defloop ~=1) || SaveIMdeform
-                        %reshape from list of grid points to matrix
-                        X=reshape(X,[S(1),S(2)]);
-                        Y=reshape(Y,[S(1),S(2)]);
-                        U=reshape(U(:,1),[S(1),S(2)]);
-                        V=reshape(V(:,1),[S(1),S(2)]);
-                        
-                        %Multigrid and Deform need to interpolate this pass's displacements
-                        %onto a different grid
-                        if strcmpi(M,'Multigrid') || ~isempty(regexpi(M,'Deform','once'))
+                %reset any changes or scaling back to pixels
+                U=Uval; V=Vval;
+
+                %If it isn't the lass pass, or the last pass hasn't
+                %converged yet for iterative deform, we need to prepare U
+                %and V from this pass for use as a predictor in the next
+                %pass
+                if e~=P || (~isempty(regexpi(M,'Deform','once')) && defloop ~=1) || SaveIMdeform
+                    %reshape from list of grid points to matrix
+                    X=reshape(X,[S(1),S(2)]);
+                    Y=reshape(Y,[S(1),S(2)]);
+                    U=reshape(U(:,1),[S(1),S(2)]);
+                    V=reshape(V(:,1),[S(1),S(2)]);
+
+                    %Multigrid and Deform need to interpolate this pass's displacements
+                    %onto a different grid
+                    if strcmpi(M,'Multigrid') || ~isempty(regexpi(M,'Deform','once'))
+                        t1=tic;
+
+                        %velocity smoothing
+                        if Velsmoothswitch(e)==1
+                            [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+                        end
+
+                        %velocity interpolation -
+                        %resample U(X,Y) and V(X,Y) onto UI(XI,YI) and
+                        %VI(XI,YI) where XI and YI are a list of every
+                        %pixel in the image plane. Velinterp is the type of
+                        %interpolation to use.
+                        % We have previously made sure XI and YI correspond
+                        % to the vector positions of the pixel centers by
+                        % shifting by -0.5.
+                        UI = VFinterp(X,Y,U,XI,YI,Velinterp);
+                        VI = VFinterp(X,Y,V,XI,YI,Velinterp);
+
+                        if defloop == 1
+                            interptime(e+1,defloop)=toc(t1);
+                        else
+                            interptime(e,defloop)=toc(t1);
+                        end
+
+                        %For deform, UI and VI will be used to deform the images, and
+                        %then downsampled in the next pass to the new grid
+                        %for addition to the next pass's displacement.
+                        %If not deform, then UI and VI just get downsampled
+                        %next pass and used for DWO.
+                        if strcmpi(M,'Deform')
                             t1=tic;
-                            
-                            %velocity smoothing
-                            if Velsmoothswitch(e)==1
-                                [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            %HOWEVER: we need to use these shifted
+                            %coordinates later in vector coordinates, so
+                            %move the -0.5 pixel correction to the call to
+                            %the sincBlackmanInterp2 function
+                            XD1 = XI-UI/2 ;
+                            YD1 = YI-VI/2;
+                            XD2 = XI+UI/2;
+                            YD2 = YI+VI/2;
+
+                            % Preallocate memory for deformed images.
+                            im1d = zeros(size(im1),imClass);
+                            im2d = zeros(size(im2),imClass);
+
+                            % Deform images according to the interpolated velocity fields
+                            for k = 1:nChannels % Loop over all of the color channels in the image
+                                if Iminterp == 1 % Sinc interpolation (without blackman window)
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'sinc');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
+
+                                elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                                end
                             end
-                            
-                            %velocity interpolation -
-                            %resample U(X,Y) and V(X,Y) onto UI(XI,YI) and
-                            %VI(XI,YI) where XI and YI are a list of every
-                            %pixel in the image plane. Velinterp is the type of
-                            %interpolation to use.
-                            % We have previously made sure XI and YI correspond
-                            % to the vector positions of the pixel centers by
-                            % shifting by -0.5.
-                            UI = VFinterp(X,Y,U,XI,YI,Velinterp);
-                            VI = VFinterp(X,Y,V,XI,YI,Velinterp);
-                            
+
+                            % keyboard
+                            % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
+                            % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
+                            % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
+                            % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
+                            % pause
+                            % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
+                            % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
+
                             if defloop == 1
-                                interptime(e+1,defloop)=toc(t1);
+                                deformtime(e+1,defloop)=toc(t1);
                             else
-                                interptime(e,defloop)=toc(t1);
+                                deformtime(e,defloop)=toc(t1);
                             end
-                            
-                            %For deform, UI and VI will be used to deform the images, and
-                            %then downsampled in the next pass to the new grid
-                            %for addition to the next pass's displacement.
-                            %If not deform, then UI and VI just get downsampled
-                            %next pass and used for DWO.
-                            if strcmpi(M,'Deform')
-                                t1=tic;
-                                
-                                % translate pixel locations, but
-                                % since sincBlackmanInterp2 assumes
-                                % coordinate system is pixel-centered, we need
-                                % to convert back to index-coordinates for the
-                                % deform.
-                                %HOWEVER: we need to use these shifted
-                                %coordinates later in vector coordinates, so
-                                %move the -0.5 pixel correction to the call to
-                                %the sincBlackmanInterp2 function
-                                XD1 = XI-UI/2 ;
-                                YD1 = YI-VI/2;
-                                XD2 = XI+UI/2;
-                                YD2 = YI+VI/2;
-                                
-                                % Preallocate memory for deformed images.
-                                im1d = zeros(size(im1),imClass);
-                                im2d = zeros(size(im2),imClass);
-                                
-                                % Deform images according to the interpolated velocity fields
-                                for k = 1:nChannels % Loop over all of the color channels in the image
-                                    if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                        im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'sinc');
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
-                                        
-                                    elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                        im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
-                                    end
+                        elseif strcmpi(M,'ForwardDeform') %only the 2nd image is deformed
+                            t1=tic;
+
+                            % translate pixel locations, but
+                            % since sincBlackmanInterp2 assumes
+                            % coordinate system is pixel-centered, we need
+                            % to convert back to index-coordinates for the
+                            % deform.
+                            %HOWEVER: we need to use these shifted
+                            %coordinates later in vector coordinates, so
+                            %move the -0.5 pixel correction to the call to
+                            %the sincBlackmanInterp2 function
+                            XD1 = XI   ;
+                            YD1 = YI   ;
+                            XD2 = XI+UI;
+                            YD2 = YI+VI;
+
+                            % Preallocate memory for deformed images.
+                            im1d = im1;
+                            im2d = zeros(size(im2),imClass);
+
+                            % Deform images according to the interpolated velocity fields
+                            for k = 1:nChannels % Loop over all of the color channels in the image
+                                if Iminterp == 1 % Sinc interpolation (without blackman window)
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
+                                elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
                                 end
-                                
-                                % keyboard
-                                % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
-                                % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
-                                % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
-                                % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
-                                % pause
-                                % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
-                                % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
-                                
-                                if defloop == 1
-                                    deformtime(e+1,defloop)=toc(t1);
-                                else
-                                    deformtime(e,defloop)=toc(t1);
-                                end
-                            elseif strcmpi(M,'ForwardDeform') %only the 2nd image is deformed
-                                t1=tic;
-                                
-                                % translate pixel locations, but
-                                % since sincBlackmanInterp2 assumes
-                                % coordinate system is pixel-centered, we need
-                                % to convert back to index-coordinates for the
-                                % deform.
-                                %HOWEVER: we need to use these shifted
-                                %coordinates later in vector coordinates, so
-                                %move the -0.5 pixel correction to the call to
-                                %the sincBlackmanInterp2 function
-                                XD1 = XI   ;
-                                YD1 = YI   ;
-                                XD2 = XI+UI;
-                                YD2 = YI+VI;
-                                
-                                % Preallocate memory for deformed images.
-                                im1d = im1;
-                                im2d = zeros(size(im2),imClass);
-                                
-                                % Deform images according to the interpolated velocity fields
-                                for k = 1:nChannels % Loop over all of the color channels in the image
-                                    if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
-                                    elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                        im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
-                                    end
-                                end
-                                
-                                % keyboard
-                                % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
-                                % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
-                                % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
-                                % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
-                                % pause
-                                % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
-                                % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
-                                
-                                if defloop == 1
-                                    deformtime(e+1,defloop)=toc(t1);
-                                else
-                                    deformtime(e,defloop)=toc(t1);
-                                end
-                                
                             end
-                            
-                            %save intermediate deformed images
-                            if SaveIMdeform
-                                %put the deformed images in a subdirectory of the vector directory to keep things tidy
-                                saveIMDdir = fullfile(pltdirec,'imDeform');
-                                [~,~,~] = mkdir(saveIMDdir); 
-                                %build image names
-                                saveIM1Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im1d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
-                                %even though this is from I2, it corresponds to the vectors saved as I1, so use I1 in name
-                                saveIM2Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im2d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
-                                %check if images look like 8 bit or 12/16 bit
-                                if max(im1d(:)) > 255 || max(im2d(:)) > 255
-                                    saveclass = 'uint16';
-                                else
-                                    saveclass = 'uint8';
-                                end
-                                imwrite(flipud(cast(im1d,saveclass)),saveIM1Dfile);
-                                imwrite(flipud(cast(im2d,saveclass)),saveIM2Dfile);
-                             end
-                            
-                        else %must be Multipass - grid is same on every pass, no resampling needed
-                            UI=U;VI=V;
+
+                            % keyboard
+                            % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
+                            % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
+                            % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
+                            % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
+                            % pause
+                            % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
+                            % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
+
+                            if defloop == 1
+                                deformtime(e+1,defloop)=toc(t1);
+                            else
+                                deformtime(e,defloop)=toc(t1);
+                            end
+
                         end
+
+                        %save intermediate deformed images
+                        if SaveIMdeform
+                            %put the deformed images in a subdirectory of the vector directory to keep things tidy
+                            saveIMDdir = fullfile(pltdirec,'imDeform');
+                            [~,~,~] = mkdir(saveIMDdir); 
+                            %build image names
+                            saveIM1Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im1d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
+                            %even though this is from I2, it corresponds to the vectors saved as I1, so use I1 in name
+                            saveIM2Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im2d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
+                            %check if images look like 8 bit or 12/16 bit
+                            if max(im1d(:)) > 255 || max(im2d(:)) > 255
+                                saveclass = 'uint16';
+                            else
+                                saveclass = 'uint8';
+                            end
+                            imwrite(flipud(cast(im1d,saveclass)),saveIM1Dfile);
+                            imwrite(flipud(cast(im2d,saveclass)),saveIM2Dfile);
+                         end
+
+                    else %must be Multipass - grid is same on every pass, no resampling needed
+                        UI=U;VI=V;
                     end
                 end
-                
-                eltime=toc(tf);
-                %output text
-                fprintf('\n----------------------------------------------------\n')
-                fprintf(['Job: ',Data.batchname,'\n'])
-                fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ') at %s \n'], datestr(now));
-                fprintf('----------------------------------------------------\n')
-                for e=1:P
-                    if e==1 && ~isempty(regexpi(M,'Deform','once')) && VelInputFile && mindefloop(e) == 1
-                        %fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
-                        fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,1))/60),floor(rem(sum(deformtime(e,1)),60)),floor((rem(sum(deformtime(e,1)),60)-floor(rem(sum(deformtime(e,1)),60)))*10))
-                    end
-                    
-                    fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(sum(corrtime(e,:))/60),floor(rem(sum(corrtime(e,:)),60)),floor((rem(sum(corrtime(e,:)),60)-floor(rem(sum(corrtime(e,:)),60)))*10))
-                    if Valswitch(e)
-                        fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),floor((rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))*10))
-                    end
-                    if ~isempty(regexpi(M,'Deform','once')) && mindefloop(e) ~= 1
+            end
+
+            eltime=toc(tf);
+            %output text
+            fprintf('\n----------------------------------------------------\n')
+            fprintf(['Job: ',Data.batchname,'\n'])
+            fprintf([frametitle ' Completed (' num2str(q) '/' num2str(length(I1)) ') at %s \n'], datestr(now));
+            fprintf('----------------------------------------------------\n')
+            for e=1:P
+                if e==1 && ~isempty(regexpi(M,'Deform','once')) && VelInputFile && mindefloop(e) == 1
+                    %fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
+                    fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,1))/60),floor(rem(sum(deformtime(e,1)),60)),floor((rem(sum(deformtime(e,1)),60)-floor(rem(sum(deformtime(e,1)),60)))*10))
+                end
+
+                fprintf('correlation...                   %0.2i:%0.2i.%0.0f\n',floor(sum(corrtime(e,:))/60),floor(rem(sum(corrtime(e,:)),60)),floor((rem(sum(corrtime(e,:)),60)-floor(rem(sum(corrtime(e,:)),60)))*10))
+                if Valswitch(e)
+                    fprintf('validation...                    %0.2i:%0.2i.%0.0f\n',floor(sum(valtime(e,:))/60),floor(rem(sum(valtime(e,:)),60)),floor((rem(sum(valtime(e,:)),60)-floor(rem(sum(valtime(e,:)),60)))*10))
+                end
+                if ~isempty(regexpi(M,'Deform','once')) && mindefloop(e) ~= 1
+                    fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
+                    fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
+                end
+                if Writeswitch(e)
+                    fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),floor((rem(savetime(e),60)-floor(rem(savetime(e),60)))*10))
+                end
+                if strcmp(M,'Multigrid') || (~isempty(regexpi(M,'Deform','once')) && mindefloop(e) == 1)
+                    if e~=P
                         fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
-                        fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
-                    end
-                    if Writeswitch(e)
-                        fprintf('save time...                     %0.2i:%0.2i.%0.0f\n',floor(savetime(e)/60),floor(rem(savetime(e),60)),floor((rem(savetime(e),60)-floor(rem(savetime(e),60)))*10))
-                    end
-                    if strcmp(M,'Multigrid') || (~isempty(regexpi(M,'Deform','once')) && mindefloop(e) == 1)
-                        if e~=P
-                            fprintf('velocity interpolation...        %0.2i:%0.2i.%0.0f\n',floor(sum(interptime(e,:))/60),floor(rem(sum(interptime(e,:)),60)),floor((rem(sum(interptime(e,:)),60)-floor(rem(sum(interptime(e,:)),60)))*10))
-                            if ~isempty(regexpi(M,'Deform','once'))
-                                fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
-                            end
+                        if ~isempty(regexpi(M,'Deform','once'))
+                            fprintf('image deformation...             %0.2i:%0.2i.%0.0f\n',floor(sum(deformtime(e,:))/60),floor(rem(sum(deformtime(e,:)),60)),floor((rem(sum(deformtime(e,:)),60)-floor(rem(sum(deformtime(e,:)),60)))*10))
                         end
                     end
                 end
-                fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),floor((rem(eltime,60)-floor(rem(eltime,60)))*10))
-                frametime(q)=eltime;
-                comptime=mean(frametime(1:q))*(length(I1)-q);
-                fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
-            
+            end
+            fprintf('total frame time...              %0.2i:%0.2i.%0.0f\n',floor(eltime/60),floor(rem(eltime,60)),floor((rem(eltime,60)-floor(rem(eltime,60)))*10))
+            frametime(q)=eltime;
+            comptime=mean(frametime(1:q))*(length(I1)-q);
+            fprintf('estimated job completion time... %0.2i:%0.2i:%0.2i\n\n',floor(comptime/3600),floor(rem(comptime,3600)/60),floor(rem(comptime,60)))
+
         end
         
     case {'Ensemble','EDeform'}
@@ -1145,9 +1157,13 @@ switch char(M)
             tf=tic;
             
             [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
+            %The old way was downsampling velocity field using pixel
+            %grid to start with, and trying to get on the vector grid
+            %as defined by IMgrid, which didn't match.  Just directly
+            %resample instead.
+            Ub = VFinterp(XI,YI,UI,X,Y,Velinterp);
+            Vb = VFinterp(XI,YI,VI,X,Y,Velinterp);
             S=size(X);X=X(:);Y=Y(:);
-            Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-            Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Eval=reshape(downsample(downsample( mask(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
             Eval(Eval==0)=-1;
             Eval(Eval>0)=0;
@@ -1700,22 +1716,22 @@ switch char(M)
                         % of the dat file (NOTE this doesn't change the
                         % file name only the title that is used in
                         % tecplot).
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
+                        write_dat_val_C(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))]),X,Y,U,V,Eval,C,Di,e,time,char([wbase{e} ' Deform passes ' writeDefStr]));
                     else
                         %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,e,0,frametitle);
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
+                        write_dat_val_C(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(1))]),X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)));
                     end
                 end
                 if str2double(Data.multiplematout)
                     if strcmpi(M,'EDeform')
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','numDefPasses','DX','DY','ALPHA')
+                        save(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))]),'X','Y','U','V','Eval','C','Di','numDefPasses','DX','DY','ALPHA')
                     else
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))],'X','Y','U','V','Eval','C','Di','DX','DY','ALPHA')
+                        save(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(1))]),'X','Y','U','V','Eval','C','Di','DX','DY','ALPHA')
                     end
                 end
                 if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                     Xloc = Xc;Yloc=Yc;%#ok
-                    save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(1)),'Xloc','Yloc','CCm')
+                    save(fullfile(pltdirec,sprintf(['%scorrplanes_%0.' Data.imzeros 'i.mat' ],wbase{e,:},I1(1))),'Xloc','Yloc','CCm')
                     clear Xloc Yloc
                 end
                 X=Xval;Y=Yval;
@@ -1859,7 +1875,6 @@ switch char(M)
             for e=1:P
                 t1=tic;
                 [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
-                S=size(X);X=X(:);Y=Y(:);
                 
                 if ~strcmpi(Corr{e},'SPC')
                     U=zeros(size(X,1),3,N,imClass);
@@ -1878,10 +1893,24 @@ switch char(M)
                     Vc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
                     Cc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
                     Dc=zeros(sum(Eval(:,1)>=0),3,N,imClass);
+                    %we temporarily need matrix form for the interpolation
+                    Xm = X;
+                    Ym = Y;
+                    
+                    S=size(X);X=X(:);Y=Y(:);
                     
                     for t=1:N
-                        Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
-                        Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+%                         Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+%                         Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1).*Dt(t);
+                        
+                        %The old way was downsampling velocity field using pixel
+                        %grid to start with, and trying to get on the vector grid
+                        %as defined by IMgrid, which didn't match.  Just directly
+                        %resample instead.
+                        Ub = VFinterp(XI,YI,UI,Xm,Ym,Velinterp).*Dt(t);
+                        Vb = VFinterp(XI,YI,VI,Xm,Ym,Velinterp).*Dt(t);
+
+                        
                         
                         %correlate image pair
                         %                         [Xc,Yc,Uc(:,:,t),Vc(:,:,t),Cc(:,:,t)]=PIVwindowed(im1(:,:,t),im2(:,:,t),Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),Peaklocator(e),1,X(Eval(:,1)>=0),Y(Eval(:,1)>=0),Ub(Eval(:,1)>=0),Vb(Eval(:,1)>=0));
@@ -1924,8 +1953,18 @@ switch char(M)
                     Eval(Eval==0)=-1;
                     Eval(Eval>0)=0;
                     
-                    Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
-                    Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                    % Ub = reshape(downsample(downsample( UI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+                    % Vb = reshape(downsample(downsample( VI(Y(1):Y(end),X(1):X(end)),Gres(e,2))',Gres(e,1))',length(X),1);
+
+                    %The old way was downsampling velocity field using pixel
+                    %grid to start with, and trying to get on the vector grid
+                    %as defined by IMgrid, which didn't match.  Just directly
+                    %resample instead.
+                    Ub = VFinterp(XI,YI,UI,Xm,Ym,Velinterp).*Dt(t);
+                    Vb = VFinterp(XI,YI,VI,Xm,Ym,Velinterp).*Dt(t);
+
+                    S=size(X);X=X(:);Y=Y(:);
+
                     %                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:), Wres(e, :, :),0,D(e),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     [Xc,Yc,Uc,Vc,Cc,t_optc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0),Dt);
                     if Peakswitch(e)
@@ -2003,14 +2042,14 @@ switch char(M)
                         %                         time=(q_full-1)/Freq;
                         time=I1(q)/Freq;
                         %write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,e,time,frametitle,t_opt);
-                        write_dat_val_C([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))],X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)),t_opt);
+                        write_dat_val_C(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.dat' ],I1(q))]),X,Y,U,V,Eval,C,Di,e,time,char(wbase(e,:)),t_opt);
                     end
                     if str2double(Data.multiplematout)
-                        save([pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))],'X','Y','U','V','Eval','C','Di','t_opt')
+                        save(fullfile(pltdirec, [char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'i.mat' ],I1(q))]),'X','Y','U','V','Eval','C','Di','t_opt')
                     end
                     if saveplane(e) && ~strcmpi(Corr{e},'SPC')
                         Xloc = Xc;Yloc=Yc;C_planes=Cp;%#ok
-                        save(sprintf(['%s%scorrplanes_%0.' Data.imzeros 'i.mat' ],pltdirec,wbase{e,:},I1(q)),'Xloc','Yloc','C_planes')
+                        save(fullfile(pltdirec,sprintf(['%scorrplanes_%0.' Data.imzeros 'i.mat' ],wbase{e,:},I1(q))),'Xloc','Yloc','C_planes')
                         clear Xloc Yloc C_planes
                     end
                     X=Xval;Y=Yval;
