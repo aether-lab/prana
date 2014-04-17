@@ -1,7 +1,7 @@
 function [X,Y]=IMgrid(L,S,G,imClass)
 % --- Grid Generation Subfunction ---
 if nargin<4
-    imClass = 'single';
+    imClass = 'double';
 end
 
 %grid buffer

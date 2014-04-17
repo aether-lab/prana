@@ -1,6 +1,6 @@
 function [X,Y,CC]=PIVensemble(im1,im2,tcorr,window,res,zpad,D,Zeromean,fracval,X,Y,Uin,Vin)
 % --- DPIV Ensemble Correlation ---
-imClass = 'single';
+imClass = 'double';
 
 %convert input parameters
 im1=cast(im1,imClass);

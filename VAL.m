@@ -6,7 +6,7 @@ else
     j=1;
 end
 
-imClass = 'single';
+imClass = 'double';
 
 if exist('DX','var')
     [~,~,~,~,DX,DY,ALPHA]=matrixform(X,Y,U,V,DX,DY,ALPHA);
