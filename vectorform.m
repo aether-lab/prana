@@ -6,7 +6,7 @@ a=sort(unique(x));
 b=sort(unique(y));
 N=length(x(:));
 
-imClass = 'single';
+imClass = 'double';
 
 %initialize vectors
 S=size(x(:));

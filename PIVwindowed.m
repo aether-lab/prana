@@ -1,6 +1,6 @@
 function [X,Y,U,V,C,Dia,Corrplanes]=PIVwindowed(im1,im2,tcorr,window,res,zpad,D,Zeromean,Peaklocator,Peakswitch,fracval,saveplane,X,Y,Uin,Vin)
 % --- DPIV Correlation ---
-imClass = 'single';
+imClass = 'double';
 
 %convert input parameters
 im1=cast(im1,imClass);
