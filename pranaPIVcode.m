@@ -8,6 +8,7 @@ if ischar(Data)
     end
 else
     
+    
     % Make sure the job file has all the required variables.  This will make
     % sure that jobs created from older versions have the necessary variables.
     [Data] = jobfile_validator(Data);
@@ -34,7 +35,7 @@ else
         if exist('parcluster','file')
             compinfo=parcluster;
             if str2double(Data.parprocessors) > compinfo.NumWorkers
-            Data.parprocessors = compinfo.NumWorkers-1;
+            Data.parprocessors = num2str(compinfo.NumWorkers-1);
             end
         else
             compinfo=findResource('scheduler','configuration','local');
