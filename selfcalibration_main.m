@@ -20,14 +20,17 @@ function [caldatamod]=selfcalibration_main(caldata,selfcaljob)
 
 %Selfcaljob is a structure containing the self calibration Job file
 
+%world coordinates
 allx1data=caldata.allx1data;
 allx2data=caldata.allx2data;
+%camera coordinates
 allX1data=caldata.allX1data;
 allX2data=caldata.allX2data;
 
 method=caldata.modeltype;
 optionsls=caldata.optionsls;
 
+%polynomial fitting coefficients?
 aXcam1=caldata.aXcam1;
 aYcam1=caldata.aYcam1;
 aXcam2=caldata.aXcam2;
@@ -93,7 +96,11 @@ axis equal tight xy
 mdx=mean((Dux(:)));%mean x disparity
 %figure(22);hist(Dux(:));
 mdy=mean((Duy(:)));%mean y disparity
-fprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy)])
+rdx=std((Dux(:)));%mean x disparity
+rdy=std((Duy(:)));%mean y disparity
+
+fprintf(['Average X Disparity in Pixels:',num2str(mdx),'\n','Average Y Disparity in Pixels:',num2str(mdy),'\n'])
+fprintf(['RMS X Disparity in Pixels:',num2str(rdx),'\n','RMS Y Disparity in Pixels:',num2str(rdy),'\n'])
 
 %keyboard;
 %calculating the length of the common grid in the object plane on which the
@@ -110,9 +117,8 @@ ymax=max(max(ygrid1));
 scalex=(xmax-xmin)/(Jmax1-1); 
 scaley=(ymax-ymin)/(Imax1-1);
 
-
-%figure(87);imagesc(Dux);title('X direction disparity');xlabel('x(pixels');ylabel('y(pixels)');%caxis on;
-%figure(88);imagesc(Duy);title('Y direction disparity');xlabel('x(pixels');ylabel('y(pixels)');%caxis on;
+% figure(87);imagesc(Dux);title('X direction disparity');xlabel('x(pixels');ylabel('y(pixels)');%caxis on;
+% figure(88);imagesc(Duy);title('Y direction disparity');xlabel('x(pixels');ylabel('y(pixels)');%caxis on;
 
 %Making object grids of same size as the grid on which disparity is calculated
 [a,b]=size(X3);
@@ -186,13 +192,110 @@ l2=length(allx2data(:,1));
 ztrans1=Roty'*Rotx'*[allx1data(:,1)';allx1data(:,2)';allx1data(:,3)'] - [tz(1).*ones(1,l1);tz(2).*ones(1,l1);tz(3).*ones(1,l1)];
 ztrans2=Roty'*Rotx'*[allx2data(:,1)';allx2data(:,2)';allx2data(:,3)'] - [tz(1).*ones(1,l2);tz(2).*ones(1,l2);tz(3).*ones(1,l2)];
 
-%figure(8);scatter3(ztrans1(1,:),ztrans1(2,:),ztrans1(3,:));title('rotated calibration planes');xlabel('x(mm)');ylabel('y(mm)');
+% figure(8);scatter3(ztrans1(1,:),ztrans1(2,:),ztrans1(3,:));title('rotated calibration planes');xlabel('x(mm)');ylabel('y(mm)');
+% hold on;scatter3(ztrans2(1,:),ztrans2(2,:),ztrans2(3,:),'r');hold off,legend('cam1','cam2')
+
+
+fprintf('alpha = %g deg; beta = %g deg; tz = %g mm.\n',alpha*180/pi,beta*180/pi,tz(3))
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+lg = length(xgrid(:));
+zres1 = Roty'*Rotx'*[xgrid(:)'; ygrid(:)'; zeros(1,lg)] - [tz(1).*ones(1,lg);tz(2).*ones(1,lg);tz(3).*ones(1,lg)];
+zres2 = Roty'*Rotx'*[x2grid(:)';y2grid(:)';zeros(1,lg)] - [tz(1).*ones(1,lg);tz(2).*ones(1,lg);tz(3).*ones(1,lg)];
+
+dzres = zres2 - zres1;
+
+% figure(9);quiver(X3(:)',Y3(:)',dzres(1,:)/scalex,dzres(2,:)/scaley,1);title('difference between world coordinates in pixels');
+% axis equal tight xy, set(9,'Name','residual')
+
+%try to correct rotation between cameras
+lg = length(xgrid(:));
+
+%Empirical testing shows there is almost no difference between these two,
+%so let's pick the adjusted field so we don't double correct.
+ORIG_DISP = 0;
+if ORIG_DISP
+    %% use the original disparity map points
+    xgrid  = xg-Dux./2;
+    x2grid = xg+Dux./2;
+    ygrid  = yg-Duy./2;
+    y2grid = yg+Duy./2; 
+else
+    %% use the corrected points after fitting a plane
+    xgrid  = xg(:)-dzres(1,:)'./2;
+    x2grid = xg(:)+dzres(1,:)'./2;
+    ygrid  = yg(:)-dzres(2,:)'./2;
+    y2grid = yg(:)+dzres(2,:)'./2; 
+end
+
+X2 = [x2grid(:).'; y2grid(:).'];
+X1 = [xgrid(:).' ; ygrid(:).' ; ones(1,lg)];
+
+%calculate the transform matrix between camera 1 and 2
+A = X2/X1;
+%extract the translation needed to shift the center of rotation
+tx = A(1,3);
+ty = A(2,3);
+%assume small angles when calculating rotation angle
+gamma = (-A(1,2) + A(2,1))/2;
+fprintf('gamma = %g deg; tx = %g mm; ty = %g mm.\n',gamma*180/pi,tx,ty)
+%build the analytical transform matrix
+Rotz = [cos(gamma/2) -sin(gamma/2) 0 ; sin(gamma/2) cos(gamma/2) 0; 0 0 1];
+%%
+keyboard
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+refineZR= input('Do you want to apply the Z-rotation? (Y/N):','s');
+
+
+if strcmpi(refineZR,'Y')
+    reftrue=1;
+    refineXY= input('Do you want to apply the X-Y shift? (Y/N):','s');
+else
+    reftrue=0;
+    refineXY = 'N';
+end
+
+%do we want to include the shift from the z-rotation too?
+if strcmpi(refineXY,'Y')
+    tf = [tx/2; ty/2 ; 0];
+else
+    tf = [0; 0 ; 0];
+end
+
+if reftrue
+    %modify the world coordinates of each camera with a rotation in Z
+    
+    %this also includes a shift in x and y, but it seems to fight with the
+    %planar adjustments which can also produce apparent tx and ty, so we
+    %added a question to see if the user even wants it.  Good practice
+    %would be to converge the planar misalignment before trying the
+    %rotation and shifts.
+    ztrans1r=Rotz  * [ztrans1(1,:);ztrans1(2,:);ztrans1(3,:)] + [tf(1).*ones(1,l1);tf(2).*ones(1,l1);tf(3).*ones(1,l1)];
+    ztrans2r=Rotz' * [ztrans2(1,:);ztrans2(2,:);ztrans2(3,:)] - [tf(1).*ones(1,l2);tf(2).*ones(1,l2);tf(3).*ones(1,l2)];
+
+    % %For now, only apply the rotation about the origin of the world
+    % %coordinates
+    % ztrans1r=Rotz  * [ztrans1(1,:);ztrans1(2,:);ztrans1(3,:)];
+    % ztrans2r=Rotz' * [ztrans2(1,:);ztrans2(2,:);ztrans2(3,:)];
+    
+else 
+    %use only the z-plane tilts we orginally calculated
+    ztrans1r = ztrans1;
+    ztrans2r = ztrans2;
+end
+    
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 %projecting cal points to new z =0 plane
 
-caldatamod.allx1data=ztrans1';
-caldatamod.allx2data=ztrans2'; %outputs the modified planes
+caldatamod.allx1data=ztrans1r';
+caldatamod.allx2data=ztrans2r'; %outputs the modified planes
+%calculate new polynomial transform coefficients
 [~,~, aXcam1, aYcam1, aXcam2, aYcam2, ~]=fitmodels(caldatamod.allx1data,...
     caldatamod.allx2data,allX1data,allX2data,method,optionsls);
 caldatamod.aXcam1=aXcam1;
