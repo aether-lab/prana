@@ -623,7 +623,7 @@ switch char(M)
                                 V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(YDc,[1,3]);
                             else
                                 %only 1 velocity field is returned, use origins directly
-                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - XDc;
+                                U2 = interp2(XI,YI,XD2,Xc+Uc,Yc+Vc,'cubic',NaN) - XDc;
                                 V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - YDc;
                             end
                             
