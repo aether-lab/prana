@@ -46,8 +46,8 @@ if strcmp(dewarpmethod,'Willert')
     fend=str2double(imagelist.imfend);
     cstep=str2double(imagelist.imcstep);
     
-    dirout1=([dir1,'Dewarped Images',filesep]);
-    dirout2=([dir2,'Dewarped Images',filesep]);
+    dirout1=fullfile(dir1,['Dewarped Images',filesep]);
+    dirout2=fullfile(dir2,['Dewarped Images',filesep]);
     if ~exist(dirout1,'dir')
         mkdir(dirout1);
     end
@@ -59,10 +59,10 @@ if strcmp(dewarpmethod,'Willert')
     outputdirlist.dewarpdir1=dirout1;
     outputdirlist.dewarpdir2=dirout2;
     
-    istring1=sprintf(['%%s%%s%%0%0.0fd.',ext],zer);
+    istring1=sprintf(['%%s%%0%0.0fd.',ext],zer);
     %keyboard;
-    IML=imread(sprintf(istring1,dir1,base1,fstart));
-    IMR=imread(sprintf(istring1,dir2,base2,fstart));
+    IML=imread(fullfile(dir1,sprintf(istring1,base1,fstart)));
+    IMR=imread(fullfile(dir2,sprintf(istring1,base2,fstart)));
 %     [Jmax1,Imax1] = size(IML);  %Possible bug, isn't this [NY,NX], but used below as [NX,NY] to build X1points, etc.?
 %     [Jmax2,Imax2] = size(IMR);
     %bug fixed?
@@ -131,25 +131,20 @@ if nargin>4
     %THIS SECTION IS FOR SETTING THE REQUIRED WORLD COORDINATE DOMAIN
     %USING THE PREDEFINED VECTOR EVALUATION GRID
     
-%     xinmin=min(xingrid(:));
-%     xinmax=max(xingrid(:));
-%     yinmin=min(yingrid(:));
-%     yinmax=max(yingrid(:));
-%     
-%     xmag=(xinmax-xinmin)/(Imax1-2*pranagridbuffer);
-%     ymag=(yinmax-yinmin)/(Jmax1-2*pranagridbuffer);
-%     
-%     xlow=xinmin-pranagridbuffer*xmag;
-%     xhigh=xinmax+pranagridbuffer*xmag;
-%     ylow=yinmin-pranagridbuffer*ymag;
-%     yhigh=yinmax+pranagridbuffer*ymag;
-%     
-%     [xgrid,ygrid]=meshgrid(linspace(xlow,xhigh,Jmax1),linspace(ylow,yhigh,Imax1));
-
-    %assume that xingrid and yingrid are vectors, not matrices, and that
-    %the user knew what they were doing and just gave us the points in 
-    %world spacethat he wanted, and didn't want us to modify the grid
-    [xgrid,ygrid] = meshgrid(xingrid,yingrid);
+    % %assume that xingrid and yingrid are vectors, not matrices, and that
+    % %the user knew what they were doing and just gave us the points in 
+    % %world spacethat he wanted, and didn't want us to modify the grid
+    % [xgrid,ygrid] = meshgrid(xingrid,yingrid);
+    
+    %we might someday pass grids that aren't orthogonal to the world
+    %coordinates, and so can't be constucted from vector lists via
+    %meshgrid, therefore, we need to pass in meshgrid arrays instead of
+    %vectors
+    xgrid = xingrid;
+    ygrid = yingrid;
+    
+    %size of image is number of elements in xgrid and ygrid
+    [ImaxD,JmaxD] = size(xgrid);
 
 else
     
@@ -266,7 +261,12 @@ else
     ylow=max([bottom1xy(2,:) bottom2xy(2,:)]);
     yhigh=min([top1xy(2,:) top2xy(2,:)]);
     
-    [xgrid,ygrid]=meshgrid(linspace(xlow,xhigh,Jmax1),linspace(ylow,yhigh,Imax1));
+    %set the number of points in dewarped image to the size of Camera 1's
+    %original undewarped image.
+    ImaxD = Imax1; %number of points in y
+    JmaxD = Jmax1; %number of points in x
+    
+    [xgrid,ygrid]=meshgrid(linspace(xlow,xhigh,Jmax1),linspace(ylow,yhigh,ImaxD));
     %zgrid=zeros(size(xgrid));
     overplots=0;
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -312,9 +312,9 @@ dewarp_grid.Ygrid2=Ygrid2;
 dewarp_grid.xgrid=xgrid;
 dewarp_grid.ygrid=ygrid;
 
-%scaling is only an estimate returned as an output, and is not used in the
-% dewarping calculation
-%divide extent in object space by number of pixels.  
+%scaling is not used in the dewarping calculation, but is used in the
+%stereo reconstruction step.
+%divide extent in object space by number of pixels in dewarped image.  
 if strcmp(dewarpmethod,'Willert')
     %JJC: this looks like a bug.  Commented out and replaced with fix below
     % % Does this have an off-by-one error?  If we have four pixels at 1:4 with 
@@ -325,8 +325,8 @@ if strcmp(dewarpmethod,'Willert')
     
     %Both numerator and denominator need to be (Max - Min), see Soloff
     %below for analogous construction
-    scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/(Imax1-1);
-    scaling.yscale =(max(ygrid(:))-min(ygrid(:)))/(Jmax1-1);
+    scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/(JmaxD-1);
+    scaling.yscale =(max(ygrid(:))-min(ygrid(:)))/(ImaxD-1);
 elseif strcmp(dewarpmethod,'Soloff')
     %JJC: this was already correct, see above
     scaling.xscale =(max(xgrid(:))-min(xgrid(:)))/(max(x1(:))-min(x1(:)));
@@ -341,10 +341,15 @@ if strcmp(dewarpmethod,'Willert')
     for k=fstart:fstep:fend+1
         %reading recorded images
         
-        IMLi= im2double(imread(sprintf(istring1,dir1,base1,k)));
-        IMRi= im2double(imread(sprintf(istring1,dir2,base2,k+cstep-1)));
+        % %no reason to cast to double, sincBlackmanInterp2 does it
+        % %internally already, and returns the same class you gave it
+        % IMLi= im2double(imread(fullfile(dir1,sprintf(istring1,base1,k))));
+        % IMRi= im2double(imread(fullfile(dir2,sprintf(istring1,base2,k+cstep-1))));
+        IMLi= imread(fullfile(dir1,sprintf(istring1,base1,k)));
+        IMRi= imread(fullfile(dir2,sprintf(istring1,base2,k+cstep-1)));
         
-        incl=class(IMLi);
+        %incl=class(IMLi);
+        
         %flipping images
         IMLi=IMLi(end:-1:1,:);
         IMRi=IMRi(end:-1:1,:);
@@ -360,7 +365,9 @@ if strcmp(dewarpmethod,'Willert')
         %  keyboard;
         %flipping them back for saving
         IMLo=IMLo(end:-1:1,:);IMRo=IMRo(end:-1:1,:);
-        IMLo=cast(IMLo,incl);IMRo=cast(IMRo,incl);
+        
+        % %still the same class as input, so no need to cast
+        % IMLo=cast(IMLo,incl);IMRo=cast(IMRo,incl);
         
         %             figure(4);imagesc(IMLo);colormap('gray');%axis equal tight;
         %             figure(5);imagesc(IMRo);colormap('gray');%axis equal tight;
@@ -378,8 +385,8 @@ if strcmp(dewarpmethod,'Willert')
         
         %keyboard;
         %JJC: why the heck are we saving them with no TIFF compression?
-        imwrite((IMLo),sprintf(istring1,dirout1,base1,k),'TIFF','WriteMode','overwrite','Compression','none');
-        imwrite((IMRo),sprintf(istring1,dirout2,base2,k+cstep-1),'TIFF','WriteMode','overwrite','Compression','none');
+        imwrite((IMLo),fullfile(dirout1,sprintf(istring1,base1,k)),'TIFF');
+        imwrite((IMRo),fullfile(dirout2,sprintf(istring1,base2,k+cstep-1)),'TIFF');
         %keyboard;
         
     end

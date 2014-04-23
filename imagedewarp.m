@@ -233,7 +233,12 @@ xhigh=min([right1xy(1,:) right2xy(1,:)]);
 ylow=max([bottom1xy(2,:) bottom2xy(2,:)]);
 yhigh=min([top1xy(2,:) top2xy(2,:)]);
 
-[xgrid,ygrid]=meshgrid(linspace(xlow,xhigh,Jmax1),linspace(ylow,yhigh,Imax1));
+%set the number of points in dewarped image to the size of Camera 1's
+%original undewarped image.
+ImaxD = Imax1; %number of points in y
+JmaxD = Jmax1; %number of points in x
+
+[xgrid,ygrid]=meshgrid(linspace(xlow,xhigh,JmaxD),linspace(ylow,yhigh,ImaxD));
 %zgrid=zeros(size(xgrid));
 overplots=0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

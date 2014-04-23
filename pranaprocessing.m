@@ -293,10 +293,14 @@ switch char(M)
                 im1 = cast(loaddata.I,imClass);
                 loaddata=load([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
                 im2 = cast(loaddata.I,imClass);
+                saveclass = class(im1);
                 loaddata =[];
             else
-                im1 = cast(imread([imbase  sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]),imClass);
-                im2 = cast(imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]),imClass);
+                im1 = imread([imbase  sprintf(['%0.' Data.imzeros 'i.' Data.imext],I1(q))]);
+                im2 = imread([imbase2 sprintf(['%0.' Data.imzeros 'i.' Data.imext],I2(q))]);
+                saveclass = class(im1);
+                im1 = cast(im1,imClass);
+                im2 = cast(im2,imClass);
             end
             
             % Specify which color channel(s) to consider
@@ -619,7 +623,7 @@ switch char(M)
                                 V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(YDc,[1,3]);
                             else
                                 %only 1 velocity field is returned, use origins directly
-                                U2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - XDc;
+                                U2 = interp2(XI,YI,XD2,Xc+Uc,Yc+Vc,'cubic',NaN) - XDc;
                                 V2 = interp2(XI,YI,YD2,Xc+Uc,Yc+Vc,'cubic',NaN) - YDc;
                             end
                             
@@ -1049,12 +1053,12 @@ switch char(M)
                             saveIM1Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im1d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
                             %even though this is from I2, it corresponds to the vectors saved as I1, so use I1 in name
                             saveIM2Dfile = fullfile(saveIMDdir, [char(wbase(e,:)) ,'im2d_', sprintf(['%0.' Data.imzeros 'i.tif' ],I1(q))]);
-                            %check if images look like 8 bit or 12/16 bit
-                            if max(im1d(:)) > 255 || max(im2d(:)) > 255
-                                saveclass = 'uint16';
-                            else
-                                saveclass = 'uint8';
-                            end
+%                             %check if images look like 8 bit or 12/16 bit
+%                             if max(im1d(:)) > 255 || max(im2d(:)) > 255
+%                                 saveclass = 'uint16';
+%                             else
+%                                 saveclass = 'uint8';
+%                             end
                             imwrite(flipud(cast(im1d,saveclass)),saveIM1Dfile);
                             imwrite(flipud(cast(im2d,saveclass)),saveIM2Dfile);
                          end
