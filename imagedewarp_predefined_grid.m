@@ -45,15 +45,17 @@ if strcmp(dewarpmethod,'Willert')
     fstart=str2double(imagelist.imfstart);
     fend=str2double(imagelist.imfend);
     cstep=str2double(imagelist.imcstep);
-    
-    dirout1=fullfile(dir1,['Dewarped Images',filesep]);
-    dirout2=fullfile(dir2,['Dewarped Images',filesep]);
+    dirsave=imagelist.outdirec;
+    dirout1=fullfile(dirsave,['Dewarped Images1',filesep]);
+    dirout2=fullfile(dirsave,['Dewarped Images2',filesep]);
+
     if ~exist(dirout1,'dir')
         mkdir(dirout1);
     end
     if ~exist(dirout2,'dir')
         mkdir(dirout2);
     end
+
     
     
     outputdirlist.dewarpdir1=dirout1;
