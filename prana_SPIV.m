@@ -144,6 +144,7 @@ guiprops.rectype='';
 guiprops.scaling=[];
 guiprops.propertiessavename='StereoJob.mat';
 guiprops.propertiessavepath='';
+guiprops.stereorecdirlist=[];
 
 guidata(hObject,guiprops);
 %keyboard;
@@ -254,7 +255,7 @@ datasave.platethickness=guiprops.platethickness;
 datasave.modeltypemenu=guiprops.modeltypemenu;   %1 is for cubic xy and linear z, 2 is for cubic xy and quadratic z, 3 is for DLT
 % 
 datasave.multilevelpopup=guiprops.multilevelpopup;
-
+datasave.stereorecdirlist=guiprops.stereorecdirlist;
 
 datasave.propertiessavename = guiprops.propertiessavename;
 datasave.propertiessavepath = guiprops.propertiessavepath;
@@ -557,25 +558,20 @@ function getcal1_Callback(hObject, eventdata, handles)
 guiprops            = guidata(hObject);
 [filename1,pathname1]   = uigetfile('*.*','Select All The Calibration Image Planes(which you want)','Multiselect','on');
 guiprops.selectcam1file = pathname1;
-% if ~isstruct(filename1)
-%     filename1={filename1};
-% end
-try
-    s=regexp(pathname1,'Camera', 'split');
-    s1=regexp(s{end},'\d');
-    guiprops.caljob.camnumber(1)=str2double(s{end}(s1(end)));
-catch
+
     cn1= input('Please Enter First Camera Number:');
     if ~isempty(cn1)
         guiprops.caljob.camnumber(1)=cn1;
     else
         guiprops.caljob.camnumber(1)=1;
     end
-end
-%guiprops.camnumber
-%keyboard;
-for t=1:length(filename1)
-   guiprops.caljob.calimagelist{1,t}=[pathname1,filename1{t}];
+
+if isstruct(filename1) 
+    for t=1:length(filename1)
+        guiprops.caljob.calimagelist{1,t}=[pathname1,filename1{t}];
+    end
+else
+    guiprops.caljob.calimagelist{1,1}=[pathname1,filename1];
 end
 guidata(hObject,guiprops);
 end
@@ -584,25 +580,20 @@ function getcal2_Callback(hObject, eventdata, handles)
 guiprops            = guidata(hObject);
 [filename2,pathname2]   = uigetfile('*.*','Select All The Calibration Image Planes(which you want)',guiprops.selectcam1file ,'Multiselect','on');
 guiprops.selectcam2file = pathname2;
-% if ~isstruct(filename2)
-%     filename2={filename2};
-% end
-try
-    s=regexp(pathname2,'Camera', 'split');
-    s1=regexp(s{end},'\d');
-    guiprops.caljob.camnumber(2)=str2double(s{end}(s1(end)));
-catch
+
     cn2= input('Please Enter Second Camera Number:');
     if ~isempty(cn2)
         guiprops.caljob.camnumber(2)=cn2;
     else
         guiprops.caljob.camnumber(2)=2;
     end
-end
-%guiprops.caljob.camnumber
-%keyboard;
-for t=1:length(filename2)
-   guiprops.caljob.calimagelist{2,t}=[pathname2,filename2{t}];
+
+if isstruct(filename2)
+    for t=1:length(filename2)
+        guiprops.caljob.calimagelist{2,t}=[pathname2,filename2{t}];
+    end
+else
+    guiprops.caljob.calimagelist{2,1}=[pathname2,filename2];
 end
 guidata(hObject,guiprops);
 end

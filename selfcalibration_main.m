@@ -244,7 +244,7 @@ fprintf('gamma = %g deg; tx = %g mm; ty = %g mm.\n',gamma*180/pi,tx,ty)
 %build the analytical transform matrix
 Rotz = [cos(gamma/2) -sin(gamma/2) 0 ; sin(gamma/2) cos(gamma/2) 0; 0 0 1];
 %%
-keyboard
+%keyboard
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
