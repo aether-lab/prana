@@ -1,10 +1,17 @@
-function [u,v,M,D,DX,DY, PEAK_ANGLE, PEAK_ECCENTRICITY] = subpixel(SPATIAL_CORRELATION_PLANE,...
+function [u,v,M,D,major_axis_length, minor_axis_length, PEAK_ANGLE, PEAK_ECCENTRICITY] = subpixel(...
+    SPATIAL_CORRELATION_PLANE,...
     CORRELATION_WIDTH, CORRELATION_HEIGHT, WEIGHTING_MATRIX, ...
     PEAK_FIT_METHOD, FIND_MULTIPLE_PEAKS, PARTICLE_DIAMETER_2D)
 
 %intialize indices
 cc_x = -floor(CORRELATION_WIDTH/2):ceil(CORRELATION_WIDTH/2)-1;
 cc_y = -floor(CORRELATION_HEIGHT/2):ceil(CORRELATION_HEIGHT/2)-1;
+
+% Set values for peak eccentricity and angle
+% so that the function returns them properly
+% even if the Guassian least-squares fit method isn't used.
+PEAK_ECCENTRICITY = 0;
+PEAK_ANGLE = 0;
 
 %find maximum correlation value
 [M,I] = max(SPATIAL_CORRELATION_PLANE(:));
@@ -148,8 +155,8 @@ else
             % Gaussian Least Squares %
             %%%%%%%%%%%%%%%%%%%%%%%%%%
             %convert the particle diameter to diameter of equivalent correlation peak
-            D1 = sqrt(2).*PARTICLE_DIAMETER_2D(1);
-            D2 = sqrt(2).*PARTICLE_DIAMETER_2D(2);
+            D1 = sqrt(2) .* PARTICLE_DIAMETER_2D(1);
+            D2 = sqrt(2) .* PARTICLE_DIAMETER_2D(2);
             goodSize = 0;  %gets set =1 after fit, but reset to 0 if betaX or betaY are bigger than 2*D1 or 2*D2
             
             %keep trying while method not 1 (G.3pt.fit), and the search diameter (2x expected diam.) is less than half the window size
@@ -169,7 +176,16 @@ else
                 if y_max>CORRELATION_HEIGHT
                     y_max=CORRELATION_HEIGHT;
                 end
-                points=double(SPATIAL_CORRELATION_PLANE(y_min:y_max,x_min:x_max).*WEIGHTING_MATRIX(y_min:y_max,x_min:x_max));
+                
+                points = ...
+                    double(SPATIAL_CORRELATION_PLANE(y_min:y_max,x_min:x_max).* ...
+                    WEIGHTING_MATRIX(y_min:y_max,x_min:x_max));
+                
+                % Subtract the minimum value from the points matrix
+                points_min_sub = points - min(points(:));
+                
+                % Normalize the points matrix so the max value is one
+                points_norm = points_min_sub ./ max(points_min_sub(:));
 
                 %Options for the lsqnonlin solver using Levenberg-Marquardt solver
                 options=optimset('MaxIter',1200,'MaxFunEvals',5000,'TolX',1e-6,'TolFun',1e-6,...
@@ -185,14 +201,28 @@ else
 
                 %Initial values for the solver (have to convert D into Beta)
                 %x0 must be double for lsqnonlin, so convert M
-                x0 = [double(M(i)) 0.5*(sigma/D1)^2 0.5*(sigma/D2)^2 shift_locx shift_locy 0];
+%                 x0 = [double(M(i)), ...
+%                       0.5*(sigma/D1)^2, ...
+%                       0.5*(sigma/D2)^2, ...
+%                       shift_locx, ...
+%                       shift_locy, ...
+%                       0];
+%                   
+                  
+              x0 = [1, ...
+                      0.5*(sigma/D1)^2, ...
+                      0.5*(sigma/D2)^2, ...
+                      shift_locx, ...
+                      shift_locy, ...
+                      0];
 
                 [xloc, yloc]=meshgrid(x_min:x_max,y_min:y_max);
 
                 %Run solver; default to 3-point gauss if it fails
                 try
                     %[xvars resnorm resid exitflag output]=lsqnonlin(@leastsquares2D,x0,LB,UB,options,points(:),[yloc(:),xloc(:)],method);
-                    [xvars]=lsqnonlin(@leastsquares2D,x0, LB, UB,options,points(:),[yloc(:),xloc(:)], method);
+%                     [xvars]=lsqnonlin(@leastsquares2D,x0, LB, UB,options,points(:),[yloc(:),xloc(:)], method);
+                    [xvars]=lsqnonlin(@leastsquares2D,x0, LB, UB,options,points_norm(:),[yloc(:),xloc(:)], method);
                     shift_errx=xvars(4)-shift_locx;
                     shift_erry=xvars(5)-shift_locy;
                     
@@ -204,14 +234,16 @@ else
                     % equal area and return that value
                     D(i) = sqrt(dA*dB);
                     peak_angle = mod(xvars(6),2*pi);
+                                        
+                    % Calculate the lengths of the major and minor axes 
+                    % of the best-fit elliptical Gaussian 
+                    major_axis_length = max(dA, dB);
+                    minor_axis_length = min(dA, dB);
                     
-                    % Calculate the eccentricity of the elliptical Gaussian
-                    % peak.
-                    % dA is the length of the major axis of the best-fit
-                    % ellipse.
-                    % dB is the length of the minoir axis of the best-fit
-                    % ellipse.                    
-                    PEAK_ECCENTRICITY = sqrt(1 - dB^2 / dA^2);
+                    % Calculate the eccentricity of the
+                    % elliptical Gaussian peak.
+                    PEAK_ECCENTRICITY = sqrt(1 - ...
+                        minor_axis_length^2 / major_axis_length^2);
                     
                     % These are the lengths of the projections of the 
                     % elliptical Gaussian peak onto the horizontal and vertical
@@ -377,6 +409,7 @@ elseif method==4
     end
 end
 % compare the Gaussian curve to the actual pixel intensities
-F=mapint_i-gauss_int;
+F = mapint_i-gauss_int;
+
 
 end
