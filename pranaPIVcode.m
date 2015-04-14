@@ -28,10 +28,6 @@ else
         % Inform the user that a parallel pool is being initialized.
         fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
         
-        % Set the boolean flag indicating that a parallel pool is open
-        % equal to true.
-        poolopen = 1;
-        
         % Create a data structure containing the settings
         % regarding the matlab parallel pool profiles
         compinfo = parcluster('local');
@@ -103,52 +99,79 @@ else
             Data.parprocessors = num2str(num_cores_requested);
         end
         
+        % This line gets parameters about any open pools.
+        current_pool_info = gcp('nocreate');
         
-        % This try-catch statement attempts to open a parallel pool
-        % with the number of processors requested.
-        try
-             
-            % This opens a parallel pool with the specified number
-            % of cores           
-            parpool('local', num_cores_requested);
+        % This checks whether a pool is already open.
+        pool_is_open = ~isempty(current_pool_info);
+        
+        % This checks the number of cores in an open pool
+        if pool_is_open
             
-        catch
+            % This checks the number of cores open in the current pool
+            num_open_cores = current_pool_info.NumWorkers;
             
-            keyboard
-            
-            % If the pool wasn't successfully opened, then set the number
-            % of requested cores to zero and run the job.
-            
-            try
-                
-                % This closes any existing matlab pools.
-                % gcp is a matlab command for "get current pool"
-               delete(gcp);
-               
-                % This opens a parallel pool with the requested
-                % number of processors.
-                parpool('local', num_cores_requested);
-                
-            catch
-                beep
-                keyboard
-                disp('Error Running Job in Parallel - Defaulting to Single Processor')
-                
-                % This sets the boolean flag that indicates whether
-                % or not a parallel pool is open to false.
-                poolopen = 0;
-                
-                % Inform the user that processing has begun
-                fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
-                
-                % Inform the user that processing has finished.
-                pranaprocessing(Data)
-                fprintf(['---------------- Job Completed at %s -------'...
-                    '--------------\n'], datestr(now));
-            end
+        else
+            % This sets the number of opened cores to zero.
+            num_open_cores = 0;
         end
         
-        if poolopen
+        
+        % This if-statement opens a matlab pool only if either one doesn't
+        % already exist or if a pool of the wrong size exists.
+        if num_open_cores ~= num_cores_requested 
+        
+            % This try-catch statement attempts to open a parallel pool
+            % with the number of processors requested.
+            try
+
+                % This opens a parallel pool with the specified number
+                % of cores           
+                parpool('local', num_cores_requested);
+
+            catch
+
+                % If the pool wasn't successfully opened, then set the number
+                % of requested cores to zero and run the job.
+
+                try
+
+                    % This closes any existing matlab pools.
+                    % gcp is a matlab command for "get current pool"
+                   delete(gcp);
+
+                    % This opens a parallel pool with the requested
+                    % number of processors.
+                    parpool('local', num_cores_requested);
+
+                catch
+                    beep
+                    disp('Error Running Job in Parallel - Defaulting to Single Processor')
+
+                    % This sets the boolean flag that indicates whether
+                    % or not a parallel pool is open to false.
+                    pool_is_open = 0;
+
+                    % Inform the user that processing has begun
+                    fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+
+                    % Inform the user that processing has finished.
+                    pranaprocessing(Data)
+                    fprintf(['---------------- Job Completed at %s -------'...
+                        '--------------\n'], datestr(now));
+                end
+            end
+
+        end
+        
+        % Get info for the currently opened pool (if any)
+        current_pool_info = gcp('nocreate');
+        
+        % Determine whether the pool is active.
+        pool_is_open = ~isempty(current_pool_info);
+        
+        % Proceed with parallel processing if a parallel pool is open.
+        if pool_is_open
             I1=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
             I2=I1+str2double(Data.imcstep);
             if strcmp(Data.masktype,'dynamic')
