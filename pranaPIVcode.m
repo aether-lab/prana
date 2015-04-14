@@ -19,53 +19,135 @@ else
     % This call also puts the out put on the screen for the user to evaluate.
     write_expsummary(Data);
     
+    % Determine whether a parallel job was specified
+    run_parallel = str2double(Data.par);
+    
     %% Set up a parallel job if needed
-    if str2double(Data.par)
+    if run_parallel
+
+        % Inform the user that a parallel pool is being initialized.
         fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
-        poolopen=1;
         
-        % This section of code checks the job file for the number of
-        % parallel processors requested for the job.  If the job requests
-        % more then what is available in the machine it reduces the number
-        % requested to 1 less then the machine maximum.  The reason for '1
-        % less' is so that machine is not unintensionally over worked.  If
-        % the users requests all of the machines processors this code will
-        % not stop the user.  Only if a request is made OVER the avialable
-        % number.
-        if exist('parcluster','file')
-            compinfo=parcluster;
-            if str2double(Data.parprocessors) > compinfo.NumWorkers
-            Data.parprocessors = num2str(compinfo.NumWorkers-1);
-            end
-        else
-            compinfo=findResource('scheduler','configuration','local');
-            avail_parprocs=num2str(compinfo.clustersize);
-            if str2double(Data.parprocessors) > avail_parprocs
-                fprintf('Job file requested %s processors while the machine only contains %s processors\n Updating job file to request %s processors',Data.parprocessors,num2str(avail_parprocs),num2str(avail_parprocs-1))
-                Data.parprocessors = num2str(avail_parprocs-1);
-            end
+        % Set the boolean flag indicating that a parallel pool is open
+        % equal to true.
+        poolopen = 1;
+        
+        % Create a data structure containing the settings
+        % regarding the matlab parallel pool profiles
+        compinfo = parcluster('local');
+
+        % Read the number of cores available to Matlab
+        num_cores_available = compinfo.NumWorkers;
+        
+        % Read the number of cores requested
+        num_cores_requested = round(str2double(Data.parprocessors));
+        
+        % If the number of cores requested exceeds the number available,
+        % set the number requested to be one fewer than the number
+        % available.
+        if num_cores_requested > num_cores_available
+            
+            % Inform the user that the number of requested cores
+            % exceeds the number of cores available to Matlab.
+            fprintf(['Job file requested %d processors while the'...
+                ' machine only contains %d processors\n Updating job'...
+                 'file to request %d processors'], ...
+                 num_cores_requested, num_cores_available, ...
+                 num_cores_available - 1);
+            
+            
+            % Set the number of requested cores to one fewer
+            % than the number available to Matlab         
+            num_cores_requested = num_cores_available - 1;
+                        
         end
         
-        %Don't open more processors than there are image pairs
-        if length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend)) < str2double(Data.parprocessors)
-            Data.parprocessors=num2str(length(str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend)));
+        % Update the data structure with the new number
+        % of requested cores.
+        %
+        % Doing this outside of the above if statement takes
+        % care of non-integer numbers of requested cores.
+        Data.parprocessors = num2str(num_cores_requested);
+        
+        % These lines deternube the number of image pairs that will be processed.
+        %
+        % This line reads the number of the first image to be processed.
+        first_image_number = str2double(Data.imfstart);
+        
+        % This line reads the number of the last image to be processed.
+        last_image_number = str2double(Data.imfend);
+        
+        % This line reads the frame step (number of images between 
+        % subsequent pairs)
+        frame_step = str2double(Data.imfstep);
+        
+        % This line creates a list of the numbers of the images to be
+        % processed. These are the numbers of the first image in each pair.
+        image_number_list = ...
+            first_image_number : frame_step : last_image_number;
+        
+        % This line determines the number of image pairs that will be
+        % processed.
+        number_of_pairs = length(image_number_list);
+        
+        % This if-statement sets the number of cores requested to 
+        % not exceed the number of image pairs to be processed.
+        if number_of_pairs < num_cores_requested
+            
+            % This updates the "number of pairs" variable to equal
+            % the number of frames.
+            num_cores_requested = number_of_pairs;
+            
+            % This updates the data structure to reflect the new number
+            % of cores.
+            Data.parprocessors = num2str(num_cores_requested);
         end
         
+        
+        % This try-catch statement attempts to open a parallel pool
+        % with the number of processors requested.
         try
-            matlabpool('open','local',Data.parprocessors);
+             
+            % This opens a parallel pool with the specified number
+            % of cores           
+            parpool('local', num_cores_requested);
+            
         catch
+            
+            keyboard
+            
+            % If the pool wasn't successfully opened, then set the number
+            % of requested cores to zero and run the job.
+            
             try
-                matlabpool close
-                matlabpool('open','local',Data.parprocessors);
+                
+                % This closes any existing matlab pools.
+                % gcp is a matlab command for "get current pool"
+               delete(gcp);
+               
+                % This opens a parallel pool with the requested
+                % number of processors.
+                parpool('local', num_cores_requested);
+                
             catch
                 beep
+                keyboard
                 disp('Error Running Job in Parallel - Defaulting to Single Processor')
-                poolopen=0;
+                
+                % This sets the boolean flag that indicates whether
+                % or not a parallel pool is open to false.
+                poolopen = 0;
+                
+                % Inform the user that processing has begun
                 fprintf('\n-------------- Processing Dataset (started at %s) ------------------\n', datestr(now));
+                
+                % Inform the user that processing has finished.
                 pranaprocessing(Data)
-                fprintf('---------------- Job Completed at %s ---------------------\n', datestr(now));
+                fprintf(['---------------- Job Completed at %s -------'...
+                    '--------------\n'], datestr(now));
             end
         end
+        
         if poolopen
             I1=str2double(Data.imfstart):str2double(Data.imfstep):str2double(Data.imfend);
             I2=I1+str2double(Data.imcstep);
@@ -128,8 +210,16 @@ else
                         catch
                             beep
                             disp('Error Running Multiframe Job in Parallel (Not Enough Image Pairs) - Defaulting to Single Processor')
-                            matlabpool close
-                            poolopen=0;
+                            
+                            % This closes the open matlab pool.
+                            delete(gcp);
+                            
+                            % This sets the "pool is open" flag to false.
+                            % It is probably unnecessary to %
+                            % close and re-open the pool every job.
+                            poolopen = 0;
+                            
+                            % This runs the Prana job.
                             pranaprocessing(Data)
                         end
                         
@@ -139,9 +229,7 @@ else
                 end
                 fprintf('----------------- Job Completed at %s----------------------\n', datestr(now));
             end
-            if poolopen
-                matlabpool close
-            end
+            
         end
     else
         fprintf('\n-------------- Processing Dataset (started at %s)------------------\n', datestr(now));
