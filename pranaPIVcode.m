@@ -237,11 +237,6 @@ else
                             % This closes the open matlab pool.
                             delete(gcp);
                             
-                            % This sets the "pool is open" flag to false.
-                            % It is probably unnecessary to %
-                            % close and re-open the pool every job.
-                            poolopen = 0;
-                            
                             % This runs the Prana job.
                             pranaprocessing(Data)
                         end
