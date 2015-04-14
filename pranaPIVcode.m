@@ -40,8 +40,14 @@ else
         % Choose between matlabpool and parpool paradigms based on the 
         % release year of the currently instance of Matlab.
         if matlab_version_year < 2013
+            % Write and insert a function for opening parallel processing
+            % tools using the paradigm for Matlab versions < 2013a.
+            
             
         else
+            
+            % Open a Matlab parallel processing pool
+            % using the paradigm for Matlab versions >= 2013a
             [Data, pool_opened] = open_prana_pool_2015(Data);
         end
         
