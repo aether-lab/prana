@@ -4,7 +4,7 @@ if ischar(Data)
     if strcmpi(Data,'version')
         varargout{1} = '2.5.beta.r2014.04.14';
     else
-        error('Error: String request must be ''version''.')
+        error('Error: String request must be ''version''.\m')
     end
 else
     
@@ -47,7 +47,7 @@ else
             % exceeds the number of cores available to Matlab.
             fprintf(['Job file requested %d processors while the'...
                 ' machine only contains %d processors\n Updating job'...
-                 'file to request %d processors'], ...
+                 'file to request %d processors.\n'], ...
                  num_cores_requested, num_cores_available, ...
                  num_cores_available - 1);
             
@@ -146,7 +146,7 @@ else
 
                 catch
                     beep
-                    disp('Error Running Job in Parallel - Defaulting to Single Processor')
+                    disp('Error Running Job in Parallel - Defaulting to Single Processor\n')
 
                     % This sets the boolean flag that indicates whether
                     % or not a parallel pool is open to false.
