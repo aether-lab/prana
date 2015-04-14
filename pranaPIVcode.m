@@ -31,6 +31,10 @@ else
     
     %% Set up a parallel job if needed
     if run_parallel
+        
+        % Define the boolean flag specifying whether a matlab pool is
+        % opened. Initialize it to zero.
+        pool_opened = 0;
 
         % Inform the user that a parallel pool is being initialized.
         fprintf('\n--- Initializing Processor Cores for Parallel Job ----\n')
@@ -40,9 +44,9 @@ else
         % Choose between matlabpool and parpool paradigms based on the 
         % release year of the currently instance of Matlab.
         if matlab_version_year < 2013
+            
             % Write and insert a function for opening parallel processing
             % tools using the paradigm for Matlab versions < 2013a.
-            
             
         else
             
