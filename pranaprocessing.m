@@ -1185,7 +1185,7 @@ switch char(M)
                 DX=zeros(size(X),imClass);DY=zeros(size(X),imClass);ALPHA=zeros(size(X),imClass);
             end
             
-            if str2double(Data.par) && matlabpool('size')>1
+            if str2double(Data.par) && parpool('size')>1
                 
                 spmd
                     verstr=version('-release');
