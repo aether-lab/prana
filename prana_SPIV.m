@@ -22,7 +22,7 @@ function varargout = prana_SPIV(varargin)
 
 % Edit the above text to modify the response to help prana_SPIV
 
-% Last Modified by GUIDE v2.5 27-Mar-2014 17:09:29
+% Last Modified by GUIDE v2.5 09-Apr-2015 19:14:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -59,13 +59,14 @@ guiprops.markerdiam    = str2double(get(handles.markerdiam,'String'));
 guiprops.xplatelevelshift =str2double(get(handles.xplatelevelshift,'String'));
 guiprops.yplatelevelshift =str2double(get(handles.yplatelevelshift,'String'));
 guiprops.targetsidesbox = get(handles.targetsidesbox,'Value');
+guiprops.targetsidesbox2 = get(handles.targetsidesbox2,'Value');
 guiprops.vertmarkerspacing  = str2double(get(handles.vertmarkerspacing,'String'));
 guiprops.hormarkerspacing   = str2double(get(handles.hormarkerspacing,'String'));
 guiprops.targetcolor = get(handles.targetcolor,'Value');
 guiprops.zplanenumber    = str2double(get(handles.zplanenumber,'String'));
 guiprops.zstart = str2double(get(handles.zstart,'String'));
-guiprops.planespacing = str2double(get(handles.planespacing,'String'));
-guiprops.channeldepth  = str2double(get(handles.channeldepth,'String'));
+guiprops.planespacing = str2num(get(handles.planespacing,'String'));
+guiprops.channeldepth  = str2num(get(handles.channeldepth,'String'));
 guiprops.levelnumber = str2double(get(handles.levelnumber,'String'));
 guiprops.platethickness= str2double(get(handles.platethickness,'String'));
 guiprops.modeltypemenu    = get(handles.modeltypemenu,'Value');   %1 is for cubic xy and linear z, 2 is for cubic xy and quadratic z, 3 is for DLT
@@ -80,7 +81,8 @@ if guiprops.targetcolor==1
 elseif guiprops.targcolor==2
     guiprops.caljob.grid_points_bright='false';
 end
-guiprops.caljob.targetside=guiprops.targetsidesbox;
+guiprops.caljob.targetsidecam1=guiprops.targetsidesbox;
+guiprops.caljob.targetsidecam2=guiprops.targetsidesbox2;
 guiprops.caljob.grid_point_diameter=guiprops.markerdiam;
 
 guiprops.caljob.x_grid_spacing=guiprops.hormarkerspacing;
@@ -242,7 +244,8 @@ datasave.scaling            = guiprops.scaling;
 datasave.markerdiam =guiprops.markerdiam ;
 datasave.xplatelevelshift=guiprops.xplatelevelshift;
 datasave.yplatelevelshift=guiprops.yplatelevelshift;
-datasave.targetsidesbox=guiprops.targetsidesbox;
+datasave.targetsidesboxcam1=guiprops.targetsidesbox;
+datasave.targetsidesboxcam2=guiprops.targetsidesbox2;
 datasave.vertmarkerspacing=guiprops.vertmarkerspacing;
 datasave.hormarkerspacing=guiprops.hormarkerspacing;
 datasave.targetcolor=guiprops.targetcolor;
@@ -301,12 +304,25 @@ function targetsidesbox_Callback(hObject, eventdata, handles)
 
 guiprops            = guidata(hObject);
 guiprops.targetsidesbox = get(hObject,'Value');
-guiprops.caljob.targetside=guiprops.targetsidesbox;
+guiprops.caljob.targetsidecam1=guiprops.targetsidesbox;
 guidata(hObject,guiprops);
 
 end
 
 function targetsidesbox_CreateFcn(hObject, eventdata, handles)
+end
+
+function targetsidesbox2_Callback(hObject, eventdata, handles)
+
+guiprops            = guidata(hObject);
+guiprops.targetsidesbox2 = get(hObject,'Value');
+guiprops.caljob.targetsidecam2=guiprops.targetsidesbox2;
+guidata(hObject,guiprops);
+
+end
+
+% --- Executes during object creation, after setting all properties.
+function targetsidesbox2_CreateFcn(hObject, eventdata, handles)
 end
 
 function vertmarkerspacing_Callback(hObject, eventdata, handles)
@@ -482,7 +498,9 @@ end
 
 function planespacing_Callback(hObject, eventdata, handles)
 guiprops            = guidata(hObject);
-guiprops.planespacing = str2double(get(hObject,'String'));
+% STR2NUM is used because the plane spacing can vary in which case it will
+% be a vector.Str2double only operates on scalars.
+guiprops.planespacing = str2num(get(hObject,'String'));
 guiprops.caljob.plane_spacing=guiprops.planespacing;
 guidata(hObject,guiprops);
 end
@@ -502,8 +520,8 @@ end
 function channeldepth_Callback(hObject, eventdata, handles)
 
 guiprops            = guidata(hObject);
-guiprops.channeldepth  = str2double(get(hObject,'String'));
-guiprops.caljob.plate_level_spacing = [0,-guiprops.channeldepth];
+guiprops.channeldepth  = str2num(get(hObject,'String'));
+guiprops.caljob.plate_level_spacing =guiprops.channeldepth;
 guidata(hObject,guiprops);
 end
 
@@ -566,13 +584,14 @@ guiprops.selectcam1file = pathname1;
         guiprops.caljob.camnumber(1)=1;
     end
 
-if isstruct(filename1) 
+if iscell(filename1) 
     for t=1:length(filename1)
         guiprops.caljob.calimagelist{1,t}=[pathname1,filename1{t}];
     end
 else
     guiprops.caljob.calimagelist{1,1}=[pathname1,filename1];
 end
+
 guidata(hObject,guiprops);
 end
 
@@ -588,7 +607,7 @@ guiprops.selectcam2file = pathname2;
         guiprops.caljob.camnumber(2)=2;
     end
 
-if isstruct(filename2)
+if iscell(filename2)
     for t=1:length(filename2)
         guiprops.caljob.calimagelist{2,t}=[pathname2,filename2{t}];
     end
@@ -628,7 +647,8 @@ JOBFILE.X_Pixel_Number 						= guiprops.caljob.x_pixel_number;
 JOBFILE.Y_Pixel_Number 						= guiprops.caljob.y_pixel_number;
 JOBFILE.ImageExtension						= guiprops.caljob.image_extension;
 JOBFILE.CalImageList                        = guiprops.caljob.calimagelist;
-
+JOBFILE.targetsidecam1                      = guiprops.caljob.targetsidecam1;
+JOBFILE.targetsidecam2                      = guiprops.caljob.targetsidecam2;
 guiprops.caljob.JOBFILE=JOBFILE;
 
 [calibration_data,calibration_plane_data]=camera_calibration_new(JOBFILE);
@@ -808,6 +828,7 @@ reftrue=1;
  caldata.aYcam1=caldatamod.aYcam1;
  caldata.aXcam2=caldatamod.aXcam2;
  caldata.aYcam2=caldatamod.aYcam2;
+ caldata.convergemessage = caldatamod.convergemessage; 
  clear caldatamod;
  %[caldatamod]=selfcalibration_v1(caldata,selfcaljob);
  
@@ -886,4 +907,3 @@ guiprops.scaling=scaling;
 
 guidata(hObject,guiprops);
 end
-
