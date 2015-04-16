@@ -83,7 +83,7 @@ for j = 1:length(rectype)
         
         %stereo reconstruction
         fprintf('\n Doing Geometric Stereo Reconstructions.... \n')
-        willert_vec_reconstruct_new(diroutlist,caldata,dewarp_grid,wil_scaling,pulsesep);
+        willert_vec_reconstruct(diroutlist,caldata,dewarp_grid,wil_scaling,pulsesep);
         scaling.wil=wil_scaling;
         %keyboard;
         
