@@ -93,9 +93,9 @@ clear dispfield
 figure('Name','Disparity Map');
 quiver(X3,Y3,Dux,Duy,1);
 axis equal tight xy
-mdx=mean((Dux(:)));%mean x disparity
+mdx=mean(abs(Dux(:)));%mean x disparity
 %figure(22);hist(Dux(:));
-mdy=mean((Duy(:)));%mean y disparity
+mdy=mean(abs(Duy(:)));%mean y disparity
 rdx=std((Dux(:)));%mean x disparity
 rdy=std((Duy(:)));%mean y disparity
 
@@ -158,7 +158,7 @@ y2grid=yg+Duy./2;
 % y2grid=yg+Duy./2;
 %Doing Triangulation
 
-[z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2); %ouput is the projected z world points
+[z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2,caldata); %ouput is the projected z world points
 
 %Just turn grid coordinates matrices into vectors, why not use (:)?
 x=reshape(xg,a*b,1);y=reshape(yg,a*b,1);z=reshape(z1grid,a*b,1);
@@ -296,16 +296,18 @@ end
 caldatamod.allx1data=ztrans1r';
 caldatamod.allx2data=ztrans2r'; %outputs the modified planes
 %calculate new polynomial transform coefficients
-[~,~, aXcam1, aYcam1, aXcam2, aYcam2, ~]=fitmodels(caldatamod.allx1data,...
+[~,~, aXcam1, aYcam1, aXcam2, aYcam2,convergemessage]=fitmodels(caldatamod.allx1data,...
     caldatamod.allx2data,allX1data,allX2data,method,optionsls);
 caldatamod.aXcam1=aXcam1;
 caldatamod.aYcam1=aYcam1;
 caldatamod.aXcam2=aXcam2;
 caldatamod.aYcam2=aYcam2;
+caldatamod.convergemessage=convergemessage;
+convergemessage
 end
 
 
-function [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2)
+function [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2,caldata)
 
 %function for calculating local viewing angles and Triangulation
 %input calibration matrices and common grid world coordinates
@@ -332,18 +334,38 @@ alphatan=zeros(rows,cols,2);betatan=zeros(rows,cols,2);
     dFdx2=zeros(rows,cols,4);
     dFdx3=zeros(rows,cols,4);
 
-for gg=1:4
+    if caldata.modeltype==1
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Mapping the camera coord. to the World Coord. using 1sr order z
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        for gg=1:4
+            a=aall(:,gg);
+            dFdx1(:,:,gg) = a(2) + 2*a(5)*xgrid + a(6)*ygrid + a(8)*zgrid + 3*a(10)*xgrid.^2 + ...
+                2*a(11)*xgrid.*ygrid + a(12)*ygrid.^2 + 2*a(14)*xgrid.*zgrid + a(15)*ygrid.*zgrid;
+            
+            dFdx2(:,:,gg) = a(3) + a(6)*xgrid + 2*a(7)*ygrid + a(9)*zgrid + a(11)*xgrid.^2 + ...
+                2*a(12)*xgrid.*ygrid + 3*a(13)*ygrid.^2 + a(15)*xgrid.*zgrid + 2*a(16)*ygrid.*zgrid;
+            
+            dFdx3(:,:,gg) = a(4) + a(8)*xgrid + a(9)*ygrid + a(14)*xgrid.^2 + a(15)*xgrid.*ygrid + a(16)*ygrid.^2;
+        end
+        
+    elseif caldata.modeltype==2
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Mapping the camera coord. to the World Coord. using 2nd order z
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        for gg=1:4
             a=aall(:,gg);
             dFdx1(:,:,gg) = a(2) + 2*a(5).*xgrid + a(6)*ygrid + a(8)*zgrid + 3*a(11)*xgrid.^2 + 2*a(12)*xgrid.*ygrid + ...
                 a(13)*ygrid.^2 + 2*a(15)*xgrid.*zgrid + a(16)*ygrid.*zgrid + a(18)*zgrid.^2;
-
+            
             dFdx2(:,:,gg) = a(3) + a(6)*xgrid + 2*a(7)*ygrid + a(9)*zgrid + a(12)*xgrid.^2 + 2*a(13)*xgrid.*ygrid + ...
                 3*a(14)*ygrid.^2 + a(16)*xgrid.*zgrid + 2*a(17)*ygrid.*zgrid + a(19)*zgrid.^2;
-
+            
             dFdx3(:,:,gg) = a(4) + a(8)*xgrid + a(9)*ygrid + 2*a(10)*zgrid + a(15)*xgrid.^2 + a(16)*xgrid.*ygrid + ...
                 a(17)*ygrid.^2 + 2*a(18)*xgrid.*zgrid + 2*a(19)*ygrid.*zgrid;
-end
-
+        end
+        
+    end
 
 %calculating the viewing angles using formula (7) and (8) from Giordano and Astarita's paper "Spatial resolution of the Stereo PIV technique" (2009)
 
@@ -358,17 +380,38 @@ betatan(:,:,1)=(((dFdx3(:,:,2).*dFdx1(:,:,1)) - (dFdx1(:,:,2).*dFdx3(:,:,1)))./(
 
 
 %Viewing angles for camera 2 calculated at gridpoints x2grid=xgrid+Dux,y2grid=ygrid+Duy
-for gg=1:4
+    if caldata.modeltype==1
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Mapping the camera coord. to the World Coord. using 1sr order z
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        for gg=1:4
+            a=aall(:,gg);
+            dFdx1(:,:,gg) = a(2) + 2*a(5)*x2grid + a(6)*y2grid + a(8)*zgrid + 3*a(10)*x2grid.^2 + ...
+                2*a(11)*x2grid.*y2grid + a(12)*y2grid.^2 + 2*a(14)*x2grid.*zgrid + a(15)*y2grid.*zgrid;
+            
+            dFdx2(:,:,gg) = a(3) + a(6)*x2grid + 2*a(7)*y2grid + a(9)*zgrid + a(11)*x2grid.^2 + ...
+                2*a(12)*x2grid.*y2grid + 3*a(13)*y2grid.^2 + a(15)*x2grid.*zgrid + 2*a(16)*y2grid.*zgrid;
+            
+            dFdx3(:,:,gg) = a(4) + a(8)*x2grid + a(9)*y2grid + a(14)*x2grid.^2 + a(15)*x2grid.*y2grid + a(16)*y2grid.^2;
+        end
+        
+    elseif caldata.modeltype==2
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Mapping the camera coord. to the World Coord. using 2nd order z
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        for gg=1:4
             a=aall(:,gg);
             dFdx1(:,:,gg) = a(2) + 2*a(5).*x2grid + a(6)*y2grid + a(8)*zgrid + 3*a(11)*x2grid.^2 + 2*a(12)*x2grid.*y2grid + ...
                 a(13)*y2grid.^2 + 2*a(15)*x2grid.*zgrid + a(16)*y2grid.*zgrid + a(18)*zgrid.^2;
-
+            
             dFdx2(:,:,gg) = a(3) + a(6)*x2grid + 2*a(7)*y2grid + a(9)*zgrid + a(12)*x2grid.^2 + 2*a(13)*x2grid.*y2grid + ...
                 3*a(14)*y2grid.^2 + a(16)*x2grid.*zgrid + 2*a(17)*y2grid.*zgrid + a(19)*zgrid.^2;
-
+            
             dFdx3(:,:,gg) = a(4) + a(8)*x2grid + a(9)*y2grid + 2*a(10)*zgrid + a(15)*x2grid.^2 + a(16)*x2grid.*y2grid + ...
                 a(17)*y2grid.^2 + 2*a(18)*x2grid.*zgrid + 2*a(19)*y2grid.*zgrid;
-end
+        end
+        
+    end
 
 alphatan(:,:,2)=(((dFdx3(:,:,4).*dFdx2(:,:,3)) - (dFdx2(:,:,4).*dFdx3(:,:,3)))./((dFdx2(:,:,4).*dFdx1(:,:,3)) - (dFdx1(:,:,4).*dFdx2(:,:,3))));
 betatan(:,:,2)=(((dFdx3(:,:,4).*dFdx1(:,:,3)) - (dFdx1(:,:,4).*dFdx3(:,:,3)))./((dFdx1(:,:,4).*dFdx2(:,:,3)) - (dFdx2(:,:,4).*dFdx1(:,:,3))));
