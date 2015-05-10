@@ -133,6 +133,10 @@ for ii=1 : number_of_cameras;
 % % 	
         % Image file name.
         image_filenames{ii,jj}=InputJobFile.CalImageList{ii,jj};%filename_string;
+        %This checks for the plane_spacing, if plane_spacing is uniform in
+        %which case it will have one element it assigns uniform plane
+        %spacing otherwise stores the different plana_spacings between
+        %calibration planes.
         if numel(plane_spacing)==1 && jj>1
             plane_spacing_temp(ii,jj)=(jj-1)*plane_spacing;
         elseif numel(plane_spacing)>1 && jj>1
@@ -141,9 +145,9 @@ for ii=1 : number_of_cameras;
                 
         % This saves the calibration plate orientation data into the cell array
         if ii==1;
-            plate_orientation{ii,jj}=cam1_orient;
+            plate_orientation{ii,jj}=cam1_orient; % takes cam1 orientation
         elseif ii==2;
-            plate_orientation{ii,jj}=cam2_orient;
+            plate_orientation{ii,jj}=cam2_orient; % takes cam2 orientation
         elseif ii==3;
             plate_orientation{ii,jj}='front';
         elseif ii==4;
@@ -151,6 +155,8 @@ for ii=1 : number_of_cameras;
         end;
     end;
 end;
+% clearing variables and reassigning plane_spacing with an array containing
+% plane _spacing for each camera each plane.
 clear plane_spacing;
 plane_spacing=plane_spacing_temp;
 clear plane_spacing_temp;
@@ -449,7 +455,8 @@ function calibration_data=calculate_full_coordinates(calibration_data,calibratio
 % level calibration grids, camera orientation, and the current calibration
 % plate location.
 
-% This is the spacing betweent the calibration planes
+% This is the spacing betweent the calibration planes for particular camera
+% number and particular plane
 plane_spacing=calibration_data.plane_spacing(current_camera_number,current_plane_number);
 % This is the starting z-depth
 z_grid_start=calibration_data.z_grid_start;
@@ -497,16 +504,8 @@ if strcmp(plate_orientation,'front');
         y_world_temp=y_grid_spacing*grid_data.y_index_grid+y_plate_level_shift(ii);
         % This calculates the Z world coordinate of the current calbration
         % level/position
-%         if numel(plane_spacing)==1
-%             z_world_temp=(z_grid_start+(current_plane_number-1)*plane_spacing)*ones(size(x_image_temp))+plate_level_spacing(ii);
-            z_world_temp=(z_grid_start+plane_spacing)*ones(size(x_image_temp))+plate_level_spacing(ii);
-%         else
-%             if current_plane_number==1
-%                 z_world_temp=(z_grid_start)*ones(size(x_image_temp))+plate_level_spacing(ii);
-%             else
-%                 z_world_temp=(z_grid_start+(current_plane_number-1)*plane_spacing(ii-1))*ones(size(x_image_temp))+plate_level_spacing(ii);
-%             end
-%         end
+        z_world_temp=(z_grid_start+plane_spacing)*ones(size(x_image_temp))+plate_level_spacing(ii);
+
         % This adds the current calibration points to the complete set of
         % calibration points
         x_image=[x_image;x_image_temp];
@@ -537,17 +536,13 @@ elseif strcmp(plate_orientation,'back');
         y_world_temp=y_grid_spacing*grid_data.y_index_grid+y_plate_level_shift(ii);
         % This calculates the Z world coordinate of the current calbration
         % level/position
-%         keyboard;
-%         if numel(plane_spacing)==1
-%             z_world_temp=(z_grid_start+(current_plane_number-1)*plane_spacing-(front_to_back_plate_thickness-abs(diff(plate_level_spacing))))*ones(size(x_image_temp))+plate_level_spacing(ii);
         z_world_temp=(z_grid_start+plane_spacing-(front_to_back_plate_thickness-abs(diff(plate_level_spacing))))*ones(size(x_image_temp))+plate_level_spacing(ii);
-%         else
-%             if current_plane_number==1
-%                 z_world_temp=(z_grid_start-(front_to_back_plate_thickness-abs(diff(plate_level_spacing))))*ones(size(x_image_temp))+plate_level_spacing(ii);
-%             else
-%                 z_world_temp=(z_grid_start+(current_plane_number-1)*plane_spacing(ii-1)-(front_to_back_plate_thickness-abs(diff(plate_level_spacing))))*ones(size(x_image_temp))+plate_level_spacing(ii);
-%             end
-%         end
+        % the z_world_temp is calculated with taking into account the front
+        % to back plane thickness for a zigzag type multilevel target:
+        % meaning one which the same calibration dots on the inner plane on
+        % one side and outer plane on the other side.
+        % the case in which same dots are on inner side on both sides of
+        % the target needs to be taken care of.
         % This adds the current calibration points to the complete set of
         % calibration points
         x_image=[x_image;x_image_temp];
@@ -687,6 +682,9 @@ while true;
 
     % This iterates through the search indices find grid point locations
     for ii=1:length(X_Index_Search);
+        % Commented plotting the different iterations of searched dots in
+        % the target, just plots the first estimated positiona and the
+        % final estimated postion
         
         % This is a rough estimate of the location of the grid point based
         % on the user entered coordinate system
@@ -713,7 +711,7 @@ while true;
         % grid points
         X_Second_Location_Search=X_Subpixel_Grid(1)+X_Axis_Mean(1)*X_Index_Search(ii)+Y_Axis_Mean(1)*Y_Index_Search(ii);
         Y_Second_Location_Search=Y_Subpixel_Grid(1)+X_Axis_Mean(2)*X_Index_Search(ii)+Y_Axis_Mean(2)*Y_Index_Search(ii);
-
+            
 %         hold on;
 %         plot(X_Second_Location_Search,Y_Second_Location_Search,'sMAGENTA','Markersize',18,'Linewidth',2);
 %         hold off;

@@ -8,7 +8,8 @@ methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
     'Multigrid - Ensemble (DWO)','Multigrid - Ensemble Deform (DWO)','Multigrid - Multiframe (DWO)','Multigrid - 1st Order Forward Deform'};
 % These are the different interpolation methods for the velocity field
 velinterp={'Nearest Neighbor','Bilinear','Cubic'};
-% These are the interpolation methods for the image deformations
+% These are the interpolation methods for the image deformations % added
+% matlab interp2
 iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter','matlab interp2'};
 % These are the different peak fitting schemes
 peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};

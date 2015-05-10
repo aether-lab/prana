@@ -66,6 +66,9 @@ if strcmp(dewarpmethod,'Willert')
     
     %The corners of each image?
     %[SW,SE,NW,NE] ?
+    
+    % this assigns the corner points of the image depending on the
+    % targetside i.e. if both the cameras are on the same side or opposite side 
     if caldata.targetsidecam1==caldata.targetsidecam2
         X1points=[1 Jmax1 1 Jmax1];
         Y1points=[1 1 Imax1 Imax1];
@@ -119,6 +122,8 @@ elseif strcmp(dewarpmethod,'Soloff')
     %
     %The corners of each vector field?
     %[SW,SE,NW,NE]?  x is flipped E-W for backside cameras
+    % this assigns the corner points of the vector grid depending on the
+    % targetside i.e. if both the cameras are on the same side or opposite side 
     if caldata.targetsidecam1==caldata.targetsidecam2
         X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))] + 0.5;
         Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))] + 0.5;
@@ -329,9 +334,9 @@ end
 if strcmp(dewarpmethod,'Willert')
     %[x1,y1] = meshgrid(0.5:1:Jmax1-0.5,0.5:1:Imax1-0.5);
     fprintf('Dewarping Images...\n');
-    dewarpflag=1;
+    dewarpflag=1; % added dewarpflag which is by default true but one can make it 0 to not run it if required
     if dewarpflag==1
-        matlabpool;
+        matlabpool; % calling matlabpool for dewarping in parallel but in future versions it should be parpool
         parfor k=fstart:fend+1
             %reading recorded images
             

@@ -58,15 +58,15 @@ guiprops = guidata(hObject);
 guiprops.markerdiam    = str2double(get(handles.markerdiam,'String'));
 guiprops.xplatelevelshift =str2double(get(handles.xplatelevelshift,'String'));
 guiprops.yplatelevelshift =str2double(get(handles.yplatelevelshift,'String'));
-guiprops.targetsidesbox = get(handles.targetsidesbox,'Value');
-guiprops.targetsidesbox2 = get(handles.targetsidesbox2,'Value');
+guiprops.targetsidesbox = get(handles.targetsidesbox,'Value'); % cam1 orientation
+guiprops.targetsidesbox2 = get(handles.targetsidesbox2,'Value'); % cam2 orientation
 guiprops.vertmarkerspacing  = str2double(get(handles.vertmarkerspacing,'String'));
 guiprops.hormarkerspacing   = str2double(get(handles.hormarkerspacing,'String'));
 guiprops.targetcolor = get(handles.targetcolor,'Value');
 guiprops.zplanenumber    = str2double(get(handles.zplanenumber,'String'));
 guiprops.zstart = str2double(get(handles.zstart,'String'));
-guiprops.planespacing = str2num(get(handles.planespacing,'String'));
-guiprops.channeldepth  = str2num(get(handles.channeldepth,'String'));
+guiprops.planespacing = str2num(get(handles.planespacing,'String')); % takes an array of plane_spacing if that is the input
+guiprops.channeldepth  = str2num(get(handles.channeldepth,'String'));% takes an array of channel depth like [0 1]
 guiprops.levelnumber = str2double(get(handles.levelnumber,'String'));
 guiprops.platethickness= str2double(get(handles.platethickness,'String'));
 guiprops.modeltypemenu    = get(handles.modeltypemenu,'Value');   %1 is for cubic xy and linear z, 2 is for cubic xy and quadratic z, 3 is for DLT
@@ -583,7 +583,9 @@ guiprops.selectcam1file = pathname1;
     else
         guiprops.caljob.camnumber(1)=1;
     end
-
+% for multiple planes selected filename1 becomes a cell and so it checks
+% for that to see if multiple calibration plane or a single plane is
+% selected.
 if iscell(filename1) 
     for t=1:length(filename1)
         guiprops.caljob.calimagelist{1,t}=[pathname1,filename1{t}];
@@ -606,6 +608,9 @@ guiprops.selectcam2file = pathname2;
     else
         guiprops.caljob.camnumber(2)=2;
     end
+% for multiple planes selected filename1 becomes a cell and so it checks
+% for that to see if multiple calibration plane or a single plane is
+% selected.
 
 if iscell(filename2)
     for t=1:length(filename2)
@@ -821,7 +826,7 @@ reftrue=1;
  while(reftrue~=0)
      
  [caldatamod]=selfcalibration_main(caldata,selfcaljob);
- 
+ % Updating calibration data after each iteration of self calibration
  caldata.allx1data=caldatamod.allx1data;
  caldata.allx2data=caldatamod.allx2data;
  caldata.aXcam1=caldatamod.aXcam1;

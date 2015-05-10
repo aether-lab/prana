@@ -302,8 +302,8 @@ caldatamod.aXcam1=aXcam1;
 caldatamod.aYcam1=aYcam1;
 caldatamod.aXcam2=aXcam2;
 caldatamod.aYcam2=aYcam2;
-caldatamod.convergemessage=convergemessage;
-convergemessage
+caldatamod.convergemessage=convergemessage; % Storing the convergence information for each iteration of selfcalibartion
+convergemessage % displaying convergemeaasge
 end
 
 
@@ -311,7 +311,7 @@ function [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Du
 
 %function for calculating local viewing angles and Triangulation
 %input calibration matrices and common grid world coordinates
-
+% added caldat in function input argument
 %outputs projected z coordinates.
 
 %called in mainselfcal.m
@@ -326,6 +326,9 @@ function [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Du
 %initializing local viewing angles 
 alphatan=zeros(rows,cols,2);betatan=zeros(rows,cols,2);
 %while (max(max(abs(dz))))>=th %&& (max(max(dz)))<=0.1
+
+% Now calculate viewing angles for both linear z and quadratic z
+% calibration models
 
 % Viewing angles for camera 1 calculated at gridpoints xgrid,ygrid;
 

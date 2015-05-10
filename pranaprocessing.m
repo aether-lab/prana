@@ -1195,7 +1195,7 @@ switch char(M)
                 U=zeros(size(X),imClass);V=zeros(size(X),imClass);C=zeros(size(X),imClass);Di=zeros(size(X),imClass);
                 DX=zeros(size(X),imClass);DY=zeros(size(X),imClass);ALPHA=zeros(size(X),imClass);
             end
-            
+            % changed matlabpool to parpool for future versions of matlab
             if str2double(Data.par) && parpool('size')>1
                 
                 spmd
