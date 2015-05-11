@@ -465,6 +465,10 @@ switch char(M)
                         elseif Iminterp == 2 % Sinc interpolation with blackman filter
                             im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
                             im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                        
+                        elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
+                            im1d(:, :, k) = interp2(im1(:, :, k), XD1+0.5, YD1+0.5, 'cubic',0);
+                            im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
                         end
                     end
                     
@@ -505,6 +509,8 @@ switch char(M)
                             im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
                         elseif Iminterp == 2 % Sinc interpolation with blackman filter
                             im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                        elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
+                            im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
                         end
                     end
                     
@@ -980,6 +986,9 @@ switch char(M)
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
                                     im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
                                     im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                                elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
+                                    im1d(:, :, k) = interp2(im1(:, :, k), XD1+0.5, YD1+0.5, 'cubic',0);
+                                    im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
                                 end
                             end
 
@@ -1024,6 +1033,8 @@ switch char(M)
                                     im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
                                     im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                                elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
+                                    im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
                                 end
                             end
 
@@ -1184,8 +1195,8 @@ switch char(M)
                 U=zeros(size(X),imClass);V=zeros(size(X),imClass);C=zeros(size(X),imClass);Di=zeros(size(X),imClass);
                 DX=zeros(size(X),imClass);DY=zeros(size(X),imClass);ALPHA=zeros(size(X),imClass);
             end
-            
-            if str2double(Data.par) && matlabpool('size')>1
+            % changed matlabpool to parpool for future versions of matlab
+            if str2double(Data.par) && parpool('size')>1
                 
                 spmd
                     verstr=version('-release');
@@ -1293,6 +1304,9 @@ switch char(M)
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
                                     im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'blackman');
                                     im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'blackman');
+                                elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
+                                    im1d(:, :, k) = interp2(im1(:, :, k), XD1, YD1, 'cubic',0);
+                                    im2d(:, :, k) = interp2(im2(:, :, k), XD2, YD2, 'cubic',0);
                                 end
                             end
                             
@@ -1440,6 +1454,9 @@ switch char(M)
                             elseif Iminterp == 2 % Sinc interpolation with blackman filter
                                 im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'blackman');
                                 im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'blackman');
+                            elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
+                                im1d(:, :, k) = interp2(im1(:, :, k), XD1, YD1, 'cubic',0);
+                                im2d(:, :, k) = interp2(im2(:, :, k), XD2, YD2, 'cubic',0);
                             end
                         end
                         

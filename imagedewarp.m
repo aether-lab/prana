@@ -66,10 +66,25 @@ if strcmp(dewarpmethod,'Willert')
     
     %The corners of each image?
     %[SW,SE,NW,NE] ?
-    X1points=[1 Jmax1 1 Jmax1];
-    Y1points=[1 1 Imax1 Imax1];
-    X2points=[1 Jmax2 1 Jmax2];
-    Y2points=[1 1 Imax2 Imax2];
+    
+    % this assigns the corner points of the image depending on the
+    % targetside i.e. if both the cameras are on the same side or opposite side 
+    if caldata.targetsidecam1==caldata.targetsidecam2
+        X1points=[1 Jmax1 1 Jmax1];
+        Y1points=[1 1 Imax1 Imax1];
+        X2points=[1 Jmax2 1 Jmax2];
+        Y2points=[1 1 Imax2 Imax2];
+    elseif caldata.targetsidecam1==1 && caldata.targetsidecam2==2
+        X1points=[1 Jmax1 1 Jmax1];
+        Y1points=[1 1 Imax1 Imax1];
+        X2points=[Jmax2 1 Jmax2 1];
+        Y2points=[1 1 Imax2 Imax2];
+    elseif caldata.targetsidecam1==2 && caldata.targetsidecam2==1
+        X1points=[Jmax1 1 Jmax1 1];
+        Y1points=[1 1 Imax1 Imax1];
+        X2points=[1 Jmax2 1 Jmax2];
+        Y2points=[1 1 Imax2 Imax2];
+    end
     
     %     X1points=[0.5 Jmax1-0.5 0.5 Jmax1-0.5];
     %     Y1points=[0.5 0.5 Imax1-0.5 Imax1-0.5];
@@ -107,16 +122,28 @@ elseif strcmp(dewarpmethod,'Soloff')
     %
     %The corners of each vector field?
     %[SW,SE,NW,NE]?  x is flipped E-W for backside cameras
-    if caldata.targetside==1
+    % this assigns the corner points of the vector grid depending on the
+    % targetside i.e. if both the cameras are on the same side or opposite side 
+    if caldata.targetsidecam1==caldata.targetsidecam2
         X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))] + 0.5;
         Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))] + 0.5;
         X2points=[min(min(x2)) max(max(x2)) min(min(x2)) max(max(x2))] + 0.5;
         Y2points=[min(min(y2)) min(min(y2)) max(max(y2)) max(max(y2))] + 0.5;
-    else    % different arrangement if camera 2 is on other side
+    % different arrangement if camera 2 is on other side
+    elseif caldata.targetsidecam1==1 && caldata.targetsidecam2==2    
+        
         X1points=[min(min(x1)) max(max(x1)) min(min(x1)) max(max(x1))] + 0.5;
         Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))] + 0.5;
         X2points=[max(max(x2)) min(min(x2))  max(max(x2)) min(min(x2))] + 0.5;
         Y2points=[min(min(y2)) min(min(y2))  max(max(y2)) max(max(y2))] + 0.5;
+        
+    elseif caldata.targetsidecam1==2 && caldata.targetsidecam2==1
+        
+        X1points=[max(max(x1)) min(min(x1)) max(max(x1)) min(min(x1))] + 0.5;
+        Y1points=[min(min(y1)) min(min(y1)) max(max(y1)) max(max(y1))] + 0.5;
+        X2points=[min(min(x2)) max(max(x2)) min(min(x2)) max(max(x2))] + 0.5;
+        Y2points=[min(min(y2)) min(min(y2)) max(max(y2)) max(max(y2))] + 0.5;
+
     end
     
 end
@@ -242,7 +269,7 @@ JmaxD = Jmax1; %number of points in x
 
 [xgrid,ygrid]=meshgrid(linspace(xlow,xhigh,JmaxD),linspace(ylow,yhigh,ImaxD));
 %zgrid=zeros(size(xgrid));
-overplots=0;
+overplots=1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Plot fig to check overlap
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -269,7 +296,6 @@ if overplots == 1
     %         axis([-200 100 -150 250])
     drawnow
 end
-%keyboard;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute this grid in the IMAGE (object) plane to interpolate values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -308,51 +334,57 @@ end
 if strcmp(dewarpmethod,'Willert')
     %[x1,y1] = meshgrid(0.5:1:Jmax1-0.5,0.5:1:Imax1-0.5);
     fprintf('Dewarping Images...\n');
-    
-    for k=fstart:fstep:fend+1
-        %reading recorded images
-        
-        IMLi= im2double(imread(fullfile(dir1,sprintf(istring1,base1,k))));
-        IMRi= im2double(imread(fullfile(dir2,sprintf(istring1,base2,k+cstep-1))));
-        
-        incl=class(IMLi);
-        %flipping images
-        IMLi=IMLi(end:-1:1,:);
-        IMRi=IMRi(end:-1:1,:);
-        %Interpolating on a common grid
-        %sincBlackmanInterp2 assumes images are on grid [1 NX] and [1 NY]
-        IMLo=((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 8,'blackman')));
-        IMRo=((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 8,'blackman')));
-        
-        %             IMLo=double((interp2(x1,y1,IMLi, Xgrid1, Ygrid1, 'spline',0)));
-        %             IMRo=double((interp2(x1,y1,IMRi, Xgrid2, Ygrid2, 'spline',0)));
-        
-        
-        %  keyboard;
-        %flipping them back for saving
-        IMLo=IMLo(end:-1:1,:);IMRo=IMRo(end:-1:1,:);
-        IMLo=cast(IMLo,incl);IMRo=cast(IMRo,incl);
-        
-        %             figure(4);imagesc(IMLo);colormap('gray');%axis equal tight;
-        %             figure(5);imagesc(IMRo);colormap('gray');%axis equal tight;
-        %             figure(6);imagesc(IMLi);colormap('gray');%axis equal tight;
-        %             figure(7);imagesc(IMRi);colormap('gray');%axis equal tight;
-        %writing dewarped images to the output directory
-        %writing the images because of two reasons:-
-        %1)prana assumes all images to be in a sigle directory while processing
-        %2)In prana processing just the image matrices cannot be given as input, have to give image location
-        %     clear IM;
-        %                 IM(:,:,1)=IMLo;
-        %                 IM(:,:,2)=IMRo;
-        %                 IM(:,:,3)=IMRo;
-        %                 figure(10);imshow(IM);
-        
-        %keyboard;
-        %JJC: why the heck are we saving them with no TIFF compression?
-        imwrite((IMLo),fullfile(dirout1,sprintf(istring1,base1,k)),'TIFF','WriteMode','overwrite','Compression','none');
-        imwrite((IMRo),fullfile(dirout2,sprintf(istring1,base2,k+cstep-1)),'TIFF','WriteMode','overwrite','Compression','none');
-        %keyboard;
-        
+    dewarpflag=1; % added dewarpflag which is by default true but one can make it 0 to not run it if required
+    if dewarpflag==1
+        matlabpool; % calling matlabpool for dewarping in parallel but in future versions it should be parpool
+        parfor k=fstart:fend+1
+            %reading recorded images
+            
+            IMLi= im2double(imread(fullfile(dir1,sprintf(istring1,base1,k))));
+            IMRi= im2double(imread(fullfile(dir2,sprintf(istring1,base2,k+cstep-1))));
+            
+            incl=class(IMLi);
+            %flipping images
+            IMLi=IMLi(end:-1:1,:);
+            IMRi=IMRi(end:-1:1,:);
+            %Interpolating on a common grid
+            %sincBlackmanInterp2 assumes images are on grid [1 NX] and [1 NY]
+            IMLo=((sincBlackmanInterp2(IMLi, Xgrid1, Ygrid1, 8,'blackman')));
+            IMRo=((sincBlackmanInterp2(IMRi, Xgrid2, Ygrid2, 8,'blackman')));
+            
+            %             IMLo=double((interp2(x1,y1,IMLi, Xgrid1, Ygrid1, 'spline',0)));
+            %             IMRo=double((interp2(x1,y1,IMRi, Xgrid2, Ygrid2, 'spline',0)));
+            
+            
+            %  keyboard;
+            %flipping them back for saving
+            IMLo=IMLo(end:-1:1,:);
+            IMRo=IMRo(end:-1:1,:);
+            IMLo=cast(IMLo,incl);
+            IMRo=cast(IMRo,incl);
+            
+            %             figure(4);imagesc(IMLo);colormap('gray');%axis equal tight;
+            %             figure(5);imagesc(IMRo);colormap('gray');%axis equal tight;
+            %             figure(6);imagesc(IMLi);colormap('gray');%axis equal tight;
+            %             figure(7);imagesc(IMRi);colormap('gray');%axis equal tight;
+            %writing dewarped images to the output directory
+            %writing the images because of two reasons:-
+            %1)prana assumes all images to be in a sigle directory while processing
+            %2)In prana processing just the image matrices cannot be given as input, have to give image location
+            %     clear IM;
+            %                 IM(:,:,1)=IMLo;
+            %                 IM(:,:,2)=IMRo;
+            %                 IM(:,:,3)=IMRo;
+            %                 figure(10);imshow(IM);
+            
+            %keyboard;
+            %JJC: why the heck are we saving them with no TIFF compression?
+            imwrite((IMLo),fullfile(dirout1,sprintf(istring1,base1,k)),'TIFF','WriteMode','overwrite','Compression','none');
+            imwrite((IMRo),fullfile(dirout2,sprintf(istring1,base2,k+cstep-1)),'TIFF','WriteMode','overwrite','Compression','none');
+            %keyboard;
+            
+        end
+        matlabpool close;
     end
 end
 
