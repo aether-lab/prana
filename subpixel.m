@@ -1,4 +1,25 @@
 function [u,v,M,D,DX,DY,ALPHA]=subpixel(G,ccsizex,ccsizey,W,Method,Peakswitch,d)
+
+%     This file is part of prana, an open-source GUI-driven program for
+%     calculating velocity fields using PIV or PTV.
+%     Copyright (C) 2012  Virginia Polytechnic Institute and State
+%     University
+% 
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 %intialize indices
 cc_x = -floor(ccsizex/2):ceil(ccsizex/2)-1;
 cc_y = -floor(ccsizey/2):ceil(ccsizey/2)-1;

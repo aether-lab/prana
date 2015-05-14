@@ -1,9 +1,9 @@
 function varargout = prana(varargin)
 % HELP TEXT for running prana from the command line goes here.
-
+%
 %     This file is part of prana, an open-source GUI-driven program for
 %     calculating velocity fields using PIV or PTV.
-%     Copyright (C) 2010  Virginia Polytechnic Institute and State
+%     Copyright (C) 2010-2012  Virginia Polytechnic Institute and State
 %     University
 % 
 %     prana is free software: you can redistribute it and/or modify
