@@ -1,5 +1,10 @@
 function [W]=windowmask(N,R)
 % --- Gaussian Window Mask Subfunction ---
+% JJC: 2014-08-15 - This has a small bug, I think.  Because the WIDTH of
+% the window is actually N-1 (for N grid points), the expressions for px
+% and py need to be changed to use N-1, not N.  x and y are correct.  R
+% doesn't change since it should be a width already, not a count of grid
+% points.
 
 %     This file is part of prana, an open-source GUI-driven program for
 %     calculating velocity fields using PIV or PTV.
