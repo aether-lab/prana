@@ -7,3 +7,6 @@
 *.mat
 *.db
 ExpSummary*
+
+.git
+.gitignore
