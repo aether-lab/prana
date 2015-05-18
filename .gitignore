@@ -3,3 +3,11 @@
 .DS_Store
 *.mat
 ._*
+
+*.asv
+*.m~
+*.dat
+*.phy
+*.db
+ExpSummary*
+.bzr*

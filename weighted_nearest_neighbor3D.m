@@ -28,6 +28,25 @@ function [tracks]=weighted_nearest_neighbor3D(X1,X2,X2_est,Y1,Y2,Y2_est,Z1,Z2,Z2
 %(v6) N. Cardwell - 7.21.2009
 %(v7) S. Raben    - 4.2011
 
+%     This file is part of prana, an open-source GUI-driven program for
+%     calculating velocity fields using PIV or PTV.
+%     Copyright (C) 2012  Virginia Polytechnic Institute and State
+%     University
+% 
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 %compute relevant parameters for each image
 num_p1=length(X1);  num_p2=length(X2);
 d_diff_max=max([d1;d2])-min([d1;d2]);
