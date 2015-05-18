@@ -6,7 +6,7 @@ function varargout=pranaPIVcode(Data)
 %     Copyright (C) 2012-2013  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -33,7 +33,7 @@ function varargout=pranaPIVcode(Data)
 
 if ischar(Data)
     if strcmpi(Data,'version')
-        varargout{1} = '2.5.beta.r2014.04.14';
+        varargout{1} = '2.5.beta.r2015.05.18';
     else
         error('Error: String request must be ''version''.\m')
     end
