@@ -30,6 +30,25 @@ function [X2_est,Y2_est,Z2_est]=PTVestloc_V1(X1,Y1,Z1,PTVprops,completed_tracks)
 %
 %(v1) N.Cardwell - 11.17.2009
 
+%     This file is part of prana, an open-source GUI-driven program for
+%     calculating velocity fields using PIV or PTV.
+%     Copyright (C) 2012  Virginia Polytechnic Institute and State
+%     University
+% 
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 if isempty(completed_tracks)==1
     %no completed tracks to use for PTV location prediction
     X2_est=X1;   Y2_est=Y1;   Z2_est=Z1;

@@ -3,3 +3,16 @@
 .DS_Store
 *.mat
 ._*
+
+*.asv
+*.m~
+*.dat
+*.phy
+*.db
+ExpSummary*
+.bzr*
+
+#tif is ignored, but we need these:
+#logo.tif
+#windowdiagram.tif
+!documentation/*.tif

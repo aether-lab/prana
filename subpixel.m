@@ -2,6 +2,35 @@ function [u,v,M,D,DX, DY, PEAK_ANGLE, PEAK_ECCENTRICITY] = subpixel(...
     SPATIAL_CORRELATION_PLANE,...
     CORRELATION_WIDTH, CORRELATION_HEIGHT, WEIGHTING_MATRIX, ...
     PEAK_FIT_METHOD, FIND_MULTIPLE_PEAKS, PARTICLE_DIAMETER_2D)
+%
+%     Copyright (C) 2012  Virginia Polytechnic Institute and State
+%     University
+% 
+%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
+%     Alamos National Laboratory (LANL), which is operated by Los Alamos 
+%     National Security, LLC for the U.S. Department of Energy. The U.S. 
+%     Government has rights to use, reproduce, and distribute this software.
+%     NEITHER THE GOVERNMENT NOR LOS ALAMOS NATIONAL SECURITY, LLC MAKES ANY
+%     WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LIABILITY FOR THE USE OF
+%     THIS SOFTWARE.  If software is modified to produce derivative works,
+%     such modified software should be clearly marked, so as not to confuse
+%     it with the version available from LANL.
+%
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 
 %intialize indices
 cc_x = -floor(CORRELATION_WIDTH/2):ceil(CORRELATION_WIDTH/2)-1;

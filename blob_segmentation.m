@@ -22,6 +22,25 @@ function [p_matrix,peaks,num_p]=blob_segmentation(im,v)
 %   identification operation, removed section of code for the creation of
 %   mapint and locxy - no longer needed with the TRACKING_V2 code)
 
+%     This file is part of prana, an open-source GUI-driven program for
+%     calculating velocity fields using PIV or PTV.
+%     Copyright (C) 2012  Virginia Polytechnic Institute and State
+%     University
+% 
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 %globally threshold the image
 im_thresh=im;  im_thresh(im < v)=0;
 

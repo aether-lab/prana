@@ -47,10 +47,29 @@ function write_dat_ptv(FILEBASE,XYZDATA,XYZNAME,VARDATA,VARNAME,TIME,TIMENAME,FO
 %   Another good idea is status messages or success/fail flags output for
 %    file creation.
 %   Change FILEBASE to require extension be included? (not assume .plt)?
-
+%
 % v2 - 2010-06-01 - Raben
 %  Added three dimensional capabilities and if statments that allows for
 %  checks before it crashes.
+
+%     This file is part of prana, an open-source GUI-driven program for
+%     calculating velocity fields using PIV or PTV.
+%     Copyright (C) 2012  Virginia Polytechnic Institute and State
+%     University
+% 
+%     prana is free software: you can redistribute it and/or modify
+%     it under the terms of the GNU General Public License as published by
+%     the Free Software Foundation, either version 3 of the License, or
+%     (at your option) any later version.
+% 
+%     This program is distributed in the hope that it will be useful,
+%     but WITHOUT ANY WARRANTY; without even the implied warranty of
+%     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%     GNU General Public License for more details.
+% 
+%     You should have received a copy of the GNU General Public License
+%     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 %write_plt(FILEBASE    ,{X(:,:,2),Y(:,:,2)},{'X','Y'},{Up          ,Vp          ,Wp          ,p_plot           ,I2,repmat(Z(:,:,2),[1,1,25])},{'U','V','W','P','Intensity','Z'},time,'T','block','volume')
 
