@@ -7,7 +7,7 @@ function [Data] = jobfile_validator(Data)
 %     Copyright (C) 2012  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -167,6 +167,16 @@ if ~isfield(Data.PIV0,'saveplane')
         eval(['Data.PIV',num2str(pass),'.saveplane=''0'';']);
     end
 end
+
+%does the job file have the ability to validate based on correlation peaks
+if ~isfield(Data.PIV0,'corrpeaktest')
+    for pass=0:str2double(Data.passes)
+        eval(['Data.PIV',num2str(pass),'.corrpeaktest=''0'';']);
+        eval(['Data.PIV',num2str(pass),'.corrpeak_absthresh=''0'';']);
+        eval(['Data.PIV',num2str(pass),'.corrpeak_ratiothresh=''1.2'';']);
+    end
+end
+
 
 % This performs a check to see if the job files
 % contains the field 'outputpassbase' if not then it

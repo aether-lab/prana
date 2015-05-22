@@ -30,7 +30,7 @@ function [defaultdata] = buildDefaultPranaJob()
 %     You should have received a copy of the GNU General Public License
 %     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-defaultdata.clientversion='2.5.1';
+defaultdata.clientversion='2.6.0';
 %defaultdata.version='2.0'; %gets set below in call to pranaPIVcode('version')
 if ispc
     defaultdata.imdirec='C:\';
@@ -120,10 +120,11 @@ defaultdata.PIV0.velsmoothfilt='2';
 defaultdata.PIV0.deform_min ='1';
 defaultdata.PIV0.deform_max ='1';
 defaultdata.PIV0.deform_conv ='0.1';
-defaultdata.PIV0.val='0';
-defaultdata.PIV0.uod='1';
-defaultdata.PIV0.bootstrap='0';
-defaultdata.PIV0.thresh='0';
+defaultdata.PIV0.val='0';           %turn on the validation postprocessing
+defaultdata.PIV0.uod='1';           %apply UOD and replacement
+defaultdata.PIV0.bootstrap='0';     %apply bootstrapping outlier detection and replacement
+defaultdata.PIV0.thresh='0';        %check whether the velocity is greater than some pixel thresh
+defaultdata.PIV0.corrpeaktest='0';  %check whether the correlation peak is less (abs or rel) than some thresh
 defaultdata.PIV0.uod_type='2';
 defaultdata.PIV0.uod_window='3,3;3,3';
 defaultdata.PIV0.uod_thresh='3,2';
@@ -132,6 +133,8 @@ defaultdata.PIV0.bootstrap_iterations='700';
 defaultdata.PIV0.bootstrap_passes='12';
 defaultdata.PIV0.valuthresh='-16,16';
 defaultdata.PIV0.valvthresh='-16,16';
+defaultdata.PIV0.corrpeak_absthresh='0';        %set to 0 so no values are excluded
+defaultdata.PIV0.corrpeak_ratiothresh='1.2';    %set to 1.2 following Keane and Adrian 1990,1992
 defaultdata.PIV0.valextrapeaks='0';
 defaultdata.PIV0.savepeakinfo='0';
 defaultdata.PIV0.corrpeaknum='1';

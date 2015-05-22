@@ -225,7 +225,7 @@ function helpmenu_Callback(hObject, eventdata, handles)
 function helpmenu_about_Callback(hObject, eventdata, handles)
 msgbox( ...
     {...
-    'prana','',['Client Version ',num2str(handles.data0.clientversion)],...
+    'prana','',['Client Version ',pranaPIVcode('version')],...
     ['Data Version ',num2str(handles.data0.clientversion)],'',...
     ['Authors: Sayantan Bhattacharya, Matt Giarra, Nick Cardwell, Brady Drew, ',...
     'Adric Eckstein, John Charonko, Sam Raben, and the rest of the AEThER Lab'],'',...
@@ -2114,6 +2114,29 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Correlation Peak Threshold Check Box ---
+function corrpeakthreshold_checkbox_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0
+    eval(['handles.data.PIV' handles.data.cpass '.corrpeaktest = num2str(get(hObject,''Value''));'])
+    handles=set_PIVcontrols(handles);
+    guidata(hObject,handles)
+end
+
+% --- Correlation Peak Absolute Threshold Text Box ---
+function corrpeak_absthresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.validatecheckbox,'Value')==1
+    eval(['handles.data.PIV' handles.data.cpass '.corrpeak_absthresh = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+
+% --- Correlation Peak Ratio Threshold Text Box ---
+function corrpeak_ratiothresh_Callback(hObject, eventdata, handles)
+if str2double(handles.Njob)>0 && get(handles.validatecheckbox,'Value')==1
+    eval(['handles.data.PIV' handles.data.cpass '.corrpeak_ratiothresh = get(hObject,''String'');'])
+    guidata(hObject,handles)
+end
+
+
 % --- Bootstrapping Checkbox ---
 function bootstrapcheckbox_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
@@ -2647,6 +2670,8 @@ if str2double(handles.Njob) == 0
     set(handles.thresh_V,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.thresh_U,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.uod_thresh,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.corrpeak_absthresh,'String','','backgroundcolor',0.5*[1 1 1]);
+    set(handles.corrpeak_ratiothresh,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.corrpeaknum,'backgroundcolor',0.5*[1 1 1]);
     set(handles.outputbasename,'String','','backgroundcolor',0.5*[1 1 1]);
     set(handles.outputpassbasename,'String','','backgroundcolor',0.5*[1 1 1]);
@@ -2762,6 +2787,8 @@ else
     set(handles.bootstrap_passes,'String','','backgroundcolor',[1 1 1]);
     set(handles.thresh_V,'String','','backgroundcolor',[1 1 1]);
     set(handles.thresh_U,'String','','backgroundcolor',[1 1 1]);
+    set(handles.corrpeak_absthresh,'String','','backgroundcolor',[1 1 1]);
+    set(handles.corrpeak_ratiothresh,'String','','backgroundcolor',[1 1 1]);
     set(handles.uod_thresh,'String','','backgroundcolor',[1 1 1]);
     set(handles.corrpeaknum,'backgroundcolor',[1 1 1]);
     set(handles.outputbasename,'String','','backgroundcolor',[1 1 1]);
@@ -3049,6 +3076,8 @@ set(handles.bootstrap_iterations,'String',A.bootstrap_iterations);
 set(handles.bootstrap_passes,'String',A.bootstrap_passes);
 set(handles.thresh_U,'string',A.valuthresh);
 set(handles.thresh_V,'string',A.valvthresh);
+set(handles.corrpeak_absthresh,'string',A.corrpeak_absthresh);
+set(handles.corrpeak_ratiothresh,'string',A.corrpeak_ratiothresh);
 set(handles.valextrapeaks,'value',str2double(A.valextrapeaks));
 set(handles.corrpeaknum,'value',str2double(A.corrpeaknum));
 set(handles.savepeakinfo,'value',str2double(A.savepeakinfo));
@@ -3109,6 +3138,15 @@ if str2double(A.val)==1
         set(handles.thresh_U,'backgroundcolor',0.5*[1 1 1]);
         set(handles.thresh_V,'backgroundcolor',0.5*[1 1 1]);
     end
+    if str2double(A.corrpeaktest)==1
+        set(handles.corrpeakthreshold_checkbox,'Value',1);
+        set(handles.corrpeak_absthresh,'backgroundcolor',[1 1 1]);
+        set(handles.corrpeak_ratiothresh,'backgroundcolor',[1 1 1]);
+    else
+        set(handles.corrpeakthreshold_checkbox,'Value',0);
+        set(handles.corrpeak_absthresh,'backgroundcolor',0.5*[1 1 1]);
+        set(handles.corrpeak_ratiothresh,'backgroundcolor',0.5*[1 1 1]);
+    end
 else
     set(handles.bootstrap_percentsampled,'backgroundcolor',0.5*[1 1 1]);
     set(handles.bootstrap_iterations,'backgroundcolor',0.5*[1 1 1]);
@@ -3118,6 +3156,8 @@ else
     set(handles.uod_type,'backgroundcolor',0.5*[1 1 1]);
     set(handles.thresh_U,'backgroundcolor',0.5*[1 1 1]);
     set(handles.thresh_V,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.corrpeak_absthresh,'backgroundcolor',0.5*[1 1 1]);
+    set(handles.corrpeak_ratiothresh,'backgroundcolor',0.5*[1 1 1]);
 end
 if str2double(A.write)==1
     set(handles.outputbasename,'backgroundcolor',[1 1 1]);
