@@ -1,4 +1,8 @@
 function [Uf,Vf]=VELfilt(U,V,H,C)
+% U,V are the fields to filter
+% H is a list of UOD window sizes arranged [x/y, numpasses], the last pass
+% will be used
+% C is standard deviation of the Gaussian filter in data points
 
 %     This file is part of prana, an open-source GUI-driven program for
 %     calculating velocity fields using PIV or PTV.
@@ -6,7 +10,7 @@ function [Uf,Vf]=VELfilt(U,V,H,C)
 %     Copyright (C) 2012-2014  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -32,7 +36,8 @@ function [Uf,Vf]=VELfilt(U,V,H,C)
 
 H(H==0) = [];
 % --- Velocity Smoothing Subfunction ---
-H = permute(H(:,:,sum(H(1,1,:)~=0)),[2 3 1]);
+% H = permute(H(:,:,sum(H(1,1,:)~=0)),[2 3 1]);
+H = H(:,end);
 %2D gaussian filtering
 A=fspecial('gaussian',[H(1) H(2)],C);
 %there seems to be a very strange bug in imfilter for when U is single and

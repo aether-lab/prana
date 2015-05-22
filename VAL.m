@@ -1,4 +1,4 @@
-function [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,D,Threshswitch,UODswitch,Bootswitch,extrapeaks,Uthresh,Vthresh,UODwinsize,UODthresh,Bootper,Bootiter,Bootkmax,DX,DY,ALPHA)
+function [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,D,Valoptions,extrapeaks,DX,DY,ALPHA)
 % --- Validation Subfunction ---
 
 %     This file is part of prana, an open-source GUI-driven program for
@@ -7,7 +7,7 @@ function [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,D
 %     Copyright (C) 2012-2014  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -30,6 +30,25 @@ function [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,D
 % 
 %     You should have received a copy of the GNU General Public License
 %     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%unpack the switches and options for the different validation types
+Threshswitch    = Valoptions.Threshswitch;
+Uthresh         = Valoptions.Uthresh;
+Vthresh         = Valoptions.Vthresh;
+
+UODswitch       = Valoptions.UODswitch;
+UODwinsize      = Valoptions.UODwinsize';  %comes in arranged as [x/y, numpasses], UOD needs [numpasses, x/y]
+UODthresh       = Valoptions.UODthresh';
+
+Bootswitch      = Valoptions.Bootswitch;
+Bootper         = Valoptions.Bootper;
+Bootiter        = Valoptions.Bootiter;
+Bootkmax        = Valoptions.Bootkmax;
+
+Corrpeakswitch      = Valoptions.Corrpeakswitch;
+Peakheight_thresh   = Valoptions.Peakheight_thresh;
+Peakratio_thresh    = Valoptions.Peakratio_thresh;
+
 
 if extrapeaks
     j=3;
@@ -77,9 +96,8 @@ if Threshswitch || UODswitch
 
         %Univeral Outlier Detection
         if UODswitch
-            t=permute(UODwinsize,[2 3 1]);
-            t=t(:,t(1,:)~=0);
-            [Uval,Vval,Evalval] = UOD(Uval,Vval,t',UODthresh,Evalval);
+            %t=permute(UODwinsize,[2 3 1]);
+            [Uval,Vval,Evalval] = UOD(Uval,Vval,UODwinsize,UODthresh,Evalval);
         end
 %         disp([num2str(sum(sum(Evalval>0))),' bad vectors'])
         %Try additional peaks where validation failed
