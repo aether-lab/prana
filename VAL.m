@@ -50,12 +50,6 @@ Peakheight_thresh   = Valoptions.Peakheight_thresh;
 Peakratio_thresh    = Valoptions.Peakratio_thresh;
 
 
-if extrapeaks
-    j=3;
-else
-    j=1;
-end
-
 imClass = 'double';
 
 if exist('DX','var')
@@ -68,15 +62,29 @@ else
     ALPHA = zeros(size(D),imClass);
 end
 
+if extrapeaks
+    numpeaks=3;
+else
+    numpeaks=1;
+end
 
+if Corrpeakswitch
+    %create a peak ratio array, with values for the first two peaks, and
+    %ones for the third peak (peak 3 will always fail ratio validation)
+    PR = cat(3,C(:,:,1:2)./C(:,:,2:3),ones(size(C(:,:,1))));
+else
+    PR = ones(size(C(:,:,1)));
+end  
 
 Uval=U(:,:,1);Vval=V(:,:,1);Evalval=Eval(:,:,1);
 if ~isempty(C)
-    Cval=C(:,:,1);
-    Dval=D(:,:,1);
+    Cval  = C(:,:,1);
+    Dval  = D(:,:,1);
+    PRval = PR(:,:,1);
 else
-    Cval=[];
-    Dval= [];
+    Cval  = [];
+    Dval  = [];
+    PRval = [];
 end
 
     DXval    = DX(:,:,1);
@@ -88,10 +96,15 @@ end
 S=size(X);
 
 if Threshswitch || UODswitch
-    for i=1:j
+    for i=1:numpeaks
         %Thresholding
         if Threshswitch
             [Uval,Vval,Evalval] = Thresh(Uval,Vval,Uthresh,Vthresh,Evalval);
+        end
+        
+        %Correlation peak thresholds
+        if Corrpeakswitch && ~isempty(C)
+            [Uval,Vval,Evalval] = CorrpeakThresh(Uval,Vval,Cval,PRval,Peakheight_thresh,Peakratio_thresh,Evalval);
         end
 
         %Univeral Outlier Detection
@@ -101,12 +114,16 @@ if Threshswitch || UODswitch
         end
 %         disp([num2str(sum(sum(Evalval>0))),' bad vectors'])
         %Try additional peaks where validation failed
-        if i<j
+        if i<numpeaks %if there are extra peaks we haven't tested...
+            %copy next peak data into temp arrays
             Utemp=U(:,:,i+1);Vtemp=V(:,:,i+1);Evaltemp=Eval(:,:,i+1);Ctemp=C(:,:,i+1);Dtemp=D(:,:,i+1);
             DXtemp=DX(:,:,i+1);DYtemp=DY(:,:,i+1);ALPHAtemp=ALPHA(:,:,i+1);
+            PRtemp=PR(:,:,i+1);
+            %copy next peak data onto sites that failed validation
             Uval(Evalval>0)=Utemp(Evalval>0);
             Vval(Evalval>0)=Vtemp(Evalval>0);
             Cval(Evalval>0)=Ctemp(Evalval>0);
+            PRval(Evalval>0)=PRtemp(Evalval>0);
             Dval(Evalval>0)=Dtemp(Evalval>0); 
             Evalval(Evalval>0)=Evaltemp(Evalval>0);
             
@@ -122,8 +139,8 @@ maxSearch = floor( (max(UODwinsize(:))-1)/2 );
 
 %replacement
 for i=1:S(1)
-    for j=1:S(2)
-        if Evalval(i,j)>0
+    for numpeaks=1:S(2)
+        if Evalval(i,numpeaks)>0
             %initialize replacement search size
             q=0;
             s=0;
@@ -133,14 +150,14 @@ for i=1:S(1)
                 q=q+1;
                 Imin = max([i-q 1   ]);
                 Imax = min([i+q S(1)]);
-                Jmin = max([j-q 1   ]);
-                Jmax = min([j+q S(2)]);
+                Jmin = max([numpeaks-q 1   ]);
+                Jmax = min([numpeaks+q S(2)]);
                 Iind = Imin:Imax;
                 Jind = Jmin:Jmax;
                 Ublock = Uval(Iind,Jind);
                 if q >= maxSearch || length(Ublock(~isnan(Ublock)))>=8 
-                    Xblock = X(Iind,Jind)-X(i,j);
-                    Yblock = Y(Iind,Jind)-Y(i,j);
+                    Xblock = X(Iind,Jind)-X(i,numpeaks);
+                    Yblock = Y(Iind,Jind)-Y(i,numpeaks);
                     Vblock = Vval(Iind,Jind);
                     s=1;
                 end
@@ -152,8 +169,8 @@ for i=1:S(1)
             Dblock(isinf(Dblock))=nan;
 
             %validated vector
-            Uval(i,j) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
-            Vval(i,j) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));       
+            Uval(i,numpeaks) = nansum(nansum(Dblock.*Ublock))/nansum(nansum(Dblock));
+            Vval(i,numpeaks) = nansum(nansum(Dblock.*Vblock))/nansum(nansum(Dblock));       
         end
     end
 end
