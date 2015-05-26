@@ -6,7 +6,7 @@ function [defaultdata] = buildDefaultPranaJob()
 %     Copyright (C) 2012-2013  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -147,7 +147,7 @@ defaultdata.PIV2=defaultdata.PIV0;
 defaultdata.passes='2';
 defaultdata.method='2';
 defaultdata.velinterp='3';
-defaultdata.iminterp='2';
+defaultdata.iminterp='2';  %'1'=Sinc, '2'=Sinc w/ Blackman, '3'=Bicubic, '4'=B-splines
 defaultdata.framestep='3';
 defaultdata.PIVerror='0.1';
 defaultdata.channel = '1';

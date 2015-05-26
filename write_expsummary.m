@@ -41,7 +41,7 @@ methods={'Multipass - DWO','Multigrid - DWO','Multigrid - Deform (DWO)',...
 velinterp={'Nearest Neighbor','Bilinear','Cubic'};
 % These are the interpolation methods for the image deformations % added
 % matlab interp2
-iminterp={'Cardinal Function','Cardinal Function w/ Blackman Filter','matlab interp2'};
+iminterp={  'Sinc Function (8 point)'; 'Sinc w/ Blackman filter'; 'Bicubic' ; 'B-splines (7th order)'};
 % These are the different peak fitting schemes
 peak={'Three-Point Gaussian','Four-Point Gaussian','Gaussian Least Squares'};
 % This is the number of peaks the user is outputing
