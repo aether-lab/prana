@@ -6,7 +6,7 @@ function pranaprocessing(Data,I1,I2,maskname)
 %     Copyright (C) 2012-2014  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -135,19 +135,26 @@ Peaklocator     = zeros(P,1);
 Velsmoothswitch = zeros(P,1);
 Velsmoothfilt   = zeros(P,1);
 Valswitch       = zeros(P,1);
-UODswitch       = zeros(P,1);
-Bootswitch      = zeros(P,1);
-Threshswitch    = zeros(P,1);
+
+Valoptions.UODswitch            = zeros(1,1);
+Valoptions.Bootswitch           = zeros(1,1);
+Valoptions.Threshswitch         = zeros(1,1);
+Valoptions.Corrpeakswitch       = zeros(1,1);
+Valoptions.UODwinsize           = zeros(2,1);  %weird things happen in reading this, it really ends up [x/y, numUODiters]
+Valoptions.UODthresh            = zeros(1,1);
+Valoptions.Bootper              = zeros(1,1);
+Valoptions.Bootiter             = zeros(1,1);
+Valoptions.Bootkmax             = zeros(1,1);
+Valoptions.Uthresh              = zeros(1,2);
+Valoptions.Vthresh              = zeros(1,2);
+Valoptions.Uthresh              = zeros(1,2);
+Valoptions.Vthresh              = zeros(1,2);
+Valoptions.Peakheight_thresh    = zeros(1,1);
+Valoptions.Peakratio_thresh     = zeros(1,1);
+Valoptions = repmat(Valoptions,[1,P]);
+extrapeaks      = zeros(P,1);
 Writeswitch     = zeros(P,1);
 Peakswitch      = zeros(P,1);
-UODwinsize      = zeros(P,2);
-UODthresh       = zeros(P,1);
-Bootper         = zeros(P,1);
-Bootiter        = zeros(P,1);
-Bootkmax        = zeros(P,1);
-Uthresh         = zeros(P,2);
-Vthresh         = zeros(P,2);
-extrapeaks      = zeros(P,1);
 PeakNum         = zeros(P,1);
 PeakMag         = zeros(P,1);
 PeakVel         = zeros(P,1);
@@ -212,34 +219,46 @@ for e=1:P
     condefloop(e) = str2double(A.deform_conv);
     
     if any(Wres(1,:,e)>Wsize(e,:)) || any(Wres(2,:,e)>Wsize(e,:))
-        warning('warning:ResGraterThenSize','Pass %0.0f has a window resolution larger then the windown size!\n   [%0.0f,%0.0f;%0.0f %0.0f] > [%0.0f,%0.0f]\n',e,Wres(1,1,e),Wres(1,2,e),Wres(2,1,e),Wres(2,2,e),Wsize(e,1), Wsize(e,2))
+        warning('warning:ResGreaterThenSize','Pass %0.0f has a window resolution larger then the windown size!\n   [%0.0f,%0.0f;%0.0f %0.0f] > [%0.0f,%0.0f]\n',e,Wres(1,1,e),Wres(1,2,e),Wres(2,1,e),Wres(2,2,e),Wsize(e,1), Wsize(e,2))
     end
     
     %validation and thresholding
     Valswitch(e)=str2double(A.val);
-    UODswitch(e)=str2double(A.uod);
-    Bootswitch(e)=str2double(A.bootstrap);
-    Threshswitch(e)=str2double(A.thresh);
+    Valoptions(e).UODswitch=str2double(A.uod);
+    Valoptions(e).Bootswitch=str2double(A.bootstrap);
+    Valoptions(e).Threshswitch=str2double(A.thresh);
+    Valoptions(e).Corrpeakswitch=str2double(A.corrpeaktest);
     Writeswitch(e)=str2double(A.write);
     
     vpass=[0 strfind(A.uod_window,';') length(A.uod_window)+1];
     for q=1:(length(vpass)-1)
         B=A.uod_window((vpass(q)+1):(vpass(q+1)-1));
-        UODwinsize(e,:,q)=[str2double(B(1:(strfind(B,',')-1))) str2double(B((strfind(B,',')+1):end))];
-        UODthresh(e,q)=str2double(A.uod_thresh(1+2*(q-1)));
+        Valoptions(e).UODwinsize(:,q)=[str2double(B(1:(strfind(B,',')-1))) str2double(B((strfind(B,',')+1):end))];
+        Valoptions(e).UODthresh(q)=str2double(A.uod_thresh(1+2*(q-1)));
     end
     
-    Bootper(e)=str2double(A.bootstrap_percentsampled);
-    Bootiter(e)=str2double(A.bootstrap_iterations);
-    Bootkmax(e)=str2double(A.bootstrap_passes);
+    Valoptions(e).Bootper=str2double(A.bootstrap_percentsampled);
+    Valoptions(e).Bootiter=str2double(A.bootstrap_iterations);
+    Valoptions(e).Bootkmax=str2double(A.bootstrap_passes);
     
     if str2double(A.thresh)==1
-        Uthresh(e,:)=[str2double(A.valuthresh(1:(strfind(A.valuthresh,',')-1))) str2double(A.valuthresh((strfind(A.valuthresh,',')+1):end))];
-        Vthresh(e,:)=[str2double(A.valvthresh(1:(strfind(A.valvthresh,',')-1))) str2double(A.valvthresh((strfind(A.valvthresh,',')+1):end))];
+        Valoptions(e).Uthresh(:)=[str2double(A.valuthresh(1:(strfind(A.valuthresh,',')-1))) str2double(A.valuthresh((strfind(A.valuthresh,',')+1):end))];
+        Valoptions(e).Vthresh(:)=[str2double(A.valvthresh(1:(strfind(A.valvthresh,',')-1))) str2double(A.valvthresh((strfind(A.valvthresh,',')+1):end))];
     else
-        Uthresh(e,:)=[-inf,inf];
-        Vthresh(e,:)=[-inf,inf];
+        Valoptions(e).Uthresh(:)=[-inf,inf];
+        Valoptions(e).Vthresh(:)=[-inf,inf];
     end
+    
+    % if we are validating against peak height or ratio, then set threshold 
+    % else set to 0 to indicate no testing
+    if str2double(A.corrpeaktest)==1
+        Valoptions(e).Peakheight_thresh = str2double(A.corrpeak_absthresh);
+        Valoptions(e).Peakratio_thresh  = str2double(A.corrpeak_ratiothresh);
+    else
+        Valoptions(e).Peakheight_thresh = 0;
+        Valoptions(e).Peakratio_thresh  = 0;
+    end
+    
     
     extrapeaks(e)=str2double(A.valextrapeaks);
     
@@ -277,7 +296,7 @@ if strcmpi(Data.input_vel_type,'static')  %'dynamic' is handled below in the pro
     
     %velocity smoothing
     if Velsmoothswitch(1)==1
-        [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
+        [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),Valoptions(1).UODwinsize(:,:),Velsmoothfilt(1));
         U = cast(U,imClass);
         V = cast(V,imClass);
         %when interpolating, assume saved coordinate system consistent with
@@ -416,7 +435,7 @@ switch char(M)
                 %velocity smoothing, if first pass is smoothed, assumed
                 %previous passs needed to be as well
                 if Velsmoothswitch(1)==1
-                    [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),UODwinsize(1,:,:),Velsmoothfilt(1));
+                    [U,V]=VELfilt(Vel0.U(:,:,1),Vel0.V(:,:,1),Valoptions(1).UODwinsize(:,:),Velsmoothfilt(1));
                     U = cast(U,imClass);
                     V = cast(V,imClass);
                     %when interpolating, assume saved coordinate system consistent with
@@ -452,7 +471,7 @@ switch char(M)
             defconvU = zeros(P,max(maxdefloop));
             defconvV = zeros(P,max(maxdefloop));
             
-            e = 0; defloop = 1; % What is e?
+            e = 0; defloop = 1; % e is the pass number, set to 0 to indicate we haven't started yet
             
             % before we start doing the new work, see if we need to deform
             % the input images to match the input velocity field
@@ -574,6 +593,14 @@ switch char(M)
                     e=e+1;
                 end
                 
+                %switch controlling whether subpixel needs to find and
+                %return more than the 1st correlation peak.  Multiple peaks
+                %are needed for replacement extra peak during validations, 
+                %validating based on correlation peak ratio, or saving more
+                %than one peak to disk
+                find_extrapeaks = Peakswitch(e) || ...
+                    (Valswitch(e) && (extrapeaks(e) || Valoptions(e).Corrpeakswitch));
+                
                 %fprintf('e=%d,defloop=%d\n',e,defloop)
                 
                 t1=tic;
@@ -609,7 +636,7 @@ switch char(M)
                 if (e~=1 || defloop~=1 || VelInputFile) && ~isempty(regexpi(M,'Deform','once'))          %then don't offset windows, images already deformed
                     %if Corr(e)<4
                     if ~strcmpi(Corr{e},'SPC')
-                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),find_extrapeaks,frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0));
                         if strcmpi(M,'ForwardDeform')
                             % use coordinate system for deformed second
                             % frame to estimate deformation tensor and
@@ -661,7 +688,7 @@ switch char(M)
                             %if shift takes us outside image domain, just
                             %return a NaN, we don't know where that point
                             %will go
-                            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                            if find_extrapeaks
                                 %there will be 3 velocity fields in Uc and Vc, so repmat vector origins
                                 U2 = interp2(XI,YI,XD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(XDc,[1,3]);
                                 V2 = interp2(XI,YI,YD2,repmat(Xc,[1 3])+Uc,repmat(Yc,[1 3])+Vc,'cubic',NaN) - repmat(YDc,[1,3]);
@@ -731,7 +758,7 @@ switch char(M)
                         end
                         
                         %reincorporate deformation as velocity for next pass
-                        if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                        if find_extrapeaks
                             %there will be 3 velocity fields in Uc an Vc, so repmat bulk offset
                             Uc = Uc + repmat(Ub(Eval>=0),[1 3]);
                             Vc = Vc + repmat(Vb(Eval>=0),[1 3]);
@@ -755,7 +782,7 @@ switch char(M)
                         if any(isnan(Ub(Eval>=0)))
                             keyboard
                         end
-                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                        [Xc,Yc,Uc,Vc,Cc,Dc,Cp]=PIVwindowed(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peaklocator(e),find_extrapeaks,frac_filt(e),saveplane(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                     else
                         [Xc,Yc,Uc,Vc,Cc]=PIVphasecorr(im1,im2,Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),Peakswitch(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         Dc = zeros(size(Cc),imClass);
@@ -766,7 +793,7 @@ switch char(M)
                 %missing values.  Use Eval to fill in complete matrices U,V
                 %over all grid points X,Y.
                 if ~strcmpi(Corr{e},'SPC') %was not SPC=4
-                    if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+                    if find_extrapeaks
                         U=zeros(size(X,1),3,imClass);
                         V=zeros(size(X,1),3,imClass);
                         U(repmat(Eval>=0,[1 3]))=Uc;V(repmat(Eval>=0,[1 3]))=Vc;
@@ -799,8 +826,7 @@ switch char(M)
                 if Valswitch(e)
                     t1=tic;
                     
-                    [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
+                    [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Valoptions(e),extrapeaks(e));
                     
                     valtime(e,defloop)=toc(t1);
                 else
@@ -969,7 +995,7 @@ switch char(M)
 
                         %velocity smoothing
                         if Velsmoothswitch(e)==1
-                            [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+                            [U,V]=VELfilt(U,V,Valoptions(e).UODwinsize(:,:),Velsmoothfilt(e));
                         end
 
                         %velocity interpolation -
@@ -1218,6 +1244,15 @@ switch char(M)
             end
             tf=tic;
             
+            %switch controlling whether subpixel needs to find and
+            %return more than the 1st correlation peak.  Multiple peaks
+            %are needed for replacement extra peak during validations,
+            %validating based on correlation peak ratio, or saving more
+            %than one peak to disk
+            find_extrapeaks = Peakswitch(e) || ...
+                (Valswitch(e) && (extrapeaks(e) || Valoptions(e).Corrpeakswitch));
+            
+            
             [X,Y]=IMgrid(imageSize,Gres(e,:),Gbuf(e,:));
             %The old way was downsampling velocity field using pixel
             %grid to start with, and trying to get on the vector grid
@@ -1230,7 +1265,7 @@ switch char(M)
             Eval(Eval==0)=-1;
             Eval(Eval>0)=0;
             
-            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+            if find_extrapeaks
                 U=zeros(size(X,1),3,imClass);
                 V=zeros(size(X,1),3,imClass);
                 C=zeros(size(X,1),3,imClass);
@@ -1587,7 +1622,7 @@ switch char(M)
             %}
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
-            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))
+            if find_extrapeaks
                 Uc=zeros(Z(3),3,imClass);
                 Vc=zeros(Z(3),3,imClass);
                 Cc=zeros(Z(3),3,imClass);
@@ -1608,7 +1643,7 @@ switch char(M)
                 t1=tic;
                 for s=1:Z(3) %Loop through grid points
                     %Find the subpixel fit of the average correlation matrix
-                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:),DXc(s,:),DYc(s,:),ALPHAc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),Peakswitch(e) || (Valswitch(e) && extrapeaks(e)),D(e,:));
+                    [Uc(s,:),Vc(s,:),Cc(s,:),Dc(s,:),DXc(s,:),DYc(s,:),ALPHAc(s,:)]=subpixel(CCm(:,:,s),Z(2),Z(1),cnorm,Peaklocator(e),find_extrapeaks,D(e,:));
                 end
                 peaktime=toc(t1);
                 fprintf('peak fitting...                  %0.2i:%0.2i.%0.0f\n',floor(peaktime/60),floor(rem(peaktime,60)),floor((rem(peaktime,60)-floor(rem(peaktime,60)))*10))
@@ -1654,7 +1689,7 @@ switch char(M)
                 U(Eval>=0)=Uc(:)+round(Ub(Eval>=0));
                 V(Eval>=0)=Vc(:)+round(Vb(Eval>=0));
             end
-            if Peakswitch(e) || (Valswitch(e) && extrapeaks(e))%~isempty(Cc)
+            if find_extrapeaks
                 C(Eval>=0)=Cc(:);
                 Di(Eval>=0)=Dc(:);
                 DX(Eval>=0)=DXc(:);
@@ -1667,8 +1702,7 @@ switch char(M)
                 %keyboard
                 t1=tic;
                 
-                [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                    Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e),...
+                [Uval,Vval,Evalval,Cval,Dval,DXval,DYval,ALPHAval]=VAL(X,Y,U,V,Eval,C,Di,Valoptions(e),extrapeaks(e),...
                     DX,DY,ALPHA);
                 
                 valtime=toc(t1);
@@ -1832,7 +1866,7 @@ switch char(M)
                 
                 %velocity smoothing
                 if Velsmoothswitch(e)==1
-                    [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+                    [U,V]=VELfilt(U,V,Valoptions(e).UODwinsize(:,:),Velsmoothfilt(e));
                 end
                 
                 %velocity interpolation
@@ -2065,8 +2099,7 @@ switch char(M)
                 if Valswitch(e)
                     t1=tic;
                     
-                    [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Threshswitch(e),UODswitch(e),Bootswitch(e),extrapeaks(e),...
-                        Uthresh(e,:),Vthresh(e,:),UODwinsize(e,:,:),UODthresh(e,UODthresh(e,:)~=0)',Bootper(e),Bootiter(e),Bootkmax(e));
+                    [Uval,Vval,Evalval,Cval,Dval]=VAL(X,Y,U,V,Eval,C,Di,Valoptions(e),extrapeaks(e));
                     
                     valtime(e)=toc(t1);
                 else
@@ -2149,7 +2182,7 @@ switch char(M)
                     
                     %velocity smoothing
                     if Velsmoothswitch(e)==1
-                        [U,V]=VELfilt(U,V,UODwinsize(e,:,:),Velsmoothfilt(e));
+                        [U,V]=VELfilt(U,V,Valoptions(e).UODwinsize(:,:),Velsmoothfilt(e));
                     end
                     
                     %velocity interpolation -

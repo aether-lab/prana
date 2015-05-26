@@ -6,7 +6,7 @@ function expsummary = write_expsummary(Data)
 %     Copyright (C) 2012-2013  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -194,7 +194,10 @@ if str2double(Data.runPIV)
         expsummary = [expsummary sprintf('Validation Type(s):                           ')];
         if str2double(A.val)
             if str2double(A.thresh)
-                expsummary = [expsummary sprintf('Thresholding ')];
+                expsummary = [expsummary sprintf('Velocity Thresholding ')];
+            end
+            if str2double(A.corrpeaktest)
+                expsummary = [expsummary sprintf('Correlation Thresholding ')];
             end
             if str2double(A.uod)
                 expsummary = [expsummary sprintf('UOD ')];
@@ -206,6 +209,10 @@ if str2double(Data.runPIV)
             if str2double(A.thresh)
                 expsummary = [expsummary sprintf(['Umin, Umax (pix):                             ',A.valuthresh,'\n'])];
                 expsummary = [expsummary sprintf(['Vmin, Vmax (pix):                             ',A.valvthresh,'\n'])];
+            end
+            if str2double(A.corrpeaktest)
+                expsummary = [expsummary sprintf(['Peak Height Threshold:                        ',A.corrpeak_absthresh,'\n'])];
+                expsummary = [expsummary sprintf(['Peak Ratio Threshold:                         ',A.corrpeak_ratiothresh,'\n'])];
             end
             if str2double(A.uod)
                 expsummary = [expsummary sprintf(['UOD Type:                                     ',uod_type{str2double(A.uod_type)},'\n'])];
