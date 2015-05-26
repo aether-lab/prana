@@ -7,7 +7,7 @@ function varargout = prana(varargin)
 %     Copyright (C) 2010-2014  Virginia Polytechnic Institute and State
 %     University
 % 
-%     Copyright 2014.  Los Alamos National Security, LLC. This material was
+%     Copyright 2014-2015.  Los Alamos National Security, LLC. This material was
 %     produced under U.S. Government contract DE-AC52-06NA25396 for Los 
 %     Alamos National Laboratory (LANL), which is operated by Los Alamos 
 %     National Security, LLC for the U.S. Department of Energy. The U.S. 
@@ -37,7 +37,7 @@ gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
                    'gui_OpeningFcn', @prana_OpeningFcn, ...
                    'gui_OutputFcn',  @prana_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
+                   'gui_LayoutFcn',  @prana_LayoutFcn, ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
@@ -120,8 +120,16 @@ end
 
 handles.data.par='0';
 try
-    compinfo=findResource('scheduler','configuration','local');
-    handles.data.parprocessors=num2str(compinfo.clustersize);
+    %findResource was removed in recent version (>2014b ?)
+    if str2double(verstr(1:4))<2014
+        compinfo=findResource('scheduler','configuration','local');
+        handles.data.parprocessors=num2str(compinfo.clustersize);
+    else %use parcluster instead
+        %get information about the parallel options and settings
+        compinfo = parcluster('local');
+        %use them to set the default clustersize for parallel computing
+        handles.data.parprocessors=num2str(compinfo.NumWorkers);
+    end
 catch
     handles.data.parprocessors='1';
 end
@@ -139,13 +147,19 @@ end
 set(gca,'children',imshow(windowdiagram));
 axis off;
 
-handles.data.cpass=num2str(get(handles.passlist,'Value'));
+% the following commented lines were the original commands used by the
+% GUIDE version of the GUI, and needed to be set to a default value due to
+% a change in execution order when the GUI changed to text-only.
+% handles.data.cpass=num2str(get(handles.passlist,'Value'));
+handles.data.cpass='0';
 handles.data0=handles.data;
-handles.Njob=num2str(size(get(handles.joblist,'String'),1));
-handles.Cjob=num2str(get(handles.joblist,'String'));
+% handles.Njob=num2str(size(get(handles.joblist,'String'),1));
+% handles.Cjob=num2str(get(handles.joblist,'String'));
+handles.Njob='0';
+handles.Cjob='';
 
 handles=rmfield(handles,'data');
-handles=update_data(handles);
+% handles=update_data(handles);  %same problem, can't update yet because items don't exist yet
 handles.output = hObject;
 guidata(hObject, handles);
 
@@ -209,11 +223,47 @@ function helpmenu_Callback(hObject, eventdata, handles)
 
 % --- Help Menu -> About ---
 function helpmenu_about_Callback(hObject, eventdata, handles)
-msgbox({'Prana','',['Client Version ',num2str(handles.data0.clientversion)],'',...
+msgbox( ...
+    {...
+    'prana','',['Client Version ',num2str(handles.data0.clientversion)],...
     ['Data Version ',num2str(handles.data0.clientversion)],'',...
-    'Authors: Brady Drew, Adric Eckstein, John Charonko, Sam Raben, and the rest of the AEThER Lab','',...
-    'Copyright 2010 - Virginia Polytechnic Institute and State University','',...
-    'This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with this program. If not, see www.gnu.org/licenses'},'About')
+    ['Authors: Sayantan Bhattacharya, Matt Giarra, Nick Cardwell, Brady Drew, ',...
+    'Adric Eckstein, John Charonko, Sam Raben, and the rest of the AEThER Lab'],'',...
+    'Copyright 2010-2015 - Virginia Polytechnic Institute and State University', ...
+    'Copyright 2014-2015.  Los Alamos National Security, LLC.','',...
+    ['This program is free software: you can redistribute it and/or modify ',...
+    'it under the terms of the GNU General Public License as published by ',...
+    'the Free Software Foundation, either version 3 of the License, or (at ',...
+    'your option) any later version. This program is distributed in the hope ',...
+    'that it will be useful, but WITHOUT ANY WARRANTY; without even the ',...
+    'implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. ',...
+    'See the GNU General Public License for more details. You should have ',...
+    'received a copy of the GNU General Public License along with this program. ',...
+    'If not, see www.gnu.org/licenses'],'',...
+    ['Portions of this program are copyright John D''Errico and Jonas Reber ',...
+    'under the following license:'],'',...
+    ['Redistribution and use in source and binary forms, with or without ',...
+     'modification, are permitted provided that the following conditions are ',...
+     'met:'],...
+     '    * Redistributions of source code must retain the above copyright',...
+     '      notice, this list of conditions and the following disclaimer.',...
+     '    * Redistributions in binary form must reproduce the above copyright',...
+     '      notice, this list of conditions and the following disclaimer in',...
+     '      the documentation and/or other materials provided with the',...
+     '      distribution',...
+     ['THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" ',...
+     'AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE ',...
+     'IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ',...
+     'ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE ',...
+     'LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR ',...
+     'CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF ',...
+     'SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS ',...
+     'INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN ',...
+     'CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ',...
+     'ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE ',...
+     'POSSIBILITY OF SUCH DAMAGE.']
+    },...
+    'About')
 
 % --- Help Menu -> Getting Started ---
 function gettingstarted_Callback(hObject, eventdata, handles)
@@ -5455,3 +5505,301 @@ function imagebasename2_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
+
+
+% --- Handles default GUIDE GUI creation and callback dispatch
+function varargout = gui_mainfcn(gui_State, varargin)
+
+gui_StateFields =  {'gui_Name'
+    'gui_Singleton'
+    'gui_OpeningFcn'
+    'gui_OutputFcn'
+    'gui_LayoutFcn'
+    'gui_Callback'};
+gui_Mfile = '';
+for i=1:length(gui_StateFields)
+    if ~isfield(gui_State, gui_StateFields{i})
+        error(message('MATLAB:guide:StateFieldNotFound', gui_StateFields{ i }, gui_Mfile));
+    elseif isequal(gui_StateFields{i}, 'gui_Name')
+        gui_Mfile = [gui_State.(gui_StateFields{i}), '.m'];
+    end
+end
+
+numargin = length(varargin);
+
+if numargin == 0
+    % PRANA
+    % create the GUI only if we are not in the process of loading it
+    % already
+    gui_Create = true;
+elseif local_isInvokeActiveXCallback(gui_State, varargin{:})
+    % PRANA(ACTIVEX,...)
+    vin{1} = gui_State.gui_Name;
+    vin{2} = [get(varargin{1}.Peer, 'Tag'), '_', varargin{end}];
+    vin{3} = varargin{1};
+    vin{4} = varargin{end-1};
+    vin{5} = guidata(varargin{1}.Peer);
+    feval(vin{:});
+    return;
+elseif local_isInvokeHGCallback(gui_State, varargin{:})
+    % PRANA('CALLBACK',hObject,eventData,handles,...)
+    gui_Create = false;
+else
+    % PRANA(...)
+    % create the GUI and hand varargin to the openingfcn
+    gui_Create = true;
+end
+
+if ~gui_Create
+    % In design time, we need to mark all components possibly created in
+    % the coming callback evaluation as non-serializable. This way, they
+    % will not be brought into GUIDE and not be saved in the figure file
+    % when running/saving the GUI from GUIDE.
+    designEval = false;
+    if (numargin>1 && ishghandle(varargin{2}))
+        fig = varargin{2};
+        while ~isempty(fig) && ~ishghandle(fig,'figure')
+            fig = get(fig,'parent');
+        end
+        
+        designEval = isappdata(0,'CreatingGUIDEFigure') || (isscalar(fig)&&isprop(fig,'GUIDEFigure'));
+    end
+        
+    if designEval
+        beforeChildren = findall(fig);
+    end
+    
+    % evaluate the callback now
+    varargin{1} = gui_State.gui_Callback;
+    if nargout
+        [varargout{1:nargout}] = feval(varargin{:});
+    else       
+        feval(varargin{:});
+    end
+    
+    % Set serializable of objects created in the above callback to off in
+    % design time. Need to check whether figure handle is still valid in
+    % case the figure is deleted during the callback dispatching.
+    if designEval && ishghandle(fig)
+        set(setdiff(findall(fig),beforeChildren), 'Serializable','off');
+    end
+else
+    if gui_State.gui_Singleton
+        gui_SingletonOpt = 'reuse';
+    else
+        gui_SingletonOpt = 'new';
+    end
+
+    % Check user passing 'visible' P/V pair first so that its value can be
+    % used by oepnfig to prevent flickering
+    gui_Visible = 'auto';
+    gui_VisibleInput = '';
+    for index=1:2:length(varargin)
+        if length(varargin) == index || ~ischar(varargin{index})
+            break;
+        end
+
+        % Recognize 'visible' P/V pair
+        len1 = min(length('visible'),length(varargin{index}));
+        len2 = min(length('off'),length(varargin{index+1}));
+        if ischar(varargin{index+1}) && strncmpi(varargin{index},'visible',len1) && len2 > 1
+            if strncmpi(varargin{index+1},'off',len2)
+                gui_Visible = 'invisible';
+                gui_VisibleInput = 'off';
+            elseif strncmpi(varargin{index+1},'on',len2)
+                gui_Visible = 'visible';
+                gui_VisibleInput = 'on';
+            end
+        end
+    end
+    
+    % Open fig file with stored settings.  Note: This executes all component
+    % specific CreateFunctions with an empty HANDLES structure.
+
+    
+    % Do feval on layout code in m-file if it exists
+    gui_Exported = ~isempty(gui_State.gui_LayoutFcn);
+    % this application data is used to indicate the running mode of a GUIDE
+    % GUI to distinguish it from the design mode of the GUI in GUIDE. it is
+    % only used by actxproxy at this time.   
+    setappdata(0,genvarname(['OpenGuiWhenRunning_', gui_State.gui_Name]),1);
+    if gui_Exported
+        gui_hFigure = feval(gui_State.gui_LayoutFcn, gui_SingletonOpt);
+
+        % make figure invisible here so that the visibility of figure is
+        % consistent in OpeningFcn in the exported GUI case
+        if isempty(gui_VisibleInput)
+            gui_VisibleInput = get(gui_hFigure,'Visible');
+        end
+        set(gui_hFigure,'Visible','off')
+
+        % openfig (called by local_openfig below) does this for guis without
+        % the LayoutFcn. Be sure to do it here so guis show up on screen.
+        movegui(gui_hFigure,'onscreen');
+    else
+        gui_hFigure = local_openfig(gui_State.gui_Name, gui_SingletonOpt, gui_Visible);
+        % If the figure has InGUIInitialization it was not completely created
+        % on the last pass.  Delete this handle and try again.
+        if isappdata(gui_hFigure, 'InGUIInitialization')
+            delete(gui_hFigure);
+            gui_hFigure = local_openfig(gui_State.gui_Name, gui_SingletonOpt, gui_Visible);
+        end
+    end
+    if isappdata(0, genvarname(['OpenGuiWhenRunning_', gui_State.gui_Name]))
+        rmappdata(0,genvarname(['OpenGuiWhenRunning_', gui_State.gui_Name]));
+    end
+
+    % Set flag to indicate starting GUI initialization
+    setappdata(gui_hFigure,'InGUIInitialization',1);
+
+    % Fetch GUIDE Application options
+    gui_Options = getappdata(gui_hFigure,'GUIDEOptions');
+    % Singleton setting in the GUI M-file takes priority if different
+    gui_Options.singleton = gui_State.gui_Singleton;
+
+    if ~isappdata(gui_hFigure,'GUIOnScreen')
+        % Adjust background color
+        if gui_Options.syscolorfig
+            set(gui_hFigure,'Color', get(0,'DefaultUicontrolBackgroundColor'));
+        end
+
+        % Generate HANDLES structure and store with GUIDATA. If there is
+        % user set GUI data already, keep that also.
+        data = guidata(gui_hFigure);
+        handles = guihandles(gui_hFigure);
+        if ~isempty(handles)
+            if isempty(data)
+                data = handles;
+            else
+                names = fieldnames(handles);
+                for k=1:length(names)
+                    data.(char(names(k)))=handles.(char(names(k)));
+                end
+            end
+        end
+        guidata(gui_hFigure, data);
+    end
+
+    % Apply input P/V pairs other than 'visible'
+    for index=1:2:length(varargin)
+        if length(varargin) == index || ~ischar(varargin{index})
+            break;
+        end
+
+        len1 = min(length('visible'),length(varargin{index}));
+        if ~strncmpi(varargin{index},'visible',len1)
+            try set(gui_hFigure, varargin{index}, varargin{index+1}), catch break, end
+        end
+    end
+
+    % If handle visibility is set to 'callback', turn it on until finished
+    % with OpeningFcn
+    gui_HandleVisibility = get(gui_hFigure,'HandleVisibility');
+    if strcmp(gui_HandleVisibility, 'callback')
+        set(gui_hFigure,'HandleVisibility', 'on');
+    end
+
+    feval(gui_State.gui_OpeningFcn, gui_hFigure, [], guidata(gui_hFigure), varargin{:});
+
+    if isscalar(gui_hFigure) && ishghandle(gui_hFigure)
+        % Handle the default callbacks of predefined toolbar tools in this
+        % GUI, if any
+        guidemfile('restoreToolbarToolPredefinedCallback',gui_hFigure); 
+        
+        % Update handle visibility
+        set(gui_hFigure,'HandleVisibility', gui_HandleVisibility);
+
+        % Call openfig again to pick up the saved visibility or apply the
+        % one passed in from the P/V pairs
+        if ~gui_Exported
+            gui_hFigure = local_openfig(gui_State.gui_Name, 'reuse',gui_Visible);
+        elseif ~isempty(gui_VisibleInput)
+            set(gui_hFigure,'Visible',gui_VisibleInput);
+        end
+        if strcmpi(get(gui_hFigure, 'Visible'), 'on')
+            figure(gui_hFigure);
+            
+            if gui_Options.singleton
+                setappdata(gui_hFigure,'GUIOnScreen', 1);
+            end
+        end
+
+        % Done with GUI initialization
+        if isappdata(gui_hFigure,'InGUIInitialization')
+            rmappdata(gui_hFigure,'InGUIInitialization');
+        end
+
+        % If handle visibility is set to 'callback', turn it on until
+        % finished with OutputFcn
+        gui_HandleVisibility = get(gui_hFigure,'HandleVisibility');
+        if strcmp(gui_HandleVisibility, 'callback')
+            set(gui_hFigure,'HandleVisibility', 'on');
+        end
+        gui_Handles = guidata(gui_hFigure);
+    else
+        gui_Handles = [];
+    end
+
+    if nargout
+        [varargout{1:nargout}] = feval(gui_State.gui_OutputFcn, gui_hFigure, [], gui_Handles);
+    else
+        feval(gui_State.gui_OutputFcn, gui_hFigure, [], gui_Handles);
+    end
+
+    if isscalar(gui_hFigure) && ishghandle(gui_hFigure)
+        set(gui_hFigure,'HandleVisibility', gui_HandleVisibility);
+    end
+end
+
+function gui_hFigure = local_openfig(name, singleton, visible)
+
+% openfig with three arguments was new from R13. Try to call that first, if
+% failed, try the old openfig.
+if nargin('openfig') == 2
+    % OPENFIG did not accept 3rd input argument until R13,
+    % toggle default figure visible to prevent the figure
+    % from showing up too soon.
+    gui_OldDefaultVisible = get(0,'defaultFigureVisible');
+    set(0,'defaultFigureVisible','off');
+    gui_hFigure = matlab.hg.internal.openfigLegacy(name, singleton);
+    set(0,'defaultFigureVisible',gui_OldDefaultVisible);
+else
+    % Call version of openfig that accepts 'auto' option"
+    gui_hFigure = matlab.hg.internal.openfigLegacy(name, singleton, visible);  
+%     %workaround for CreateFcn not called to create ActiveX
+%     if feature('HGUsingMATLABClasses')
+%         peers=findobj(findall(allchild(gui_hFigure)),'type','uicontrol','style','text');    
+%         for i=1:length(peers)
+%             if isappdata(peers(i),'Control')
+%                 actxproxy(peers(i));
+%             end            
+%         end
+%     end
+end
+
+function result = local_isInvokeActiveXCallback(gui_State, varargin)
+
+try
+    result = ispc && iscom(varargin{1}) ...
+             && isequal(varargin{1},gcbo);
+catch
+    result = false;
+end
+
+function result = local_isInvokeHGCallback(gui_State, varargin)
+
+try
+    fhandle = functions(gui_State.gui_Callback);
+    result = ~isempty(findstr(gui_State.gui_Name,fhandle.file)) || ...
+             (ischar(varargin{1}) ...
+             && isequal(ishghandle(varargin{2}), 1) ...
+             && (~isempty(strfind(varargin{1},[get(varargin{2}, 'Tag'), '_'])) || ...
+                ~isempty(strfind(varargin{1}, '_CreateFcn'))) );
+catch
+    result = false;
+end
+
+
