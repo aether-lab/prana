@@ -1,4 +1,3 @@
-*.tif
 *~
 .DS_Store
 *.mat
@@ -12,7 +11,3 @@
 ExpSummary*
 .bzr*
 
-#tif is ignored, but we need these:
-#logo.tif
-#windowdiagram.tif
-!documentation/*.tif
