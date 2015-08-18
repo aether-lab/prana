@@ -357,12 +357,40 @@ else
         % [f_resid1 f_resid2 f_resid3]
         
         % Combine the camera coef for each camera
-        a_cam1=[a1_cam1 a2_cam1 a3_cam1];
-        a_cam2=[a1_cam2 a2_cam2 a3_cam2];
+        a_cam1=[a1_cam1; a2_cam1; a3_cam1];
+        a_cam2=[a1_cam2; a2_cam2; a3_cam2];
     end
 end
 convergemessage={msgX1;msgY1;msgX2;msgY2};
-[aXcam1 aYcam1 aXcam2 aYcam2]
+
+if modeltype==1 || modeltype==2
+    
+    [aXcam1 aYcam1 aXcam2 aYcam2]
+    fprintf('\n Approximate Camera Angles: \n Alpha1  Alpha2  Beta1 Beta2\n');
+    alpha1=atand((aYcam1(4)*aXcam1(3) - aYcam1(3)*aXcam1(4))/(aYcam1(3)*aXcam1(2) - aYcam1(2)*aXcam1(3)));
+    alpha2=atand((aYcam2(4)*aXcam2(3) - aYcam2(3)*aXcam2(4))/(aYcam2(3)*aXcam2(2) - aYcam2(2)*aXcam2(3)));
+    beta1=atand((aYcam1(4)*aXcam1(2) - aYcam1(2)*aXcam1(4))/(aYcam1(2)*aXcam1(3) - aYcam1(3)*aXcam1(2)));
+    beta2=atand((aYcam2(4)*aXcam2(2) - aYcam2(2)*aXcam2(4))/(aYcam2(2)*aXcam2(3) - aYcam2(3)*aXcam2(2)));
+    [alpha1 alpha2 beta1 beta2]
+    
+elseif modeltype==3
+    [a_cam1;a_cam2]
+    aXcam1=[a_cam1(1,4) a_cam1(1,1) a_cam1(1,2) a_cam1(1,3)]';
+    aYcam1=[a_cam1(2,4) a_cam1(2,1) a_cam1(2,2) a_cam1(2,3)]';
+    aXcam2=[a_cam2(1,4) a_cam2(1,1) a_cam2(1,2) a_cam2(1,3)]';
+    aYcam2=[a_cam2(2,4) a_cam2(2,1) a_cam2(2,2) a_cam2(2,3)]';
+    [aXcam1 aYcam1 aXcam2 aYcam2]
+    
+    fprintf('\n Approximate Camera Angles: \n Alpha1  Alpha2  Beta1 Beta2\n');
+    alpha1=atand((aYcam1(4)*aXcam1(3) - aYcam1(3)*aXcam1(4))/(aYcam1(3)*aXcam1(2) - aYcam1(2)*aXcam1(3)));
+    alpha2=atand((aYcam2(4)*aXcam2(3) - aYcam2(3)*aXcam2(4))/(aYcam2(3)*aXcam2(2) - aYcam2(2)*aXcam2(3)));
+    beta1=atand((aYcam1(4)*aXcam1(2) - aYcam1(2)*aXcam1(4))/(aYcam1(2)*aXcam1(3) - aYcam1(3)*aXcam1(2)));
+    beta2=atand((aYcam2(4)*aXcam2(2) - aYcam2(2)*aXcam2(4))/(aYcam2(2)*aXcam2(3) - aYcam2(3)*aXcam2(2)));
+    [alpha1 alpha2 beta1 beta2]
+    
+    aXcam1=[];aYcam1=[];aXcam2=[];aYcam2=[];
+    
+end
 % save('aXcam1.mat','aXcam1');
 % save('aXcam2.mat','aXcam2');
 % save('aYcam1.mat','aYcam1');
