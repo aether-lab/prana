@@ -1,4 +1,4 @@
-function willert_vec_reconstruct_new(diroutlist,caldata,dewarp_grid,scaling,pulsesep)
+function willert_vec_reconstruct(diroutlist,caldata,dewarp_grid,scaling,pulsesep)
 % Performs geometric reconstruction on vector fields extracted using the
 % Willert method (1997).  Method has also been modified to include angle
 % calculations based on Scarano 2005 paper.
