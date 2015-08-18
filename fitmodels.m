@@ -362,7 +362,8 @@ else
     end
 end
 convergemessage={msgX1;msgY1;msgX2;msgY2};
-
+% Approximate camera angles calculated for each calibration Mapping
+% function using the ratio of the coefficients.
 if modeltype==1 || modeltype==2
     
     [aXcam1 aYcam1 aXcam2 aYcam2]

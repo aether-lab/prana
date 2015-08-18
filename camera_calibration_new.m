@@ -474,7 +474,7 @@ for ii=1:plate_level_number;
     set(gcf,'Name',figure_string);
     % This has the user select the grid point origin and an x and y axis.
     axis_data=specify_coordinate(calibration_data,current_camera_number,current_plane_number);
-    
+    % A QuestDialog added to confirm if right points are selected
     Buttonname=questdlg('Correct points selected?',...
         'point selection confirmation',...
         'yes','no','yes');
