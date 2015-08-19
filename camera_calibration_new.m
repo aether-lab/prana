@@ -474,6 +474,22 @@ for ii=1:plate_level_number;
     set(gcf,'Name',figure_string);
     % This has the user select the grid point origin and an x and y axis.
     axis_data=specify_coordinate(calibration_data,current_camera_number,current_plane_number);
+    % A QuestDialog added to confirm if right points are selected
+    Buttonname=questdlg('Correct points selected?',...
+        'point selection confirmation',...
+        'yes','no','yes');
+    
+    while strcmpi(Buttonname,'no')
+        figure(1);
+        set(gcf,'Name',figure_string);
+        % This has the user select the grid point origin and an x and y axis.
+        axis_data=specify_coordinate(calibration_data,current_camera_number,current_plane_number);
+        
+        Buttonname=questdlg('Correct points selected?',...
+            'point selection confirmation',...
+            'yes','no','yes');
+    end
+    
     % This saves the current grid plane data to the structure
     calibration_plane_data.axis_data{ii}=axis_data;
 end;
@@ -635,9 +651,13 @@ Ny=0.40*norm(y_axis_vector);
 
 % This loads the current image
 I=imread(calibration_data.image_filenames{current_camera_number,current_plane_number});
+
+% I=imadjust(I);
 % This diplays a high contrast version of the current image
 figure(1);
 imshow(imadjust(I));
+% imshow(I);
+% I(I<mean(I(:)))=0;
 
 % These are the vectors of known coordinate locations in pixels
 X_Subpixel_Grid=[origin_vector(1);origin_vector(1)+x_axis_vector(1);origin_vector(1)+y_axis_vector(1)];
@@ -980,9 +1000,12 @@ grid_point_diameter=calibration_data.grid_point_diameter;
 
 % This loads the current image
 I=imread(calibration_data.image_filenames{current_camera_number, current_plane_number});
+% I=imadjust(I);
 % This diplays a high contrast version of the current image
 figure(1);
 imshow(imadjust(I));
+% imshow(I);
+% I(I<mean(I(:)))=0;
 
 % This displays a title telling the user to select the origin grid point
 title('Select origin grid point.');

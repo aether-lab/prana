@@ -78,19 +78,28 @@ for j=1:nof
     end
     
     vecfr1 = load(vectorlist{j}{1});
+    vecfr2 = load(vectorlist{j}{2});
+    %This gets the number of Peaks saved for each 2D correlation and also
+    %stores the Eval matrices for each camera 2D processing
+    Noofpeaks=min(size(vecfr1.U,3),size(vecfr2.U,3));
+    Eval1=vecfr1.Eval;
+    Eval2=vecfr2.Eval;
+    
+%    Generalized reconstruction done for each saved correlation peaks
+    for p=1:Noofpeaks
     %need to convert vector locations on pixel corners to pixel centers for image coordinates
     x1=vecfr1.X + 0.5;
     y1=vecfr1.Y + 0.5;
-    u1=vecfr1.U(:,:,1); %pixels displacement?
-    v1=vecfr1.V(:,:,1);
-    clear vecfr1;
-    vecfr2 = load(vectorlist{j}{2});
+    u1=vecfr1.U(:,:,p); %pixels displacement?
+    v1=vecfr1.V(:,:,p);
+%     clear vecfr1;
+    
     %need to convert vector locations on pixel corners to pixel centers for image coordinates
     x2=vecfr2.X + 0.5;
     y2=vecfr2.Y + 0.5;
-    u2=vecfr2.U(:,:,1); %pixels displacement?
-    v2=vecfr2.V(:,:,1);
-    clear vecfr2;
+    u2=vecfr2.U(:,:,p); %pixels displacement?
+    v2=vecfr2.V(:,:,p);
+%     clear vecfr2;
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Perform the interpolation in the image planes
@@ -169,10 +178,16 @@ for j=1:nof
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % output the plt file with all components
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    U=u.*(t/1000);% convert from mm/frame (mm displacement) to m/sec
-    V=v.*(t/1000);%/data.pulsesep;%*1000;     % pulsesep is in microsec
-    W=w.*(t/1000);%/data.pulsesep;%*1000;
+    U(:,:,p)=u.*(t/1000);% convert from mm/frame (mm displacement) to m/sec
+    V(:,:,p)=v.*(t/1000);%/data.pulsesep;%*1000;     % pulsesep is in microsec
+    W(:,:,p)=w.*(t/1000);%/data.pulsesep;%*1000;
     
+    end
+    clear vecfr1 vecfr2;
+    
+    U=squeeze(U);
+    V=squeeze(V);
+    W=squeeze(W);
     
     % Change from mm to m for SI output.
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,11 +202,11 @@ for j=1:nof
     
     stereo_output=fullfile(diroutlist.soloff3cfields,['piv_2d3c_cam',num2str(caldata.camnumber(1)),'cam',num2str(caldata.camnumber(2)),'_pass_',foutname]);
     
-    save(stereo_output,'X','Y','Z','U','V','W');
+    save(stereo_output,'X','Y','Z','U','V','W','Eval1','Eval2');
     
     fprintf(['stereo frame_pass_',foutname,'  done.\n']);
     %keyboard;
-    clear X Y Z U V W;
+    clear X Y Z U V W Eval1 Eval2;
 end
 
 end

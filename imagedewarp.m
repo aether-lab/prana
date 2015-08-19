@@ -325,6 +325,76 @@ if overplots == 1
     %         axis([-200 100 -150 250])
     drawnow
 end
+%angle calculation
+[rows,cols]=size(xgrid);
+
+% xgrid=X1;
+% ygrid=Y1;
+zgrid=zeros(size(xgrid));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Compute gradients of calibration functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+aall=[caldata.aXcam1 caldata.aYcam1 caldata.aXcam2 caldata.aYcam2];
+dFdx1=zeros(rows,cols,4);       % the 3rd dimention corresponds to dFdx1 for (X1,Y1,X2,Y2)
+dFdx2=zeros(rows,cols,4);
+dFdx3=zeros(rows,cols,4);
+
+
+if caldata.modeltype==1
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Mapping the camera coord. to the World Coord. using 1sr order z
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for gg=1:4
+        a=aall(:,gg);
+        dFdx1(:,:,gg) = a(2) + 2*a(5)*xgrid + a(6)*ygrid + a(8)*zgrid + 3*a(10)*xgrid.^2 + ...
+            2*a(11)*xgrid.*ygrid + a(12)*ygrid.^2 + 2*a(14)*xgrid.*zgrid + a(15)*ygrid.*zgrid;
+        
+        dFdx2(:,:,gg) = a(3) + a(6)*xgrid + 2*a(7)*ygrid + a(9)*zgrid + a(11)*xgrid.^2 + ...
+            2*a(12)*xgrid.*ygrid + 3*a(13)*ygrid.^2 + a(15)*xgrid.*zgrid + 2*a(16)*ygrid.*zgrid;
+        
+        dFdx3(:,:,gg) = a(4) + a(8)*xgrid + a(9)*ygrid + a(14)*xgrid.^2 + a(15)*xgrid.*ygrid + a(16)*ygrid.^2;
+    end
+elseif caldata.modeltype==2
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Mapping the camera coord. to the World Coord. using 2nd order z
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    for gg=1:4
+        a=aall(:,gg);
+        dFdx1(:,:,gg) = a(2) + 2*a(5)*xgrid + a(6)*ygrid + a(8)*zgrid + 3*a(11)*xgrid.^2 + 2*a(12)*xgrid.*ygrid + ...
+            a(13)*ygrid.^2 + 2*a(15)*xgrid.*zgrid + a(16)*ygrid.*zgrid + a(18)*zgrid.^2;
+        
+        dFdx2(:,:,gg) = a(3) + a(6)*xgrid + 2*a(7)*ygrid + a(9)*zgrid + a(12)*xgrid.^2 + 2*a(13)*xgrid.*ygrid + ...
+            3*a(14)*ygrid.^2 + a(16)*xgrid.*zgrid + 2*a(17)*ygrid.*zgrid + a(19)*zgrid.^2;
+        
+        dFdx3(:,:,gg) = a(4) + a(8)*xgrid + a(9)*ygrid + 2*a(10)*zgrid + a(15)*xgrid.^2 + a(16)*xgrid.*ygrid + ...
+            a(17)*ygrid.^2 + 2*a(18)*xgrid.*zgrid + 2*a(19)*ygrid.*zgrid;
+    end
+end
+
+alpha1 = ((dFdx3(:,:,2).*dFdx2(:,:,1))-(dFdx2(:,:,2).*dFdx3(:,:,1)))./(dFdx2(:,:,2).*dFdx1(:,:,1)-dFdx1(:,:,2).*dFdx2(:,:,1));
+beta1  = ((dFdx3(:,:,2).*dFdx1(:,:,1))-(dFdx1(:,:,2).*dFdx3(:,:,1)))./(dFdx1(:,:,2).*dFdx2(:,:,1)-dFdx2(:,:,2).*dFdx1(:,:,1));
+
+alpha2 = ((dFdx3(:,:,4).*dFdx2(:,:,3))-(dFdx2(:,:,4).*dFdx3(:,:,3)))./(dFdx2(:,:,4).*dFdx1(:,:,3)-dFdx1(:,:,4).*dFdx2(:,:,3));
+beta2  = ((dFdx3(:,:,4).*dFdx1(:,:,3))-(dFdx1(:,:,4).*dFdx3(:,:,3)))./(dFdx1(:,:,4).*dFdx2(:,:,3)-dFdx2(:,:,4).*dFdx1(:,:,3));
+
+%Display camera angles for reference
+    
+figure(100); subplot(2,2,1);
+imagesc(atand(alpha1)); colorbar; %caxis([25 30]);
+title('Camera 1 Angle \alpha1','FontSize',16)
+subplot(2,2,2);
+imagesc(atand(alpha2)); colorbar; %caxis([-30 -25]);
+title('Camera 2 Angle \alpha2','FontSize',16)
+subplot(2,2,3);
+imagesc(atand(beta1)); colorbar; %caxis([-2 2]);(end-(zed+10):end-(zed+5))
+title('Camera 1 Angle \beta1','FontSize',16)
+subplot(2,2,4);
+imagesc(atand(beta2)); colorbar; %caxis([-2 2]);
+title('Camera 1 Angle \beta1','FontSize',16)
+
+[mean(atand(alpha1(:))) mean(atand(alpha2(:))) mean(atand(beta1(:))) mean(atand(beta2(:)))]
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Compute this grid in the IMAGE (object) plane to interpolate values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -338,6 +408,7 @@ dewarp_grid.Ygrid2=Ygrid2;
 dewarp_grid.xgrid=xgrid;
 dewarp_grid.ygrid=ygrid;
 
+% keyboard;
 %scaling is only an estimate returned as an output, and is not used in the
 % dewarping calculation
 %divide extent in object space by number of pixels.  
@@ -365,7 +436,8 @@ if strcmp(dewarpmethod,'Willert')
     fprintf('Dewarping Images...\n');
     dewarpflag=1; % added dewarpflag which is by default true but one can make it 0 to not run it if required
     if dewarpflag==1
-        matlabpool; % calling matlabpool for dewarping in parallel but in future versions it should be parpool
+        delete(gcp);
+        parpool; % calling matlabpool for dewarping in parallel but in future versions it should be parpool
         parfor k=fstart:fend+1
             %reading recorded images
             
@@ -413,7 +485,7 @@ if strcmp(dewarpmethod,'Willert')
             %keyboard;
             
         end
-        matlabpool close;
+        delete(gcp);
     end
 end
 

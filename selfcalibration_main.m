@@ -96,7 +96,7 @@ job1.imcstep='0';
 %make sure someone doesn't load a job where they've been manually altered?
 
 
-fprintf('Calculating Disparity.\n')
+fprintf('Calculating Disparity.\n');
 pranaPIVcode(job1);
 %keyboard;
 istring1=sprintf(['%%s%%s%%0%0.0fd.','mat'],str2double(job1.imzeros));
@@ -189,7 +189,7 @@ y2grid=yg+Duy./2;
 %Doing Triangulation
 
 [z1grid]= geometricTriangulation(xgrid,x2grid,ygrid,y2grid,zgrid,Dux,Duy,aXcam1,aYcam1,aXcam2,aYcam2,caldata); %ouput is the projected z world points
-
+keyboard;
 %Just turn grid coordinates matrices into vectors, why not use (:)?
 x=reshape(xg,a*b,1);y=reshape(yg,a*b,1);z=reshape(z1grid,a*b,1);
 
@@ -464,11 +464,11 @@ betatan(:,:,2)=(((dFdx3(:,:,4).*dFdx1(:,:,3)) - (dFdx1(:,:,4).*dFdx3(:,:,3)))./(
 %         subplot(2,2,4);
 %         imagesc(atand(betatan(:,:,2))); colorbar; %caxis([-2 2]);
 %         title('Camera 1 Angle \beta1','FontSize',16)
-%     
+%
     %keyboard;
 % Triangulation using formula (1) of that paper
 
-if max(max(abs(alphatan(:,:,1)-abs(alphatan(:,:,2)))))>max(max(abs(betatan(:,:,1)-abs(betatan(:,:,2)))))
+if max(max(abs(alphatan(:,:,1))-abs(alphatan(:,:,2))))>max(max(abs(betatan(:,:,1))-abs(betatan(:,:,2)))) % Previously a bracket was misplaced
     dz1=(-sign(alphatan(1,1)).*Dux)./(abs(alphatan(:,:,1))+abs(alphatan(:,:,2)));
 else
     %dz2=Duy./(abs(alphatan(:,:,1))+abs(alphatan(:,:,2)));%(abs(betatan(:,:,1))+abs(betatan(:,:,2)));
