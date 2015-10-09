@@ -508,12 +508,12 @@ switch char(M)
                     % Deform images according to the interpolated velocity fields
                     for k = 1:nChannels % Loop over all of the color channels in the image
                         if Iminterp == 1 % Sinc interpolation (without blackman window)
-                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'sinc');
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
+                            im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1 + 0.5, YD1 + 0.5, 3, 0);
+                            im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2 + 0.5, YD2 + 0.5, 3, 0);
                             
                         elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                            im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                            im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1 + 0.5, YD1 + 0.5, 6, 1);
+                            im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2 + 0.5, YD2 + 0.5, 6, 1);
                         
                         elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
                             im1d(:, :, k) = interp2(im1(:, :, k), XD1+0.5, YD1+0.5, 'cubic',0);
@@ -560,9 +560,9 @@ switch char(M)
                     % Deform images according to the interpolated velocity fields
                     for k = 1:nChannels % Loop over all of the color channels in the image
                         if Iminterp == 1 % Sinc interpolation (without blackman window)
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
+                            im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2 + 0.5, YD2 + 0.5, 3, 0);
                         elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                            im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                            im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2 + 0.5, YD2 + 0.5, 6, 1);
                         elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
                             im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
                         elseif Iminterp == 4 % 7th-order Bspline interpolation using @bsarry class
@@ -1044,16 +1044,16 @@ switch char(M)
                             % Deform images according to the interpolated velocity fields
                             for k = 1:nChannels % Loop over all of the color channels in the image
                                 if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'sinc');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
+                                    im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1 + 0.5, YD1+0.5, 3, 0);
+                                    im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2 + 0.5, YD2+0.5, 3, 0);
 
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1+0.5, YD1+0.5, 8, 'blackman');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                                    im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1 + 0.5, YD1 + 0.5, 6, 1);
+                                    im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2 + 0.5, YD2 + 0.5, 6, 1);
                                     
                                 elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
-                                    im1d(:, :, k) = interp2(im1(:, :, k), XD1+0.5, YD1+0.5, 'cubic',0);
-                                    im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
+                                    im1d(:, :, k) = interp2(im1(:, :, k), XD1+0.5, YD1+0.5, 'cubic', 0);
+                                    im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic', 0);
                                     
                                 elseif Iminterp == 4 % 7th-order Bspline interpolation using @bsarry class
                                     bsplDegree = 7;  %order of the b-spline (0-7)
@@ -1061,15 +1061,6 @@ switch char(M)
                                     im2d(:, :, k) = interp2(bsarray(im2(:, :, k),'degree',bsplDegree), XD2+0.5, YD2+0.5, 0);
                                 end
                             end
-
-                            % keyboard
-                            % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
-                            % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
-                            % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
-                            % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
-                            % pause
-                            % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
-                            % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
 
                             if defloop == 1
                                 deformtime(e+1,defloop)=toc(t1);
@@ -1098,27 +1089,21 @@ switch char(M)
                             im2d = zeros(size(im2),imClass);
 
                             % Deform images according to the interpolated velocity fields
-                            for k = 1:nChannels % Loop over all of the color channels in the image
+                            for k = 1 : nChannels % Loop over all of the color channels in the image
                                 if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'sinc');
-                                elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2+0.5, YD2+0.5, 8, 'blackman');
+                                    im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2+0.5, YD2+0.5, 3, 0);
+                                
+								elseif Iminterp == 2 % Sinc interpolation with blackman filter
+                                    im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2+0.5, YD2+0.5, 6, 1);
+									
                                 elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
                                     im2d(:, :, k) = interp2(im2(:, :, k), XD2+0.5, YD2+0.5, 'cubic',0);
-                                elseif Iminterp == 4 % 7th-order Bspline interpolation using @bsarry class
+                                
+								elseif Iminterp == 4 % 7th-order Bspline interpolation using @bsarry class
                                     bsplDegree = 7;  %order of the b-spline (0-7)
                                     im2d(:, :, k) = interp2(bsarray(im2(:, :, k),'degree',bsplDegree), XD2+0.5, YD2+0.5, 0);
                                 end
                             end
-
-                            % keyboard
-                            % figure(1),imagesc(im1),colormap(gray),axis image xy,xlabel('im1')
-                            % figure(2),imagesc(im2),colormap(gray),axis image xy,xlabel('im2')
-                            % figure(3),imagesc(im1d),colormap(gray),axis image xy,xlabel('im1d')
-                            % figure(4),imagesc(im2d),colormap(gray),axis image xy,xlabel('im2d')
-                            % pause
-                            % imwrite(uint8(im1d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ia.png' ],I1(q))]);
-                            % imwrite(uint8(im2d),[pltdirec char(wbase(e,:)) sprintf(['%0.' Data.imzeros 'ib.png' ],I1(q))]);
 
                             if defloop == 1
                                 deformtime(e+1,defloop)=toc(t1);
@@ -1358,7 +1343,7 @@ switch char(M)
                             
                             t1=tic;
                             % translate pixel locations, but
-                            % since sincBlackmanInterp2 assumes
+                            % since the interpolation functions assume
                             % coordinate system is pixel-centered, we need
                             % to convert back to index-coordinates for the
                             % deform.
@@ -1380,12 +1365,12 @@ switch char(M)
                             % memory at the expense of some speed here.
                             for k = 1:nChannels % Loop over all of the color channels in the image
                                 if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'sinc');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'sinc');
+                                    im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1, YD1, 3, 0);
+                                    im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2, YD2, 3, 0);
                                     
                                 elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                    im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'blackman');
-                                    im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'blackman');
+                                    im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1, YD1, 6, 1);
+                                    im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2, YD2, 6, 1);
                                     
                                 elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
                                     im1d(:, :, k) = interp2(im1(:, :, k), XD1, YD1, 'cubic',0);
@@ -1405,9 +1390,9 @@ switch char(M)
                         %correlate image pair and average correlations
                         %                      [Xc,Yc,CC]=PIVensemble(im1,im2,Corr(e),Wsize(e,:),Wres(e, :, :),0,D(e),Zeromean(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         if strcmpi(M,'EDeform') && (e~=1 || defloop ~=1  || VelInputFile)
-                            [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
+                            [Xc,Yc,CC]=PIVensemble(im1d,im2d,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:), Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0));
                         else
-                            [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:),Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
+                            [Xc,Yc,CC]=PIVensemble(im1,im2,Corr{e},Wsize(e,:),Wres(:, :, e),0,D(e,:), Zeromean(e),frac_filt(e),X(Eval>=0),Y(Eval>=0),Ub(Eval>=0),Vb(Eval>=0));
                         end
                         
                         if ~strcmpi(Corr{e},'SPC')
@@ -1516,7 +1501,7 @@ switch char(M)
                         t1=tic;
                         
                         % translate pixel locations, but
-                        % since sincBlackmanInterp2 assumes
+                        % since the interpolation functions assume
                         % coordinate system is pixel-centered, we need
                         % to convert back to index-coordinates for the
                         % deform.
@@ -1536,12 +1521,12 @@ switch char(M)
                         % but I'm trying to save memory at the expense of some speed here.
                         for k = 1:nChannels % Loop over all of the color channels in the image
                             if Iminterp == 1 % Sinc interpolation (without blackman window)
-                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'sinc');
-                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'sinc');
+                                im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1, YD1, 3, 0);
+                                im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2, YD2, 3, 0);
                                 
                             elseif Iminterp == 2 % Sinc interpolation with blackman filter
-                                im1d(:, :, k) = sincBlackmanInterp2(im1(:, :, k), XD1, YD1, 8, 'blackman');
-                                im2d(:, :, k) = sincBlackmanInterp2(im2(:, :, k), XD2, YD2, 8, 'blackman');
+                                im1d(:, :, k) = whittaker_blackman(im1(:, :, k), XD1, YD1, 6, 1);
+                                im2d(:, :, k) = whittaker_blackman(im2(:, :, k), XD2, YD2, 6, 1);
                                 
                             elseif Iminterp == 3 % Matlab interp2 option added to avoid memory intensive processing
                                 im1d(:, :, k) = interp2(im1(:, :, k), XD1, YD1, 'cubic',0);

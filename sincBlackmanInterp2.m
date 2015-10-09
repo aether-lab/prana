@@ -133,8 +133,8 @@ clear Interpolants;
 
 % Calculate the interpolant apodization function
 if strcmp(METHOD, 'blackman') % If blackman window was specified
-    apodizationY =  0.42 + 0.5 * cos( pi *( interpolantRows - repYI ) / (kernelSize/2) ) + 0.08 * cos (2 * pi * ( interpolantRows - repYI ) / (kernelSize/2) ); % Blackman window ( vertical )
-    apodizationX = 0.42 + 0.5 * cos( pi *( interpolantCols - repXI ) / (kernelSize/2) ) + 0.08 * cos (2 * pi * ( interpolantCols - repXI ) / (kernelSize/2) ); % Blackman window ( horizontal)
+    apodizationY =  (0.42 + 0.5 * cos( pi *( interpolantRows - repYI ) / (kernelSize/2) ) + 0.08 * cos (2 * pi * ( interpolantRows - repYI ) / (kernelSize/2) )) ./ 1.72; % Blackman window ( vertical )
+    apodizationX = (0.42 + 0.5 * cos( pi *( interpolantCols - repXI ) / (kernelSize/2) ) + 0.08 * cos (2 * pi * ( interpolantCols - repXI ) / (kernelSize/2) )) ./ 1.72; % Blackman window ( horizontal)
 else % If no apodization function was specified then don't apodize the interpolant
     apodizationY =  ones(size(interpolantRows));
     apodizationX = ones(size(interpolantCols));
