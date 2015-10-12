@@ -220,7 +220,7 @@ function executemenu_alljobs_Callback(hObject, eventdata, handles)
 runall_Callback(hObject, eventdata, handles)
 
 % --- Execute Menu -> Compile codes ---
-function executemenu_compile_codes_Callback(hObject, eventdata, handles)
+function jobmenu_compile_codes_Callback(hObject, eventdata, handles)
 compile_codes_Callback(hObject, eventdata, handles)
 
 % --- Help Menu ---
@@ -377,15 +377,9 @@ end
 function runcurrent_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
 	
-	% File name for compiled codes
-	% mexext is a built-in matlab command.
-	compiled_code_file_name = ['whittaker_blackman.' mexext];
-	
-	% Compile the compileable codes if their compiled versions
-	% don't already exist.
-	if ~exist(compiled_code_file_name, 'file')
-		compile_codes_Callback(hObject, eventdata, handles)
-	end
+	% Check for compiled codes, and compile them
+	% if they don't already exist.
+	check_compiled_codes(hObject, eventdata, handles);
 	
     Data=handles.data;
     if str2double(Data.runPIV)
@@ -399,6 +393,10 @@ end
 % --- Run All Jobs Button ---
 function runall_Callback(hObject, eventdata, handles)
 if str2double(handles.Njob)>0
+	
+	% Check for compiled codes, and compile them
+	% if they don't already exist.
+	check_compiled_codes(hObject, eventdata, handles);
     
     Jlist=char(get(handles.joblist,'String'));
     eval(['handles.' Jlist(str2double(handles.Cjob),:) '=handles.data;']);
@@ -413,6 +411,17 @@ if str2double(handles.Njob)>0
         end
     end
 end
+
+function check_compiled_codes(hObject, eventdata, handles)
+	% File name for compiled codes
+	% mexext is a built-in matlab command.
+	compiled_code_file_name = ['whittaker_blackman.' mexext];
+	
+	% Compile the compileable codes if their compiled versions
+	% don't already exist.
+	if ~exist(compiled_code_file_name, 'file')
+		compile_codes_Callback(hObject, eventdata, handles)
+	end
 
 % --- Run Current Job Button ---
 function compile_codes_Callback(hObject, eventdata, handles)
