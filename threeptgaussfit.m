@@ -64,7 +64,7 @@ if Better ~= 1
     %function is designed to return NaN should any of the nearest neighbor
     %pixels to max_int equal zero or if the particles have equal intensity
     %values
-    if LE(2) > 1 && RE(2) < xmax_I %edge_ckx == 0;
+    if LE(2) >= 1 && RE(2) <= xmax_I %edge_ckx == 0;
         left_int  = I(LE(1),LE(2));
         right_int = I(RE(1),RE(2));
         LR_denom = (2*(log(left_int)+log(right_int)-2*log(max_int)));
@@ -82,7 +82,7 @@ if Better ~= 1
         I0x=NaN;
     end
     
-    if TE(1) > 1 && BE(1) < ymax_I %edge_cky == 0;
+    if TE(1) >= 1 && BE(1) <= ymax_I %edge_cky == 0;
         top_int    = I(TE(1),TE(2));
         bottom_int = I(BE(1),BE(2));
         TB_denom = (2*(log(top_int)+log(bottom_int)-2*log(max_int)));
